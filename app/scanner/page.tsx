@@ -57,6 +57,8 @@ export default function ScannerPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSystemId, setSelectedSystemId] = useState('');
   const [googleClientId, setGoogleClientId] = useState(googleClientIdFromBuild);
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const [scannerFileCount, setScannerFileCount] = useState(0);
 
   const loadScannerData = useCallback(async () => {
     const response = await fetch('/api/scanner/data', { cache: 'no-store' });
@@ -83,6 +85,8 @@ export default function ScannerPage() {
     const response = await fetch('/api/scanner/developer', { cache: 'no-store' });
     const payload = await response.json();
     setDeveloperMessage(payload.message || payload.error || '');
+    setDownloadUrl(payload.downloadUrl || '');
+    setScannerFileCount(Number(payload.scannerCount || 0));
   }, []);
 
   const handleCredential = useCallback(async (credential: string) => {
@@ -305,6 +309,14 @@ export default function ScannerPage() {
                 <div className="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4">
                   <h3 className="font-semibold text-emerald-200">Developer tools</h3>
                   <p className="mt-2 text-sm text-emerald-100">{developerMessage || 'Developer access confirmed.'}</p>
+                  {downloadUrl ? (
+                    <a
+                      href={downloadUrl}
+                      className="mt-4 inline-flex rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                    >
+                      Download scanner zip{scannerFileCount ? ` (${scannerFileCount} scanners)` : ''}
+                    </a>
+                  ) : null}
                 </div>
               ) : (
                 <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950 p-4">

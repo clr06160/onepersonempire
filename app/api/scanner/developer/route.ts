@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireScannerSession } from '@/lib/scanner-auth';
+import { listScannerDownloadSummary } from '@/lib/scanner-download';
 
 export const runtime = 'nodejs';
 
@@ -9,10 +10,16 @@ export async function GET() {
     return NextResponse.json({ error: 'Developer access required.' }, { status: 403 });
   }
 
-  return NextResponse.json({
-    user,
-    downloadsEnabled: false,
-    message:
-      'Developer login is working. Next step is packaging a safe Python download without secrets, cache files, or API keys.',
-  });
+  try {
+    const summary = await listScannerDownloadSummary();
+    return NextResponse.json({
+      user,
+      ...summary,
+      message: `Download a zip with ${summary.scannerCount} scanner files plus shared Python modules.`,
+      downloadUrl: '/api/scanner/developer/download',
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Developer tools unavailable.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
