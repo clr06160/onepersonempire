@@ -49,6 +49,8 @@ declare global {
 
 const googleClientIdFromBuild = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
+const scannerFetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
+
 export default function ScannerPage() {
   const [user, setUser] = useState<ScannerUser | null>(null);
   const [data, setData] = useState<ScannerData | null>(null);
@@ -61,7 +63,7 @@ export default function ScannerPage() {
   const [scannerFileCount, setScannerFileCount] = useState(0);
 
   const loadScannerData = useCallback(async () => {
-    const response = await fetch('/api/scanner/data', { cache: 'no-store' });
+    const response = await fetch('/api/scanner/data', scannerFetchInit);
     const payload = await response.json();
     if (!response.ok) {
       setError(payload.error || 'Could not load scanner data.');
@@ -74,7 +76,7 @@ export default function ScannerPage() {
   }, []);
 
   const refreshSession = useCallback(async () => {
-    const response = await fetch('/api/scanner/session', { cache: 'no-store' });
+    const response = await fetch('/api/scanner/session', scannerFetchInit);
     const payload = await response.json();
     setUser(payload.user || null);
     setLoading(false);
@@ -82,7 +84,7 @@ export default function ScannerPage() {
   }, []);
 
   const loadDeveloperTools = useCallback(async () => {
-    const response = await fetch('/api/scanner/developer', { cache: 'no-store' });
+    const response = await fetch('/api/scanner/developer', scannerFetchInit);
     const payload = await response.json();
     setDeveloperMessage(payload.message || payload.error || '');
     setDownloadUrl(payload.downloadUrl || '');
@@ -92,6 +94,7 @@ export default function ScannerPage() {
   const handleCredential = useCallback(async (credential: string) => {
     setError('');
     const response = await fetch('/api/scanner/auth/login', {
+      ...scannerFetchInit,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential }),
@@ -122,7 +125,7 @@ export default function ScannerPage() {
   }, [googleClientId, handleCredential]);
 
   const logout = useCallback(async () => {
-    await fetch('/api/scanner/auth/logout', { method: 'POST' });
+    await fetch('/api/scanner/auth/logout', { ...scannerFetchInit, method: 'POST' });
     setUser(null);
     setData(null);
     setDeveloperMessage('');
@@ -131,7 +134,7 @@ export default function ScannerPage() {
 
   useEffect(() => {
     if (googleClientIdFromBuild) return;
-    fetch('/api/scanner/config', { cache: 'no-store' })
+    fetch('/api/scanner/config', scannerFetchInit)
       .then((response) => response.json())
       .then((payload) => {
         if (payload.googleClientId) setGoogleClientId(String(payload.googleClientId));
