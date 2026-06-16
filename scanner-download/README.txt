@@ -1,29 +1,37 @@
 OnePersonEmpire Stock Scanner Review Pack
 =========================================
 
-This zip is for developer accounts reviewing scanner logic.
+Main contents
+-------------
+- scanners/     6 Python files (one per live scanner on the website)
+- shared/       helper Python modules the scanners import
+- setup/env.example   blank FMP API template (they add their own key)
 
-Purpose
--------
-Check for look-ahead bias, data timing bugs, rebalance issues, and other
-methodology problems. Email findings back to the person who granted access.
+The JSON files are NOT the database
+-----------------------------------
+These are just ticker lists — which symbols belong to each universe:
+- russell_clean_2026-04-02.json        IWM / Russell names
+- nasdaq100_constituents_2026-06-08.json   QQQ / Nasdaq-100 names
+- sp500_constituents_2026-06-08.json       SPY / S&P 500 names
 
-Contents
---------
-- scanners/     one Python file per live dashboard scanner
-- shared/       supporting backtest modules and FMP cache helpers
-- setup/        REVIEW.txt checklist + optional env.example for local runs
-- *.json        constituent ticker lists
+They are not price history or fundamentals. Think of them as "who is in the index."
 
-Start here
-----------
-Read setup/REVIEW.txt for the checklist and how to report results.
+The real data (prices + fundamentals) comes from FMP
+----------------------------------------------------
+Developers use their own FMP API key (setup/env.example -> .env) and run:
+  shared/price_cache.py
+  shared/fundamentals_cache.py
 
-Optional local run
-------------------
-If you want to execute code, not just read it:
-1. Copy setup/env.example to .env and add your own FMP_API_KEY
-2. pip install -r requirements.txt
-3. Follow the cache + run steps in setup/REVIEW.txt
+That downloads data into a local data/cache/ folder on their machine.
+First download can take a while; after that runs are incremental.
 
-Not included: website secrets, cloud upload scripts, or owner credentials.
+Run one scanner
+---------------
+  PYTHONPATH=shared python scanners/core_iwm_quality_2month.py
+
+Review goal
+-----------
+Check for look-ahead bias, timing bugs, and methodology issues.
+Email findings back to the person who granted developer access.
+
+Not included: your API keys, website secrets, or cloud upload tools.
