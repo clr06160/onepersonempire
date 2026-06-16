@@ -6,7 +6,7 @@ function privateKeyFromEnv() {
   return process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 }
 
-function initializeFirebaseAdmin() {
+export function initializeFirebaseAdmin() {
   if (getApps().length) return;
 
   const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
