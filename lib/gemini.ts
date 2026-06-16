@@ -39,16 +39,6 @@ function isUnavailableModelError(error: unknown) {
   return /\b(404|not found|no longer available)\b/i.test(message);
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
-export const textModel = genAI.getGenerativeModel({ 
-  model: 'gemini-2.5-flash',
-});
-
-export const imageModel = genAI.getGenerativeModel({ 
-  model: 'gemini-2.5-flash-image'
-});
-
 export async function generateTextWithFallback(prompt: string, options?: {
   maxOutputTokens?: number;
 }) {
