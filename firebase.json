@@ -1,0 +1,20 @@
+{
+  "hosting": {
+    "site": "onepersonempire",
+    "public": "firebase-public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "onepersonempire",
+          "region": "us-central1"
+        }
+      }
+    ]
+  }
+}

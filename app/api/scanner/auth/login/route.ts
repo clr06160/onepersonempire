@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createScannerSession, getScannerRole, verifyGoogleCredential } from '@/lib/scanner-auth';
+import { buildScannerSessionCookie, getScannerRole, verifyGoogleCredential } from '@/lib/scanner-auth';
 
 export const runtime = 'nodejs';
 
@@ -17,8 +17,10 @@ export async function POST(req: Request) {
     }
 
     const user = { ...googleUser, role };
-    await createScannerSession(user);
-    return NextResponse.json({ user });
+    const sessionCookie = buildScannerSessionCookie(user);
+    const response = NextResponse.json({ user });
+    response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options);
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Login failed.';
     return NextResponse.json({ error: message }, { status: 401 });

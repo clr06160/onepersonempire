@@ -11,7 +11,7 @@ export type ScannerUser = {
   role: ScannerRole;
 };
 
-const COOKIE_NAME = 'scanner_session';
+export const SCANNER_SESSION_COOKIE = 'scanner_session';
 const SESSION_DAYS = 14;
 
 function normalizeEmail(email: string) {
@@ -51,6 +51,24 @@ function makeCookieValue(user: ScannerUser) {
   const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
   const payload = base64Url(JSON.stringify({ ...user, expiresAt }));
   return `${payload}.${signPayload(payload)}`;
+}
+
+export function scannerSessionCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: SESSION_DAYS * 24 * 60 * 60,
+  };
+}
+
+export function buildScannerSessionCookie(user: ScannerUser) {
+  return {
+    name: SCANNER_SESSION_COOKIE,
+    value: makeCookieValue(user),
+    options: scannerSessionCookieOptions(),
+  };
 }
 
 function verifyCookieValue(value: string | undefined): ScannerUser | null {
@@ -134,24 +152,19 @@ export async function getScannerRole(email: string): Promise<ScannerRole | null>
 }
 
 export async function createScannerSession(user: ScannerUser) {
+  const cookie = buildScannerSessionCookie(user);
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, makeCookieValue(user), {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: SESSION_DAYS * 24 * 60 * 60,
-  });
+  cookieStore.set(cookie.name, cookie.value, cookie.options);
 }
 
 export async function clearScannerSession() {
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(SCANNER_SESSION_COOKIE);
 }
 
 export async function getScannerSession(): Promise<ScannerUser | null> {
   const cookieStore = await cookies();
-  return verifyCookieValue(cookieStore.get(COOKIE_NAME)?.value);
+  return verifyCookieValue(cookieStore.get(SCANNER_SESSION_COOKIE)?.value);
 }
 
 export async function requireScannerSession(role: ScannerRole = 'viewer') {
