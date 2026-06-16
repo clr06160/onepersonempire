@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({
       user,
       ...summary,
-      message: `Download a zip with ${summary.scannerCount} scanner files plus shared Python modules.`,
+      message: `Download a zip with ${summary.scannerCount} Python scanner files and shared modules only.`,
       downloadUrl: '/api/scanner/developer/download',
     });
   } catch (error) {
