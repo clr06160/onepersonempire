@@ -1,29 +1,29 @@
-OnePersonEmpire Stock Scanner Code Pack
-======================================
+OnePersonEmpire Stock Scanner Review Pack
+=========================================
 
-Developer download: raw Python only.
+This zip is for developer accounts reviewing scanner logic.
 
-What is included
-----------------
-- scanners/   one Python file per dashboard scanner
-- shared/     shared modules imported by those scanners
-- manifest.json   maps website scanner IDs to Python files
+Purpose
+-------
+Check for look-ahead bias, data timing bugs, rebalance issues, and other
+methodology problems. Email findings back to the person who granted access.
 
-What is NOT included
---------------------
-- No .env files, API keys, or cloud upload scripts
-- No HTML dashboard or website upload tooling
-- No price/fundamental cache data (bring your own)
+Contents
+--------
+- scanners/     one Python file per live dashboard scanner
+- shared/       supporting backtest modules and FMP cache helpers
+- setup/        REVIEW.txt checklist + optional env.example for local runs
+- *.json        constituent ticker lists
 
-Setup
------
-1. Unzip anywhere on your machine.
-2. Create a Python environment and install packages from requirements.txt.
-3. Point the shared modules at your own local price and fundamentals data,
-   or run from your own research project root with these files on PYTHONPATH.
-4. Run a scanner directly, for example:
-   python scanners/core_iwm_quality_2month.py
+Start here
+----------
+Read setup/REVIEW.txt for the checklist and how to report results.
 
-Scanner list
-------------
-See manifest.json for the mapping between website dropdown IDs and Python files.
+Optional local run
+------------------
+If you want to execute code, not just read it:
+1. Copy setup/env.example to .env and add your own FMP_API_KEY
+2. pip install -r requirements.txt
+3. Follow the cache + run steps in setup/REVIEW.txt
+
+Not included: website secrets, cloud upload scripts, or owner credentials.

@@ -1,59 +1,72 @@
-{
-  "packageVersion": 2,
-  "packageName": "onepersonempire-stock-scanners",
-  "sharedDir": "shared",
-  "scanners": [
-    {
-      "id": "core",
-      "label": "Core: IWM Quality 2-Month",
-      "file": "scanners/core_iwm_quality_2month.py",
-      "variantHint": "top10_two_month_quality_qqq200_half_only"
-    },
-    {
-      "id": "monthly-core",
-      "label": "Prior Core: IWM Quality Monthly",
-      "file": "scanners/monthly_core_iwm_quality.py",
-      "variantHint": "top10_monthly_quality_qqq200_half_only"
-    },
-    {
-      "id": "raw10",
-      "label": "Aggressive: Raw PowerTrend Top10",
-      "file": "scanners/raw_powertrend_top10.py",
-      "variantHint": "iwm_top200_accel_top10_weekly__baseline_acceleration"
-    },
-    {
-      "id": "raw5",
-      "label": "Rocket: Raw PowerTrend Top5",
-      "file": "scanners/raw_powertrend_top5.py",
-      "variantHint": "iwm_top200_accel_top5_weekly__baseline_acceleration"
-    },
-    {
-      "id": "raw5-quarterly",
-      "label": "191-197% Test: Raw Top5 PowerTrend / Quarterly",
-      "file": "scanners/raw_powertrend_top5_quarterly.py",
-      "variantHint": "iwm_top200_accel_top5_monthly__baseline_acceleration"
-    },
-    {
-      "id": "qqq",
-      "label": "QQQ Pure Acceleration",
-      "file": "scanners/qqq_pure_acceleration.py",
-      "variantHint": "nasdaq100_accel_top10_monthly__baseline_acceleration"
-    }
-  ],
-  "sharedFiles": [
-    "shared/quality_regime_router_runner.py",
-    "shared/nasdaq100_accel_momentum_risk_runner.py",
-    "shared/nasdaq100_second_derivative_scanner.py",
-    "shared/nasdaq_power_trend_runner.py",
-    "shared/qqq_accel_quality_overlay_runner.py",
-    "shared/tight_setup_acceleration_runner.py",
-    "shared/iwm_exposure_scaling_runner.py",
-    "shared/iwm_powertrend_hybrid_quality_runner.py",
-    "shared/iwm_weekly_accel_no_stop_runner.py"
-  ],
-  "requirements": [
-    "pandas",
-    "numpy",
-    "requests"
-  ]
-}
+{
+  "packageVersion": 3,
+  "packageName": "onepersonempire-stock-scanners",
+  "sharedDir": "shared",
+  "scanners": [
+    {
+      "id": "core",
+      "label": "Core: IWM Quality 2-Month",
+      "file": "scanners/core_iwm_quality_2month.py",
+      "variantHint": "top10_two_month_quality_qqq200_half_only"
+    },
+    {
+      "id": "monthly-core",
+      "label": "Prior Core: IWM Quality Monthly",
+      "file": "scanners/monthly_core_iwm_quality.py",
+      "variantHint": "top10_monthly_quality_qqq200_half_only"
+    },
+    {
+      "id": "raw10",
+      "label": "Aggressive: Raw PowerTrend Top10",
+      "file": "scanners/raw_powertrend_top10.py",
+      "variantHint": "iwm_top200_accel_top10_weekly__baseline_acceleration"
+    },
+    {
+      "id": "raw5",
+      "label": "Rocket: Raw PowerTrend Top5",
+      "file": "scanners/raw_powertrend_top5.py",
+      "variantHint": "iwm_top200_accel_top5_weekly__baseline_acceleration"
+    },
+    {
+      "id": "raw5-quarterly",
+      "label": "191-197% Test: Raw Top5 PowerTrend / Quarterly",
+      "file": "scanners/raw_powertrend_top5_quarterly.py",
+      "variantHint": "iwm_top200_accel_top5_monthly__baseline_acceleration"
+    },
+    {
+      "id": "qqq",
+      "label": "QQQ Pure Acceleration",
+      "file": "scanners/qqq_pure_acceleration.py",
+      "variantHint": "nasdaq100_accel_top10_monthly__baseline_acceleration"
+    }
+  ],
+  "sharedFiles": [
+    "shared/price_cache.py",
+    "shared/fundamentals_cache.py",
+    "shared/scoreboard.py",
+    "shared/quality_regime_router_runner.py",
+    "shared/nasdaq100_accel_momentum_risk_runner.py",
+    "shared/nasdaq100_second_derivative_scanner.py",
+    "shared/nasdaq_power_trend_runner.py",
+    "shared/qqq_accel_quality_overlay_runner.py",
+    "shared/tight_setup_acceleration_runner.py",
+    "shared/iwm_exposure_scaling_runner.py",
+    "shared/iwm_powertrend_hybrid_quality_runner.py",
+    "shared/iwm_weekly_accel_no_stop_runner.py"
+  ],
+  "dataFiles": [
+    "russell_clean_2026-04-02.json",
+    "nasdaq100_constituents_2026-06-08.json",
+    "sp500_constituents_2026-06-08.json"
+  ],
+  "setupFiles": [
+    "setup/env.example",
+    "setup/REVIEW.txt"
+  ],
+  "requirements": [
+    "pandas",
+    "numpy",
+    "requests",
+    "python-dotenv"
+  ]
+}

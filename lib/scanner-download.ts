@@ -12,23 +12,28 @@ type ScannerManifest = {
     variantHint?: string;
   }>;
   sharedFiles?: string[];
+  dataFiles?: string[];
+  setupFiles?: string[];
 };
 
 const PACKAGE_ROOT = path.join(process.cwd(), 'scanner-download');
-const BLOCKED_FILE_NAMES = new Set(['.env', '.env.local', '.env.production', '.env.example', 'env.example']);
+const ALLOWED_RELATIVE_PATHS = new Set(['setup/env.example', 'setup/review.txt']);
+const BLOCKED_FILE_NAMES = new Set(['.env', '.env.local', '.env.production', '.env.example']);
 const BLOCKED_EXTENSIONS = new Set(['.log', '.pem', '.key', '.p12', '.pfx']);
 const BLOCKED_PATH_PREFIXES = ['dashboard/'];
 
 function isBlockedRelativePath(relativePath: string) {
-  const normalized = relativePath.replace(/\\/g, '/').toLowerCase();
-  const base = path.basename(normalized);
+  const normalized = relativePath.replace(/\\/g, '/');
+  const lowered = normalized.toLowerCase();
+  const base = path.basename(lowered);
   const ext = path.extname(base);
-  if (BLOCKED_PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return true;
+  if (ALLOWED_RELATIVE_PATHS.has(lowered)) return false;
+  if (BLOCKED_PATH_PREFIXES.some((prefix) => lowered.startsWith(prefix))) return true;
   if (BLOCKED_FILE_NAMES.has(base)) return true;
   if (base.includes('.env')) return true;
   if (BLOCKED_EXTENSIONS.has(ext)) return true;
   if (base.includes('credentials') || base.includes('secret')) return true;
-  if (normalized.includes('upload_scanner')) return true;
+  if (lowered.includes('upload_scanner')) return true;
   return false;
 }
 
@@ -77,6 +82,14 @@ export async function buildScannerDownloadZip() {
   await addFileToZip(zip, 'manifest.json');
 
   for (const relativePath of manifest.sharedFiles || []) {
+    await addFileToZip(zip, relativePath);
+  }
+
+  for (const relativePath of manifest.dataFiles || []) {
+    await addFileToZip(zip, relativePath);
+  }
+
+  for (const relativePath of manifest.setupFiles || []) {
     await addFileToZip(zip, relativePath);
   }
 

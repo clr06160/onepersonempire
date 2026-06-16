@@ -13,7 +13,7 @@ from fundamentals_cache import ENDPOINT_CASH_FLOW, ENDPOINT_INCOME, endpoint_row
 from scoreboard import REPORTS_DIR, max_drawdown_pct
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 HOLY40_CACHE = PROJECT_ROOT / "data" / "cache" / "holy40_godmode108"
 SOXLGOOD_PRICE_DIR = PROJECT_ROOT / "data" / "cache" / "soxlgood" / "prices"
 CACHE_PRICE_UNIVERSES = ("qqq", "sp500", "iwm", "soxlgood")

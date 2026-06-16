@@ -1,0 +1,40 @@
+Code review pack
+================
+
+This zip is for independent review of the scanner logic.
+
+What we want back
+-----------------
+Email your findings to the person who gave you developer access. Include:
+- Scanner file(s) reviewed
+- Issue type: look-ahead bias, data timing, rebalance logic, quality filter timing, etc.
+- What you checked
+- What you found (pass/fail + notes)
+- Any output files or screenshots that support the finding
+
+Review checklist
+----------------
+1. Rebalance timing: are ranks built only from data available before the trade date?
+2. Fundamentals: are income/cash-flow statements filtered by filing date, not report period alone?
+3. Price data: are signals computed on completed bars only?
+4. PowerTrend / regime filters: do they use prior completed signals, not same-day future info?
+5. Universe selection: any survivorship or point-in-time membership issues?
+6. Quality filters: could future restatements leak into historical picks?
+
+Optional: run locally
+---------------------
+You do not have to run the code to review it. If you do want to execute a scanner:
+
+1. Copy setup/env.example to .env and add your own FMP_API_KEY
+2. pip install -r requirements.txt
+3. Build local cache (first run can take a while):
+   PYTHONPATH=shared python shared/price_cache.py update --universe qqq
+   PYTHONPATH=shared python shared/price_cache.py update --universe iwm
+   PYTHONPATH=shared python shared/fundamentals_cache.py update --universe iwm --endpoints income_statement cash_flow_statement
+4. Run one scanner:
+   PYTHONPATH=shared python scanners/core_iwm_quality_2month.py
+
+Not included
+------------
+- Website secrets, cloud upload tooling, or pre-built cache data
+- Any API keys or credentials from the live scanner owner

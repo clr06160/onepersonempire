@@ -12,7 +12,7 @@ import pandas as pd
 from price_cache import read_ticker_prices
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = PROJECT_ROOT / "reports"
 DEFAULT_INITIAL_CAPITAL = 10_000.0
 DEFAULT_SEARCH_UNIVERSES = ("qqq", "soxlgood", "sp500", "iwm")

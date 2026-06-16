@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({
       user,
       ...summary,
-      message: `Download a zip with ${summary.scannerCount} Python scanner files and shared modules only.`,
+      message: `Download Python for code review (look-ahead bias, timing, methodology). Email findings back when done.`,
       downloadUrl: '/api/scanner/developer/download',
     });
   } catch (error) {
