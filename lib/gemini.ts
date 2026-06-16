@@ -23,8 +23,8 @@ export function getGeminiTextModelNames() {
     ...(process.env.GEMINI_TEXT_FALLBACK_MODELS || '').split(','),
   ]
     .map((model) => model?.trim().replace(/^["']|["']$/g, ''))
-    .filter(Boolean)
-    .filter((model) => !DISABLED_TEXT_MODEL_PATTERNS.some((pattern) => pattern.test(model))) as string[];
+    .filter((model): model is string => Boolean(model))
+    .filter((model) => !DISABLED_TEXT_MODEL_PATTERNS.some((pattern) => pattern.test(model)));
 
   return [...new Set([...configured, ...DEFAULT_TEXT_MODELS])];
 }

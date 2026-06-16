@@ -26,7 +26,7 @@ async function loadScannerData() {
   }
 
   const html = await readFile(htmlPath as string, 'utf8');
-  const match = html.match(/const systems = (\[.*?\]);\s*const select =/s);
+  const match = html.match(/const systems = (\[[\s\S]*?\]);\s*const select =/);
   if (!match) {
     throw new Error('Could not find scanner systems in dashboard HTML.');
   }
