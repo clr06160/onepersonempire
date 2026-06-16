@@ -11,7 +11,8 @@ export type ScannerUser = {
   role: ScannerRole;
 };
 
-export const SCANNER_SESSION_COOKIE = 'scanner_session';
+// Firebase Hosting only forwards a cookie named __session to Cloud Run backends.
+export const SCANNER_SESSION_COOKIE = '__session';
 const SESSION_DAYS = 14;
 
 function normalizeEmail(email: string) {
