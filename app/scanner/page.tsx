@@ -47,7 +47,7 @@ declare global {
   }
 }
 
-const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+const googleClientIdFromBuild = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
 export default function ScannerPage() {
   const [user, setUser] = useState<ScannerUser | null>(null);
@@ -56,6 +56,7 @@ export default function ScannerPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedSystemId, setSelectedSystemId] = useState('');
+  const [googleClientId, setGoogleClientId] = useState(googleClientIdFromBuild);
 
   const loadScannerData = useCallback(async () => {
     const response = await fetch('/api/scanner/data', { cache: 'no-store' });
@@ -114,7 +115,7 @@ export default function ScannerPage() {
       text: 'continue_with',
       shape: 'pill',
     });
-  }, [handleCredential]);
+  }, [googleClientId, handleCredential]);
 
   const logout = useCallback(async () => {
     await fetch('/api/scanner/auth/logout', { method: 'POST' });
@@ -123,6 +124,18 @@ export default function ScannerPage() {
     setDeveloperMessage('');
     setTimeout(renderGoogleButton, 0);
   }, [renderGoogleButton]);
+
+  useEffect(() => {
+    if (googleClientIdFromBuild) return;
+    fetch('/api/scanner/config', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (payload.googleClientId) setGoogleClientId(String(payload.googleClientId));
+      })
+      .catch(() => {
+        // Keep the default empty state; the sign-in panel shows setup instructions.
+      });
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -134,8 +147,8 @@ export default function ScannerPage() {
   }, [loadScannerData, refreshSession]);
 
   useEffect(() => {
-    if (!loading && !user) renderGoogleButton();
-  }, [loading, renderGoogleButton, user]);
+    if (!loading && !user && googleClientId) renderGoogleButton();
+  }, [googleClientId, loading, renderGoogleButton, user]);
 
   useEffect(() => {
     if (user?.role !== 'developer') return;
@@ -165,7 +178,7 @@ export default function ScannerPage() {
             <p className="mb-5 text-zinc-300">Use an approved Google account to open the scanner.</p>
             {!googleClientId ? (
               <p className="rounded-xl border border-amber-700 bg-amber-950/60 p-4 text-amber-200">
-                Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID in the environment.
+                Google login is not configured yet. Add GOOGLE_OAUTH_CLIENT_ID (or NEXT_PUBLIC_GOOGLE_CLIENT_ID) in Cloud Run, then redeploy or refresh this page.
               </p>
             ) : (
               <div id="google-signin-button" />
