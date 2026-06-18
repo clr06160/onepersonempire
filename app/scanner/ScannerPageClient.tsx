@@ -34,6 +34,42 @@ type ScannerSystem = {
   powertrendOn?: boolean;
 };
 
+type EwOverlay = {
+  generatedAt?: string;
+  labelsBySystem?: Record<string, Record<string, string>>;
+  message?: string;
+};
+
+function ewIsCaution(label: string) {
+  return /^ew(4|[ABC])$/i.test(label);
+}
+
+function EwBadge({ label }: { label: string }) {
+  const caution = ewIsCaution(label);
+  return (
+    <span
+      className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        caution
+          ? 'border border-amber-700 bg-amber-950/80 text-amber-300'
+          : 'border border-zinc-700 bg-zinc-900 text-zinc-400'
+      }`}
+      title="Elliott Wave context only — not part of ranking"
+    >
+      {label}
+    </span>
+  );
+}
+
+function tickerWithEw(ticker: string, labels: Record<string, string>) {
+  const ew = labels[ticker];
+  return (
+    <span className="flex items-center font-semibold">
+      {ticker}
+      {ew ? <EwBadge label={ew} /> : null}
+    </span>
+  );
+}
+
 declare global {
   interface Window {
     google?: {
@@ -56,6 +92,7 @@ type ScannerPageClientProps = {
 export default function ScannerPageClient({ googleClientId: initialGoogleClientId }: ScannerPageClientProps) {
   const [user, setUser] = useState<ScannerUser | null>(null);
   const [data, setData] = useState<ScannerData | null>(null);
+  const [ewOverlay, setEwOverlay] = useState<EwOverlay | null>(null);
   const [developerMessage, setDeveloperMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -68,15 +105,20 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   const tryRenderGoogleButtonRef = useRef<() => void>(() => {});
 
   const loadScannerData = useCallback(async () => {
-    const response = await fetch('/api/scanner/data', scannerFetchInit);
-    const payload = await response.json();
-    if (!response.ok) {
+    const [scannerResponse, ewResponse] = await Promise.all([
+      fetch('/api/scanner/data', scannerFetchInit),
+      fetch('/api/scanner/ew', scannerFetchInit),
+    ]);
+    const payload = await scannerResponse.json();
+    if (!scannerResponse.ok) {
       setError(payload.error || 'Could not load scanner data.');
       return;
     }
+    const ewPayload = ewResponse.ok ? await ewResponse.json() : { overlay: { labelsBySystem: {} } };
     setError('');
     setUser(payload.user || null);
     setData(payload.data || null);
+    setEwOverlay(ewPayload.overlay || { labelsBySystem: {} });
     const systems = (payload.data?.systems || []) as ScannerSystem[];
     if (systems.length) setSelectedSystemId((current) => current || systems[0].id);
   }, []);
@@ -154,6 +196,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
     await fetch('/api/scanner/auth/logout', { ...scannerFetchInit, method: 'POST' });
     setUser(null);
     setData(null);
+    setEwOverlay(null);
     setDeveloperMessage('');
     renderAttemptsRef.current = 0;
     window.setTimeout(tryRenderGoogleButton, 0);
@@ -196,6 +239,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
 
   const systems = data?.systems || [];
   const selectedSystem = systems.find((system) => system.id === selectedSystemId) || systems[0];
+  const ewLabels = (selectedSystem && ewOverlay?.labelsBySystem?.[selectedSystem.id]) || {};
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
@@ -301,7 +345,10 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
 
                   <div className="grid gap-5 lg:grid-cols-2">
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
-                      <h3 className="mb-3 text-lg font-semibold">Top Names</h3>
+                      <h3 className="mb-1 text-lg font-semibold">Top Names</h3>
+                      <p className="mb-3 text-xs text-zinc-500">
+                        Small ew tags are Elliott Wave context only (e.g. ew4 = possible wave-4 chop). They do not change rankings.
+                      </p>
                       <div className="space-y-2">
                         {(selectedSystem.top || []).map((ticker, index) => (
                           <div
@@ -311,7 +358,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                             }`}
                           >
                             <span>#{index + 1}</span>
-                            <span className="font-semibold">{ticker}</span>
+                            {tickerWithEw(ticker, ewLabels)}
                             <span className="text-xs text-zinc-400">{index < 3 ? 'Highest priority' : 'Portfolio name'}</span>
                           </div>
                         ))}
@@ -326,7 +373,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                           {selectedSystem.watch.map((ticker, index) => (
                             <div key={`${ticker}-${index}`} className="flex items-center justify-between rounded-lg bg-zinc-900 px-3 py-2">
                               <span>#{index + 1}</span>
-                              <span className="font-semibold">{ticker}</span>
+                              {tickerWithEw(ticker, ewLabels)}
                             </div>
                           ))}
                         </div>
