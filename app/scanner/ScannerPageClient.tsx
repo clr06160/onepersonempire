@@ -344,6 +344,12 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
               <p className="mt-2 text-sm text-zinc-400">
                 This page is tied to the signed-in Google account, not a shared password.
               </p>
+              <a
+                href="/scanner/requests"
+                className="mt-5 inline-flex rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+              >
+                Request a scan
+              </a>
               {user.role === 'developer' ? (
                 <div className="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4">
                   <h3 className="font-semibold text-emerald-200">Developer tools</h3>
