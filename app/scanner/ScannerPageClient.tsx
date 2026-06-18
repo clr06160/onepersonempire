@@ -202,7 +202,15 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner</p>
-          <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
+            <a
+              href="/scanner/requests"
+              className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+            >
+              Request a scan
+            </a>
+          </div>
         </div>
 
         {loading ? (
