@@ -40,19 +40,10 @@ type EwOverlay = {
   message?: string;
 };
 
-function ewIsCaution(label: string) {
-  return /^ew(4|[ABC])$/i.test(label);
-}
-
 function EwBadge({ label }: { label: string }) {
-  const caution = ewIsCaution(label);
   return (
     <span
-      className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-        caution
-          ? 'border border-amber-700 bg-amber-950/80 text-amber-300'
-          : 'border border-zinc-700 bg-zinc-900 text-zinc-400'
-      }`}
+      className="ml-1.5 rounded px-1 py-0.5 text-[10px] font-normal lowercase tracking-normal text-zinc-500"
       title="Elliott Wave context only — not part of ranking"
     >
       {label}
@@ -346,9 +337,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                   <div className="grid gap-5 lg:grid-cols-2">
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
                       <h3 className="mb-1 text-lg font-semibold">Top Names</h3>
-                      <p className="mb-3 text-xs text-zinc-500">
-                        Small ew tags are Elliott Wave context only (e.g. ew4 = possible wave-4 chop). They do not change rankings.
-                      </p>
+                      <p className="mb-3 text-xs text-zinc-600">Optional ew tags — wave context only, not used in rankings.</p>
                       <div className="space-y-2">
                         {(selectedSystem.top || []).map((ticker, index) => (
                           <div
