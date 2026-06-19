@@ -3,6 +3,12 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactCompiler: true,
+  env: {
+    NEXT_PUBLIC_DOMAIN_CNAME_TARGET:
+      process.env.NEXT_PUBLIC_DOMAIN_CNAME_TARGET || 'onepersonempire.web.app',
+    NEXT_PUBLIC_BASE_URL:
+      process.env.NEXT_PUBLIC_BASE_URL || 'https://onepersonempire.web.app',
+  },
   async headers() {
     return [
       {

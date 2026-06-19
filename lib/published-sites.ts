@@ -30,6 +30,16 @@ function isCloudAssetPublishingEnabled() {
   return Boolean(process.env.PUBLISHED_ASSETS_BUCKET);
 }
 
+function assertPublishStorageConfiguredForRuntime() {
+  if (
+    process.env.NODE_ENV === 'production'
+    && !isFirestorePublishingEnabled()
+    && process.env.ALLOW_LOCAL_PUBLISH_STORAGE !== 'true'
+  ) {
+    throw new Error('Publishing needs PUBLISH_STORAGE=firestore in production. Set ALLOW_LOCAL_PUBLISH_STORAGE=true only for a temporary tester build.');
+  }
+}
+
 export function normalizeSlug(value: string) {
   return value
     .toLowerCase()
@@ -99,6 +109,7 @@ export async function publishSite(input: {
   idea?: string;
   safetyReview?: PublishedSite['safetyReview'];
 }) {
+  assertPublishStorageConfiguredForRuntime();
   const slug = normalizeSlug(input.slug);
   if (!slug) throw new Error('Enter a simple site URL name, like coffee-subscription.');
   if (!input.html || input.html.length < 100) throw new Error('Generate a site before publishing.');
@@ -168,6 +179,7 @@ export async function publishSite(input: {
 }
 
 export async function getPublishedSite(slug: string) {
+  assertPublishStorageConfiguredForRuntime();
   const normalized = normalizeSlug(slug);
   if (!normalized) return null;
 
@@ -209,6 +221,7 @@ export async function updatePublishedSiteHtml(input: {
   slug: string;
   html: string;
 }) {
+  assertPublishStorageConfiguredForRuntime();
   const normalized = normalizeSlug(input.slug);
   if (!normalized) throw new Error('Enter a valid site name.');
   if (!input.html || input.html.length < 100) throw new Error('Updated site HTML is empty.');

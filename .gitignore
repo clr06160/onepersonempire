@@ -20,6 +20,10 @@
 # production
 /build
 
+# local published-site previews
+/data/published-sites/
+/data/custom-domains/
+
 # misc
 .DS_Store
 *.pem

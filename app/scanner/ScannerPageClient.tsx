@@ -43,8 +43,8 @@ type EwOverlay = {
 function EwBadge({ label }: { label: string }) {
   return (
     <span
-      className="ml-1.5 rounded px-1 py-0.5 text-[10px] font-normal lowercase tracking-normal text-zinc-500"
-      title="Elliott Wave context only — not part of ranking"
+      className="ml-1.5 rounded px-1 py-0.5 text-[10px] font-normal lowercase text-zinc-500"
+      title="Weekly Elliott Wave context — not part of ranking"
     >
       {label}
     </span>
@@ -337,7 +337,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                   <div className="grid gap-5 lg:grid-cols-2">
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
                       <h3 className="mb-1 text-lg font-semibold">Top Names</h3>
-                      <p className="mb-3 text-xs text-zinc-600">Optional ew tags — wave context only, not used in rankings.</p>
+                      <p className="mb-3 text-xs text-zinc-600">Optional ew tags (weekly structure) — context only.</p>
                       <div className="space-y-2">
                         {(selectedSystem.top || []).map((ticker, index) => (
                           <div

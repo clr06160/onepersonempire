@@ -1,0 +1,6 @@
+tester,type,business_example,published_successfully,prompt_clarity_1_to_5,site_quality_1_to_5,editing_clarity_1_to_5,payment_clarity_1_to_5,domain_clarity_1_to_5,trust_1_to_5,would_share_with_customer,biggest_confusion,biggest_trust_concern,next_fix_candidate
+1,real owner,,,,,,,,,,,,
+2,real owner,,,,,,,,,,,,
+3,real owner/proxy,,,,,,,,,,,,
+4,less technical proxy,,,,,,,,,,,,
+5,skeptical reviewer,,,,,,,,,,,,

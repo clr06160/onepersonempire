@@ -1,0 +1,57 @@
+import { isAppHost, normalizeHost } from '@/lib/custom-domain-host';
+import { NextRequest, NextResponse } from 'next/server';
+
+const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success'];
+
+function shouldServePublishedSite(pathname: string) {
+  if (pathname.startsWith('/api/')) return false;
+  if (pathname.startsWith('/_next/')) return false;
+  if (pathname.startsWith('/published-assets/')) return false;
+  if (pathname.startsWith('/i/')) return false;
+  if (APP_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
+  return true;
+}
+
+export async function proxy(request: NextRequest) {
+  const host = normalizeHost(
+    request.headers.get('x-forwarded-host') || request.headers.get('host'),
+  );
+
+  if (isAppHost(host)) {
+    return NextResponse.next();
+  }
+
+  const pathname = request.nextUrl.pathname;
+
+  if (APP_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    const fallbackHost = process.env.NEXT_PUBLIC_BASE_URL
+      || process.env.PUBLISH_PUBLIC_BASE_URL
+      || 'https://onepersonempire.web.app';
+    return NextResponse.redirect(new URL('/', fallbackHost));
+  }
+
+  if (!shouldServePublishedSite(pathname)) {
+    return NextResponse.next();
+  }
+
+  const lookupUrl = new URL('/api/custom-domain', request.url);
+  lookupUrl.searchParams.set('host', host);
+
+  try {
+    const response = await fetch(lookupUrl, { cache: 'no-store' });
+    if (!response.ok) return NextResponse.next();
+
+    const data = await response.json() as { slug?: string | null };
+    if (!data.slug) return NextResponse.next();
+
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = `/s/${data.slug}`;
+    return NextResponse.rewrite(rewriteUrl);
+  } catch {
+    return NextResponse.next();
+  }
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};

@@ -13,6 +13,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Tester Feedback
+
+Use [`tester-feedback/README.md`](tester-feedback/README.md) to recruit the first 5 testers, run 20-30 minute feedback sessions, score the results, and choose the next product fixes. Record scores in [`tester-feedback/scores.csv`](tester-feedback/scores.csv), then summarize patterns in [`tester-feedback/synthesis.md`](tester-feedback/synthesis.md).
+
 ## Environment
 
 Copy `.env.example` to `.env.local` and fill in the values you need.
@@ -95,7 +99,31 @@ When testing from `localhost` but generating customer-facing links for a deploye
 
 ```env
 PUBLISH_PUBLIC_BASE_URL=https://onepersonempire.web.app
+NEXT_PUBLIC_BASE_URL=https://onepersonempire.web.app
+NEXT_PUBLIC_DOMAIN_CNAME_TARGET=onepersonempire.web.app
 ```
+
+## Custom domains (GoDaddy and others)
+
+After publish, owners can enter a domain like `joespainting.com` in Launch, save it, then give GoDaddy these DNS records:
+
+1. **CNAME** — Name: `www` — Value: `onepersonempire.web.app`
+2. **Forward** — `joespainting.com` → `https://www.joespainting.com`
+
+The app maps the saved domain to that published site slug. When someone opens `https://www.joespainting.com`, they see that business site instead of the builder.
+
+For HTTPS on a customer domain, the app now registers the domain with Firebase Hosting automatically when the owner clicks **Save domain**. The Cloud Run service account (or Firebase admin credentials) needs permission to manage Hosting custom domains:
+
+- Role: `Firebase Hosting Admin` (`roles/firebasehosting.admin`), or broader `Firebase Admin`
+
+Optional env vars:
+
+```env
+FIREBASE_HOSTING_SITE=onepersonempire
+AUTO_PROVISION_FIREBASE_CUSTOM_DOMAINS=true
+```
+
+Set `AUTO_PROVISION_FIREBASE_CUSTOM_DOMAINS=false` only if you want to disable automatic Firebase registration in a dev environment.
 
 ## SMS / WhatsApp CMS
 
@@ -154,18 +182,3 @@ DEFAULT_PAYMENT_INSTRUCTIONS=Venmo: @your-business-name
 ```
 
 The card/payment-link option comes from the payment link configured on the site's payment button.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

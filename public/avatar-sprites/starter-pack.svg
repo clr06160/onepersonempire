@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="OnePerson Empire starter avatar sprite sheet">
+  <defs>
+    <linearGradient id="skinA" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffd7b5"/>
+      <stop offset="1" stop-color="#f2a86f"/>
+    </linearGradient>
+    <linearGradient id="skinB" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#9b5f3d"/>
+      <stop offset="1" stop-color="#5a2f1c"/>
+    </linearGradient>
+    <linearGradient id="shopBlue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="shopPink" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f9a8d4"/>
+      <stop offset="1" stop-color="#c026d3"/>
+    </linearGradient>
+    <style>
+      .cell{fill:#0f172a;stroke:#334155;stroke-width:4}
+      .label{font:700 18px Arial,sans-serif;fill:#cbd5e1}
+      .line{stroke:#0f172a;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+      .white{fill:#f8fafc}
+      .dark{fill:#111827}
+      .green{fill:#22c55e}
+      .yellow{fill:#facc15}
+      .red{fill:#ef4444}
+    </style>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#020617"/>
+
+  <g id="base-light" transform="translate(0 0)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <circle cx="128" cy="88" r="42" fill="url(#skinA)"/>
+    <path d="M76 200c7-55 97-55 104 0z" fill="url(#shopBlue)"/>
+    <path class="line" d="M99 88h1M156 88h1M112 121c10 8 22 8 32 0"/>
+    <text class="label" x="32" y="222">base-light</text>
+  </g>
+
+  <g id="base-deep" transform="translate(256 0)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <circle cx="128" cy="88" r="42" fill="url(#skinB)"/>
+    <path d="M76 200c7-55 97-55 104 0z" fill="url(#shopPink)"/>
+    <path class="line" d="M99 88h1M156 88h1M112 121c10 8 22 8 32 0"/>
+    <text class="label" x="32" y="222">base-deep</text>
+  </g>
+
+  <g id="hair-short" transform="translate(512 0)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M82 92c1-47 89-60 106-12 2 10-4 20-17 22-25-22-56-19-91 4z" fill="#1f2937"/>
+    <path d="M80 104c34-27 66-30 96-6" fill="none" stroke="#374151" stroke-width="12" stroke-linecap="round"/>
+    <text class="label" x="32" y="222">hair-short</text>
+  </g>
+
+  <g id="hair-long" transform="translate(768 0)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M74 92c-8-54 100-70 116-8 11 43-2 82-14 112-18-15-75-15-96 0-10-35-16-68-6-104z" fill="#7c2d12"/>
+    <path d="M89 95c27-25 62-29 86-2" fill="none" stroke="#9a3412" stroke-width="12" stroke-linecap="round"/>
+    <text class="label" x="32" y="222">hair-long</text>
+  </g>
+
+  <g id="eyes-cool" transform="translate(0 256)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M74 102h56M142 102h56" stroke="#0f172a" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="104" cy="102" r="9" fill="#38bdf8"/>
+    <circle cx="172" cy="102" r="9" fill="#38bdf8"/>
+    <text class="label" x="32" y="222">eyes-cool</text>
+  </g>
+
+  <g id="eyes-bright" transform="translate(256 256)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <circle cx="104" cy="104" r="18" fill="#f8fafc"/>
+    <circle cx="172" cy="104" r="18" fill="#f8fafc"/>
+    <circle cx="104" cy="104" r="9" fill="#16a34a"/>
+    <circle cx="172" cy="104" r="9" fill="#16a34a"/>
+    <text class="label" x="32" y="222">eyes-bright</text>
+  </g>
+
+  <g id="mouth-smile" transform="translate(512 256)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M88 113c22 28 58 28 80 0" fill="none" stroke="#0f172a" stroke-width="12" stroke-linecap="round"/>
+    <path d="M102 123c16 7 35 7 52 0" fill="#f8fafc"/>
+    <text class="label" x="32" y="222">mouth-smile</text>
+  </g>
+
+  <g id="mouth-goofy" transform="translate(768 256)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M92 108c20 34 58 34 78 0z" fill="#0f172a"/>
+    <rect x="118" y="110" width="20" height="30" rx="4" fill="#f8fafc"/>
+    <text class="label" x="32" y="222">mouth-goofy</text>
+  </g>
+
+  <g id="outfit-apron" transform="translate(0 512)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M86 62h84l22 142H64z" fill="#0f766e"/>
+    <path d="M94 62c6 34 62 34 68 0" fill="none" stroke="#f8fafc" stroke-width="10"/>
+    <path d="M91 132h74" stroke="#f8fafc" stroke-width="8" stroke-linecap="round"/>
+    <text class="label" x="32" y="222">outfit-apron</text>
+  </g>
+
+  <g id="outfit-hoodie" transform="translate(256 512)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M70 202c5-78 112-78 116 0z" fill="#7c3aed"/>
+    <path d="M91 84c9-39 66-39 74 0 20 18 18 48 9 70-24-13-68-13-92 0-10-23-13-52 9-70z" fill="#a78bfa"/>
+    <text class="label" x="32" y="222">outfit-hoodie</text>
+  </g>
+
+  <g id="tool-brush" transform="translate(512 512)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M72 164l94-94" stroke="#f59e0b" stroke-width="16" stroke-linecap="round"/>
+    <path d="M158 62l34 34-30 16-20-20z" fill="#f8fafc" stroke="#0f172a" stroke-width="6"/>
+    <text class="label" x="32" y="222">tool-brush</text>
+  </g>
+
+  <g id="tool-cup" transform="translate(768 512)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M91 75h76l-10 120H101z" fill="#f8fafc" stroke="#0f172a" stroke-width="8"/>
+    <path d="M99 104h61" stroke="#38bdf8" stroke-width="14"/>
+    <path d="M101 75l8-25h40l8 25" fill="#facc15" stroke="#0f172a" stroke-width="8"/>
+    <text class="label" x="32" y="222">tool-cup</text>
+  </g>
+
+  <g id="pet-blob" transform="translate(0 768)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M74 153c-25-54 34-93 77-70 45 23 44 88-6 105-31 11-58-8-71-35z" fill="#86efac"/>
+    <path class="line" d="M108 130h1M154 130h1M117 157c12 9 25 9 38 0"/>
+    <text class="label" x="32" y="222">pet-blob</text>
+  </g>
+
+  <g id="badge-first-sale" transform="translate(256 768)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <circle cx="128" cy="116" r="58" fill="#facc15" stroke="#92400e" stroke-width="10"/>
+    <path d="M128 76v80M104 102c0-18 48-18 48 0 0 28-48 6-48 34 0 18 48 18 48 0" fill="none" stroke="#92400e" stroke-width="12" stroke-linecap="round"/>
+    <text class="label" x="32" y="222">badge-sale</text>
+  </g>
+
+  <g id="shop-sign" transform="translate(512 768)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <rect x="60" y="82" width="136" height="82" rx="16" fill="#f8fafc" stroke="#0f172a" stroke-width="8"/>
+    <path d="M84 111h88M84 137h52" stroke="#7c3aed" stroke-width="10" stroke-linecap="round"/>
+    <text class="label" x="32" y="222">shop-sign</text>
+  </g>
+
+  <g id="sparkle" transform="translate(768 768)">
+    <rect class="cell" x="16" y="16" width="224" height="224" rx="28"/>
+    <path d="M128 44l22 58 58 22-58 22-22 58-22-58-58-22 58-22z" fill="#f0abfc" stroke="#86198f" stroke-width="8"/>
+    <path d="M72 58l8 22 22 8-22 8-8 22-8-22-22-8 22-8z" fill="#fde68a"/>
+    <text class="label" x="32" y="222">sparkle</text>
+  </g>
+</svg>

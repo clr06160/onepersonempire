@@ -1,8 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateTextWithFallback } from '@/lib/gemini';
 import { NextRequest } from 'next/server';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,14 +14,15 @@ ${currentHTML}
 USER WANTS THESE CHANGES: "${instructions}"
 
 Regenerate the full HTML with the changes applied intelligently.
-Keep the exact same dark modern style, Tailwind, hover edit system, and checkout script.
+Keep the exact same dark modern style, Tailwind, hover edit system, and editor script.
 Output ONLY clean, complete HTML.`;
 
-    const result = await model.generateContent(prompt);
-    const html = result.response.text();
+    const result = await generateTextWithFallback(prompt, { maxOutputTokens: 16000 });
+    const html = result.text;
 
     return Response.json({ html });
-  } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Landing page refinement failed';
+    return Response.json({ error: message }, { status: 500 });
   }
 }
