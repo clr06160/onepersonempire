@@ -1,6 +1,7 @@
 'use client';
 
 import Script from 'next/script';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type ScannerUser = {
@@ -10,11 +11,71 @@ type ScannerUser = {
   role: 'viewer' | 'developer';
 };
 
+type GlobalRegime = {
+  regimeLabel?: string;
+  regimeBadge?: string;
+  regimeScale?: number;
+  scalePct?: number;
+  footerTitle?: string;
+  footerText?: string;
+  footerHint?: string;
+  backtestCagr?: string;
+  backtestMaxDd?: string;
+  backtestCalmar?: string;
+};
+
 type ScannerData = {
   connected?: boolean;
   generatedAt?: string;
   message?: string;
+  liveScanOk?: boolean;
+  liveScanError?: string;
+  liveScanNote?: string;
+  regimeBadges?: RegimeBadge[];
+  globalRegime?: GlobalRegime;
+  health?: ScannerHealth;
+  adaptiveMonitor?: {
+    verdict?: string;
+    headline?: string;
+    cycleCount?: number;
+  };
   systems?: ScannerSystem[];
+};
+
+type ScannerHealthAlert = {
+  code: string;
+  severity: 'ok' | 'watch' | 'alert';
+  message: string;
+  detail?: string;
+};
+
+type ScannerHealth = {
+  operator?: {
+    verdict: 'ok' | 'watch' | 'alert';
+    headline: string;
+    recommendations?: string[];
+  };
+  alerts?: ScannerHealthAlert[];
+  forwardPaper?: {
+    metrics?: Record<string, number>;
+    interpretation?: {
+      roll20dPct?: number;
+      roll20dBand?: Record<string, number>;
+    };
+  };
+};
+
+type RegimeBadge = {
+  kind?: string;
+  name?: string;
+  action?: string;
+  regimeBadge?: string;
+  regimeLabel?: string;
+  regimeReason?: string;
+  detail?: string;
+  tone?: string;
+  scale?: number;
+  scalePct?: number;
 };
 
 type ScannerSystem = {
@@ -32,6 +93,11 @@ type ScannerSystem = {
   asOf?: string;
   powertrend?: string;
   powertrendOn?: boolean;
+  regimeScale?: number;
+  regimeLabel?: string;
+  regimeBadge?: string;
+  regimeReason?: string;
+  overlayModule?: { line?: string };
 };
 
 type EwOverlay = {
@@ -51,13 +117,21 @@ function EwBadge({ label }: { label: string }) {
   );
 }
 
+function chartHref(ticker: string) {
+  return `/scanner/charts?ticker=${encodeURIComponent(ticker.toUpperCase())}`;
+}
+
 function tickerWithEw(ticker: string, labels: Record<string, string>) {
   const ew = labels[ticker];
   return (
-    <span className="flex items-center font-semibold">
+    <Link
+      href={chartHref(ticker)}
+      className="flex items-center font-semibold text-emerald-300 hover:text-emerald-200 hover:underline"
+      title={`Open ${ticker.toUpperCase()} chart`}
+    >
       {ticker}
       {ew ? <EwBadge label={ew} /> : null}
-    </span>
+    </Link>
   );
 }
 
@@ -75,6 +149,20 @@ declare global {
 }
 
 const scannerFetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
+
+function regimePillClass(scale?: number) {
+  if (scale === 0) return 'border-red-800 bg-red-950 text-red-200';
+  if (scale === 0.5) return 'border-amber-700 bg-amber-950 text-amber-200';
+  if (scale === 1) return 'border-emerald-700 bg-emerald-950 text-emerald-300';
+  return 'border-sky-800 bg-sky-950 text-sky-200';
+}
+
+function regimeBadgeToneClass(tone?: string) {
+  if (tone === 'cash') return 'border-red-800/80 bg-red-950/60';
+  if (tone === 'half') return 'border-amber-700/80 bg-amber-950/40';
+  if (tone === 'full' || tone === 'clear') return 'border-emerald-700/80 bg-emerald-950/40';
+  return 'border-zinc-700 bg-zinc-900';
+}
 
 type ScannerPageClientProps = {
   googleClientId: string;
@@ -231,6 +319,24 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   const systems = data?.systems || [];
   const selectedSystem = systems.find((system) => system.id === selectedSystemId) || systems[0];
   const ewLabels = (selectedSystem && ewOverlay?.labelsBySystem?.[selectedSystem.id]) || {};
+  const powerBadge = (data?.regimeBadges || []).find((badge) => badge.kind === 'powertrend');
+  const powerLabel =
+    selectedSystem?.powertrend && selectedSystem.powertrend !== 'POWER TREND UNKNOWN'
+      ? selectedSystem.powertrend
+      : powerBadge?.regimeBadge || selectedSystem?.powertrend || 'POWER TREND UNKNOWN';
+  const powerOn =
+    selectedSystem?.powertrend && selectedSystem.powertrend !== 'POWER TREND UNKNOWN'
+      ? Boolean(selectedSystem.powertrendOn)
+      : powerBadge?.regimeLabel?.toUpperCase() === 'ON' || Boolean(selectedSystem?.powertrendOn);
+  const health = data?.health;
+  const healthVerdict = health?.operator?.verdict || 'ok';
+  const healthTone =
+    healthVerdict === 'alert'
+      ? 'border-red-800 bg-red-950/50 text-red-100'
+      : healthVerdict === 'watch'
+        ? 'border-amber-800 bg-amber-950/40 text-amber-100'
+        : 'border-emerald-800 bg-emerald-950/40 text-emerald-100';
+  const globalRegime = data?.globalRegime;
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
@@ -239,14 +345,34 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
-            <a
-              href="/scanner/requests"
-              className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
-            >
-              Request a scan
-            </a>
+            {data?.generatedAt ? (
+              <p className="mt-2 text-sm text-zinc-400">
+                Dashboard last updated: <span className="font-semibold text-emerald-300">{data.generatedAt}</span>
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/scanner/charts"
+                className="rounded-full border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:border-amber-500 hover:text-amber-200"
+              >
+                Charts
+              </Link>
+              <Link
+                href="/scanner/requests"
+                className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+              >
+                Request a scan
+              </Link>
+            </div>
           </div>
         </div>
+
+        {user && data?.liveScanOk === false ? (
+          <section className="mb-6 rounded-2xl border border-amber-800 bg-amber-950/40 p-4 text-amber-100">
+            Saved scan fallback — live refresh did not run. Picks may be stale.
+            {data.liveScanError ? <span className="mt-1 block text-sm text-amber-200/90">{data.liveScanError}</span> : null}
+          </section>
+        ) : null}
 
         {loading ? (
           <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">Checking session...</section>
@@ -287,22 +413,91 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                 </button>
               </div>
 
+              {health?.operator ? (
+                <div className={`mb-6 rounded-xl border p-4 ${healthTone}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide">Scale operator</h3>
+                    <span className="rounded-full border border-current px-3 py-1 text-xs font-bold uppercase">
+                      {healthVerdict}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm">{health.operator.headline}</p>
+                  {health.forwardPaper?.metrics?.roll20dPct != null ? (
+                    <p className="mt-2 text-xs opacity-90">
+                      Core paper book 20d: {health.forwardPaper.metrics.roll20dPct}% vs backtest band p10{' '}
+                      {health.forwardPaper.interpretation?.roll20dBand?.p10 ?? 'n/a'}%
+                    </p>
+                  ) : null}
+                  {!!health.alerts?.length && (
+                    <ul className="mt-3 space-y-1 text-sm">
+                      {health.alerts.slice(0, 4).map((alert) => (
+                        <li key={alert.code}>
+                          <span className="font-semibold uppercase">{alert.severity}</span>: {alert.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Link href="/scanner/monitor" className="mt-3 inline-flex text-sm text-violet-300 hover:text-violet-200">
+                    Full adaptive monitor →
+                  </Link>
+                </div>
+              ) : null}
+
               {selectedSystem ? (
                 <div className="space-y-5">
                   <div className="flex flex-wrap items-center gap-3">
                     <span
                       className={`rounded-full border px-3 py-1 text-sm font-semibold ${
-                        selectedSystem.powertrendOn
+                        powerOn
                           ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
                           : 'border-red-800 bg-red-950 text-red-200'
                       }`}
                     >
-                      {selectedSystem.powertrend || 'POWER TREND UNKNOWN'}
+                      {powerLabel}
                     </span>
+                    {selectedSystem.regimeLabel ? (
+                      <span
+                        className={`rounded-full border px-3 py-1 text-sm font-semibold ${regimePillClass(selectedSystem.regimeScale)}`}
+                        title={selectedSystem.regimeReason || undefined}
+                      >
+                        {selectedSystem.regimeBadge || `REGIME: ${selectedSystem.regimeLabel}`}
+                      </span>
+                    ) : null}
                     <span className="text-sm text-zinc-400">
                       {selectedSystem.isLive ? 'Live scan' : 'Saved scan'} · as of {selectedSystem.asOf || selectedSystem.date || 'n/a'}
                     </span>
                   </div>
+                  {selectedSystem.regimeReason ? (
+                    <p className="text-sm text-zinc-400">{selectedSystem.regimeReason}</p>
+                  ) : null}
+
+                  {(data?.regimeBadges || []).length ? (
+                    <div className="space-y-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        Regime signals — what each overlay says right now
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(data?.regimeBadges || []).map((badge) => (
+                          <div
+                            key={`${badge.kind}-${badge.name}`}
+                            className={`min-w-[160px] flex-1 rounded-lg border px-3 py-2 ${regimeBadgeToneClass(badge.tone)}`}
+                            title={badge.detail || badge.regimeReason}
+                          >
+                            <div className="text-[11px] uppercase tracking-wide text-zinc-500">{badge.name}</div>
+                            <div className="text-sm font-semibold text-zinc-100">
+                              {badge.action || badge.regimeLabel}
+                              {badge.kind !== 'powertrend' && badge.kind !== 'sharp-pause' && badge.scalePct != null
+                                ? ` · book ${badge.scalePct}%`
+                                : ''}
+                            </div>
+                            {badge.detail || badge.regimeReason ? (
+                              <div className="mt-1 text-xs text-zinc-400">{badge.detail || badge.regimeReason}</div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
@@ -332,6 +527,21 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                     <h3 className="text-lg font-semibold">{selectedSystem.label}</h3>
                     <p className="mt-2 text-zinc-300">{selectedSystem.note}</p>
                     <p className="mt-2 text-sm text-zinc-500">Saved rebalance date: {selectedSystem.date || 'n/a'}</p>
+                    {selectedSystem.overlayModule?.line ? (
+                      <p className="mt-3 rounded-lg border border-sky-800/40 bg-sky-950/20 p-3 text-sm text-sky-100/90">
+                        {selectedSystem.overlayModule.line}
+                      </p>
+                    ) : null}
+                    {!!selectedSystem.method?.length && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">How it works</h4>
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+                          {selectedSystem.method.map((line) => (
+                            <li key={line}>{line}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-5 lg:grid-cols-2">
@@ -369,6 +579,32 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                       </div>
                     )}
                   </div>
+
+                  {globalRegime?.regimeLabel ? (
+                    <div className="rounded-xl border border-zinc-700 bg-zinc-950 p-5">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                        {globalRegime.footerTitle || 'Book regime'}
+                      </h3>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-sm font-semibold ${regimePillClass(globalRegime.regimeScale)}`}
+                        >
+                          {globalRegime.regimeBadge || 'LEARNED PAIN - CORE'}
+                        </span>
+                        <span className="text-sm text-zinc-300">
+                          Scale any scan&apos;s total book to{' '}
+                          <strong>{globalRegime.scalePct ?? Math.round((globalRegime.regimeScale ?? 1) * 100)}%</strong>
+                        </span>
+                      </div>
+                      {globalRegime.footerHint || globalRegime.footerText ? (
+                        <p className="mt-3 text-sm text-zinc-400">{globalRegime.footerHint || globalRegime.footerText}</p>
+                      ) : null}
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Backtest (core ledger): {globalRegime.backtestCagr || '58.8%'} CAGR ·{' '}
+                        {globalRegime.backtestMaxDd || '-15.5%'} max DD · Calmar {globalRegime.backtestCalmar || '3.80'}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
@@ -394,6 +630,27 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
               >
                 Request a scan
               </a>
+              <div className="mt-5 space-y-2 border-t border-zinc-800 pt-5 text-sm">
+                <p className="font-semibold text-zinc-300">Separate tools</p>
+                <Link href="/scanner/charts" className="block text-amber-300 hover:text-amber-200">
+                  Charts
+                </Link>
+                <Link href="/scanner/instructions" className="block text-emerald-300 hover:text-emerald-200">
+                  Instructions
+                </Link>
+                <Link href="/scanner/fmp" className="block text-emerald-300 hover:text-emerald-200">
+                  FMP fundamentals
+                </Link>
+                <Link href="/scanner/monitor" className="block text-emerald-300 hover:text-emerald-200">
+                  Adaptive monitor
+                </Link>
+                <Link href="/scanner/agents" className="block text-emerald-300 hover:text-emerald-200">
+                  Agent tournament
+                </Link>
+                <Link href="/scanner/cot" className="block text-emerald-300 hover:text-emerald-200">
+                  COT report
+                </Link>
+              </div>
               {user.role === 'developer' ? (
                 <div className="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4">
                   <h3 className="font-semibold text-emerald-200">Developer tools</h3>
