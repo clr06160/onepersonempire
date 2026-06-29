@@ -68,7 +68,7 @@ async function loadScannerDataFromFiles(): Promise<ScannerPayload | null> {
   };
 }
 
-export async function loadScannerData(): Promise<ScannerPayload> {
+async function loadScannerDataUncached(): Promise<ScannerPayload> {
   try {
     const cloudData = await loadScannerDataFromGcs();
     if (cloudData) {
@@ -90,4 +90,26 @@ export async function loadScannerData(): Promise<ScannerPayload> {
       'Scanner login is working. Waiting for the first upload from your PC scanner refresh job.',
     systems: [],
   };
+}
+
+// Short-lived in-process cache so repeat page loads don't re-download the
+// dashboard JSON from Cloud Storage on every request. The data refreshes once
+// per day, so a brief TTL is safe and removes the per-load GCS round-trip.
+const SCANNER_CACHE_TTL_MS = 60_000;
+let scannerCache: { data: ScannerPayload; expires: number } | null = null;
+
+export async function loadScannerData(): Promise<ScannerPayload> {
+  if (scannerCache && scannerCache.expires > Date.now()) {
+    return scannerCache.data;
+  }
+
+  const data = await loadScannerDataUncached();
+
+  // Only cache successful loads; never cache an error/empty fallback so a
+  // transient failure can't get pinned for the full TTL.
+  if (data && data.connected !== false) {
+    scannerCache = { data, expires: Date.now() + SCANNER_CACHE_TTL_MS };
+  }
+
+  return data;
 }

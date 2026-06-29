@@ -87,7 +87,7 @@ export async function loadFmpScreenerData(): Promise<FmpScreenerPayload> {
 
   return {
     connected: false,
-    message: 'FMP screener not uploaded yet. Run scanners/fmp_growth_screener.py on your PC, then upload.',
+    message: 'Fundamentals screener not uploaded yet. Run the daily fundamentals refresh on your PC, then upload.',
     rows: [],
   };
 }

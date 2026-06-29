@@ -46,11 +46,11 @@ export default function FmpScreenerClient() {
   const [sortKey, setSortKey] = useState('combined');
 
   const load = useCallback(async () => {
-    const response = await fetch('/api/scanner/fmp', fetchInit);
+    const response = await fetch('/api/scanner/fundamentals', fetchInit);
     const payload = await response.json();
     setLoading(false);
     if (!response.ok) {
-      setError(payload.error || 'Could not load FMP screener.');
+      setError(payload.error || 'Could not load the fundamentals screener.');
       return;
     }
     setError('');
@@ -76,7 +76,7 @@ export default function FmpScreenerClient() {
 
   return (
     <>
-      <ScannerExtrasNav active="/scanner/fmp" />
+      <ScannerExtrasNav active="/scanner/fundamentals" />
 
       {loading ? (
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">Loading screener...</section>
@@ -91,7 +91,7 @@ export default function FmpScreenerClient() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-semibold">FMP Fundamentals Screener</h2>
+              <h2 className="text-2xl font-semibold">Proprietary Fundamentals</h2>
               <p className="text-sm text-zinc-400">
                 {meta.label || data?.universeLabel || 'Universe'} · sorted by {activeSortLabel} · as of{' '}
                 {data?.asOf || 'n/a'} · {meta.tickerCount || data?.tickerCount || 0} names screened, top{' '}

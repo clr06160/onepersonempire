@@ -14,7 +14,7 @@ export async function GET() {
     const data = await loadFmpScreenerData();
     return NextResponse.json({ user, data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load FMP screener data.';
+    const message = error instanceof Error ? error.message : 'Could not load fundamentals screener data.';
     return NextResponse.json({ user, data: { connected: false, message, rows: [] } });
   }
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { ChartManifest, ScannerChartPayload } from '@/lib/charts/load-chart-data';
+import type { ScannerNewsItem } from '@/lib/scanner-news-data';
 import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 import ChartPanelErrorBoundary from './ChartPanelErrorBoundary';
 
@@ -12,7 +13,16 @@ const StockChartPanel = dynamic(() => import('./StockChartPanel'), {
   ssr: false,
   loading: () => (
     <div className="flex min-h-[1040px] items-center justify-center rounded-xl border border-zinc-300 bg-white">
-      <p className="text-base text-zinc-500">Loading chart module…</p>
+      <p className="text-base text-zinc-700">Loading chart module…</p>
+    </div>
+  ),
+});
+
+const TradingViewWidgetPanel = dynamic(() => import('./TradingViewWidgetPanel'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[700px] items-center justify-center rounded-xl border border-zinc-300 bg-white">
+      <p className="text-base text-zinc-700">Loading chart…</p>
     </div>
   ),
 });
@@ -23,6 +33,19 @@ type ScannerUser = {
 };
 
 const scannerFetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
+
+function relativeTime(published?: string) {
+  if (!published) return '';
+  const parsed = new Date(published.replace(' ', 'T'));
+  if (Number.isNaN(parsed.getTime())) return published;
+  const mins = Math.round((Date.now() - parsed.getTime()) / 60000);
+  if (mins < 60) return `${Math.max(mins, 0)}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 export default function ChartsPreviewClient() {
   const searchParams = useSearchParams();
@@ -38,6 +61,8 @@ export default function ChartsPreviewClient() {
   const [loading, setLoading] = useState(false);
   const [bootLoading, setBootLoading] = useState(true);
   const [chartError, setChartError] = useState('');
+  const [newsByTicker, setNewsByTicker] = useState<Record<string, ScannerNewsItem[]>>({});
+  const [newsLoaded, setNewsLoaded] = useState(false);
 
   const filteredTickers = useMemo(() => {
     const query = search.trim().toUpperCase();
@@ -50,6 +75,10 @@ export default function ChartsPreviewClient() {
     if (!query) return null;
     return tickers.includes(query) ? query : null;
   }, [search, tickers]);
+
+  // Only the owner (developer) sees the in-house chart fed by our data source.
+  // Everyone else gets the TradingView widget, which serves its own market data.
+  const isDeveloper = user?.role === 'developer';
 
   const loadManifest = useCallback(async () => {
     const response = await fetch('/api/scanner/charts/manifest', scannerFetchInit);
@@ -90,6 +119,22 @@ export default function ChartsPreviewClient() {
     }
   }, []);
 
+  // Owner-only headlines, sourced from a licensed provider the API gates to the
+  // developer account. Fetched once and indexed by ticker for the preview panel.
+  const loadNews = useCallback(async () => {
+    try {
+      const response = await fetch('/api/scanner/news', scannerFetchInit);
+      const payload = await response.json();
+      if (response.ok && !payload.restricted) {
+        setNewsByTicker(payload.data?.byTicker || {});
+      }
+    } catch {
+      // Preview is best-effort; ignore failures.
+    } finally {
+      setNewsLoaded(true);
+    }
+  }, []);
+
   useEffect(() => {
     loadManifest()
       .catch((error: Error) => setManifestError(error.message || 'Could not load scanner tickers.'))
@@ -97,12 +142,24 @@ export default function ChartsPreviewClient() {
   }, [loadManifest]);
 
   useEffect(() => {
-    if (!pendingTicker) return;
+    if (!isDeveloper) return;
+    loadNews();
+  }, [isDeveloper, loadNews]);
+
+  useEffect(() => {
+    if (!pendingTicker || !isDeveloper) return;
     const timer = window.setTimeout(() => {
       loadChart(pendingTicker);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadChart, pendingTicker]);
+  }, [loadChart, pendingTicker, isDeveloper]);
+
+  // Non-owner view (TradingView widget) has no data fetch to advance the active
+  // ticker, so keep it in sync with the current selection here.
+  useEffect(() => {
+    if (isDeveloper || !pendingTicker) return;
+    setActiveTicker(pendingTicker);
+  }, [isDeveloper, pendingTicker]);
 
   // Exact symbol typed → load chart without clicking a pill.
   useEffect(() => {
@@ -140,10 +197,13 @@ export default function ChartsPreviewClient() {
     commitSearch();
   };
 
+  const newsTicker = activeTicker || pendingTicker;
+  const tickerNews = newsByTicker[newsTicker] || [];
+
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-6 text-zinc-900 sm:px-6 sm:py-8">
       <div className="mx-auto w-full max-w-[1600px]">
-        <ScannerExtrasNav active="/scanner/charts" />
+        <ScannerExtrasNav active="/scanner/charts" theme="light" />
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">
@@ -160,82 +220,143 @@ export default function ChartsPreviewClient() {
         </div>
 
         {bootLoading ? (
-          <div className="rounded-xl border border-zinc-300 bg-white p-5 text-sm text-zinc-500">
+          <div className="rounded-xl border border-zinc-300 bg-white p-5 text-sm text-zinc-700">
             Loading scanner tickers…
           </div>
         ) : manifestError ? (
           <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-700">{manifestError}</div>
         ) : (
           <>
-            <div className="mb-4 rounded-xl border border-zinc-300 bg-white p-4 shadow-sm">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-zinc-700">Search ticker</span>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value.toUpperCase())}
-                  onKeyDown={handleSearchKeyDown}
-                  onBlur={() => {
-                    if (exactTickerMatch) selectTicker(exactTickerMatch);
-                  }}
-                  placeholder="Type symbol (e.g. NVDA) — loads when exact match"
-                  className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-4 py-2.5 font-mono text-lg text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none"
-                  spellCheck={false}
-                  autoCapitalize="characters"
-                />
-              </label>
-              <p className="mt-2 text-xs text-zinc-500">
-                {tickers.length} chart tickers
-                {tickerSource ? ` · ${tickerSource.replace('+', ' + ')}` : ''}
-                {search.trim() ? ` · ${filteredTickers.length} match "${search.trim().toUpperCase()}"` : ''}
-              </p>
+            <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-stretch">
+              <div className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm lg:flex-1">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-zinc-700">Search ticker</span>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value.toUpperCase())}
+                    onKeyDown={handleSearchKeyDown}
+                    onBlur={() => {
+                      if (exactTickerMatch) selectTicker(exactTickerMatch);
+                    }}
+                    placeholder="Type symbol (e.g. NVDA) — loads when exact match"
+                    className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-4 py-2.5 font-mono text-lg text-zinc-900 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none"
+                    spellCheck={false}
+                    autoCapitalize="characters"
+                  />
+                </label>
+                <p className="mt-2 text-xs text-zinc-700">
+                  {tickers.length} chart tickers
+                  {tickerSource ? ` · ${tickerSource.replace('+', ' + ')}` : ''}
+                  {search.trim() ? ` · ${filteredTickers.length} match "${search.trim().toUpperCase()}"` : ''}
+                </p>
 
-              {search.trim() && filteredTickers.length > 1 && !exactTickerMatch ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="w-full text-xs text-zinc-500">Multiple matches — pick one or press Enter for top hit:</span>
-                  {filteredTickers.slice(0, 12).map((ticker) => (
-                      <button
-                        key={ticker}
-                        type="button"
-                        onClick={() => selectTicker(ticker)}
-                        className={`rounded-full border px-3 py-1.5 font-mono text-sm font-semibold transition ${
-                          activeTicker === ticker
-                            ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-                            : 'border-zinc-300 bg-zinc-50 text-zinc-700 hover:border-zinc-500'
-                        }`}
-                      >
-                        {ticker}
-                      </button>
-                    ))}
-                  {filteredTickers.length > 12 ? (
-                    <span className="self-center text-xs text-zinc-600">
-                      +{filteredTickers.length - 12} more — refine search
+                {search.trim() && filteredTickers.length > 1 && !exactTickerMatch ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="w-full text-xs font-medium text-zinc-700">Multiple matches — pick one or press Enter for top hit:</span>
+                    {filteredTickers.slice(0, 12).map((ticker) => (
+                        <button
+                          key={ticker}
+                          type="button"
+                          onClick={() => selectTicker(ticker)}
+                          className={`rounded-full border px-3 py-1.5 font-mono text-sm font-semibold transition ${
+                            activeTicker === ticker
+                              ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
+                              : 'border-zinc-400 bg-white text-zinc-900 hover:border-zinc-600 hover:bg-zinc-50'
+                          }`}
+                        >
+                          {ticker}
+                        </button>
+                      ))}
+                    {filteredTickers.length > 12 ? (
+                      <span className="self-center text-xs text-zinc-600">
+                        +{filteredTickers.length - 12} more — refine search
+                      </span>
+                    ) : null}
+                  </div>
+                ) : search.trim() && !filteredTickers.length ? (
+                  <p className="mt-2 text-sm text-zinc-700">No matching chart tickers.</p>
+                ) : null}
+              </div>
+
+              {isDeveloper ? (
+                <aside className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm lg:w-96 lg:flex-shrink-0">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-zinc-800">
+                      {newsTicker ? `${newsTicker} news` : 'News'}
                     </span>
-                  ) : null}
-                </div>
-              ) : search.trim() && !filteredTickers.length ? (
-                <p className="mt-2 text-sm text-zinc-500">No matching chart tickers.</p>
+                    <Link
+                      href="/scanner/news"
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                    >
+                      All news →
+                    </Link>
+                  </div>
+
+                  {!newsTicker ? (
+                    <p className="text-sm text-zinc-600">Load a ticker to see its latest headlines.</p>
+                  ) : !newsLoaded ? (
+                    <p className="text-sm text-zinc-500">Loading news…</p>
+                  ) : tickerNews.length === 0 ? (
+                    <p className="text-sm text-zinc-600">
+                      No scanner headlines for {newsTicker}.{' '}
+                      <a
+                        href={`https://news.google.com/search?q=${encodeURIComponent(`${newsTicker} stock`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-emerald-700 hover:underline"
+                      >
+                        Search the web →
+                      </a>
+                    </p>
+                  ) : (
+                    <ul className="space-y-2.5">
+                      {tickerNews.slice(0, 5).map((item, index) => (
+                        <li key={`${item.url || item.title}-${index}`}>
+                          <a
+                            href={item.url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group block"
+                          >
+                            <span className="block text-sm font-semibold leading-snug text-zinc-900 line-clamp-2 group-hover:text-emerald-700">
+                              {item.title}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-zinc-500">
+                              {item.publisher || item.site || ''}
+                              {item.publishedDate ? ` · ${relativeTime(item.publishedDate)}` : ''}
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </aside>
               ) : null}
             </div>
 
-            {chartError && pendingTicker !== activeTicker ? (
+            {isDeveloper && chartError && pendingTicker !== activeTicker ? (
               <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {chartError} Showing {activeTicker || 'previous'} chart.
               </div>
             ) : null}
 
-            <ChartPanelErrorBoundary ticker={activeTicker || pendingTicker}>
-              <StockChartPanel
-                ticker={activeTicker || pendingTicker}
-                data={data}
-                loading={loading && !data}
-                error={chartError && !data ? chartError : ''}
-                onSelectTicker={selectTicker}
-              />
-            </ChartPanelErrorBoundary>
+            {isDeveloper ? (
+              <ChartPanelErrorBoundary ticker={activeTicker || pendingTicker}>
+                <StockChartPanel
+                  ticker={activeTicker || pendingTicker}
+                  data={data}
+                  loading={loading && !data}
+                  error={chartError && !data ? chartError : ''}
+                  onSelectTicker={selectTicker}
+                />
+              </ChartPanelErrorBoundary>
+            ) : (
+              <TradingViewWidgetPanel ticker={activeTicker || pendingTicker} />
+            )}
 
             {user ? (
-              <p className="mt-3 text-xs text-zinc-500">
+              <p className="mt-3 text-xs text-zinc-700">
                 Signed in as {user.email} ({user.role})
               </p>
             ) : null}
