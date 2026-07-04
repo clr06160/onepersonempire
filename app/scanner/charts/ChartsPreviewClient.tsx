@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { ChartManifest, ScannerChartPayload } from '@/lib/charts/load-chart-data';
 import type { ScannerNewsItem } from '@/lib/scanner-news-data';
+import type { FlowPublicSummary } from '@/lib/scanner-flow-data';
+import FlowSummaryStrip from '@/components/scanner/FlowSummaryStrip';
 import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 import ChartPanelErrorBoundary from './ChartPanelErrorBoundary';
 
@@ -63,6 +65,8 @@ export default function ChartsPreviewClient() {
   const [chartError, setChartError] = useState('');
   const [newsByTicker, setNewsByTicker] = useState<Record<string, ScannerNewsItem[]>>({});
   const [newsLoaded, setNewsLoaded] = useState(false);
+  const [flowSummary, setFlowSummary] = useState<FlowPublicSummary | null>(null);
+  const [flowLoading, setFlowLoading] = useState(false);
 
   const filteredTickers = useMemo(() => {
     const query = search.trim().toUpperCase();
@@ -135,6 +139,33 @@ export default function ChartsPreviewClient() {
     }
   }, []);
 
+  const loadFlowSummary = useCallback(async (ticker: string) => {
+    if (!ticker) {
+      setFlowSummary(null);
+      return;
+    }
+    setFlowLoading(true);
+    try {
+      const response = await fetch(`/api/scanner/flow?ticker=${encodeURIComponent(ticker)}`, scannerFetchInit);
+      const payload = await response.json();
+      if (!response.ok) {
+        setFlowSummary(null);
+        return;
+      }
+      if (payload.publicSummary) {
+        setFlowSummary(payload.publicSummary as FlowPublicSummary);
+      } else if (payload.ticker?.publicSummary) {
+        setFlowSummary(payload.ticker.publicSummary as FlowPublicSummary);
+      } else {
+        setFlowSummary(null);
+      }
+    } catch {
+      setFlowSummary(null);
+    } finally {
+      setFlowLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadManifest()
       .catch((error: Error) => setManifestError(error.message || 'Could not load scanner tickers.'))
@@ -160,6 +191,12 @@ export default function ChartsPreviewClient() {
     if (isDeveloper || !pendingTicker) return;
     setActiveTicker(pendingTicker);
   }, [isDeveloper, pendingTicker]);
+
+  useEffect(() => {
+    const ticker = activeTicker || pendingTicker;
+    if (!ticker) return;
+    void loadFlowSummary(ticker);
+  }, [activeTicker, pendingTicker, loadFlowSummary]);
 
   // Exact symbol typed → load chart without clicking a pill.
   useEffect(() => {
@@ -279,8 +316,16 @@ export default function ChartsPreviewClient() {
                 ) : null}
               </div>
 
+              <div className="flex flex-col gap-4 lg:w-96 lg:flex-shrink-0">
+                <FlowSummaryStrip
+                  ticker={newsTicker}
+                  summary={flowSummary}
+                  loading={flowLoading}
+                  isDeveloper={isDeveloper}
+                />
+
               {isDeveloper ? (
-                <aside className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm lg:w-96 lg:flex-shrink-0">
+                <aside className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-zinc-800">
                       {newsTicker ? `${newsTicker} news` : 'News'}
@@ -333,6 +378,7 @@ export default function ChartsPreviewClient() {
                   )}
                 </aside>
               ) : null}
+              </div>
             </div>
 
             {isDeveloper && chartError && pendingTicker !== activeTicker ? (
