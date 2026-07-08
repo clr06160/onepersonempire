@@ -2,9 +2,21 @@
 
 import Script from 'next/script';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { AgentLeaderboardRow } from '@/lib/scanner-agents';
+import {
+  agentRankBySystemId,
+  formatAgentRankSuffix,
+  sortSystemsByAgentRank,
+} from '@/lib/scanner-agent-ranks';
 import TickerLink from './TickerLink';
 import { formatMeetingDate, nextUpcomingMeeting, rateLean, type FedWatchPayload } from '@/lib/fedwatch-utils';
+import DreamTreeHeaderLogo from '@/components/scanner/DreamTreeHeaderLogo';
+import ExecutionStatusBar from '@/components/scanner/ExecutionStatusBar';
+import PickContextLegend from '@/components/scanner/PickContextLegend';
+import PickNameRow from '@/components/scanner/PickNameRow';
+import { SIDEBAR_NAV_GROUPS, sidebarLinkClass } from '@/components/scanner/sidebar-nav-groups';
+import type { LensForwardSnapshot, PickContext } from '@/lib/scanner-pick-context';
 
 type ScannerUser = {
   email: string;
@@ -137,6 +149,16 @@ declare global {
 
 const scannerFetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
 
+async function readResponseJson<T>(response: Response, fallback: T): Promise<T> {
+  try {
+    const text = await response.text();
+    if (!text.trim()) return fallback;
+    return JSON.parse(text) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 function regimeBadgeToneClass(tone?: string) {
   if (tone === 'cash') return 'border-red-800/80 bg-red-950/70 text-red-200';
   if (tone === 'half') return 'border-amber-700/80 bg-amber-950/50 text-amber-200';
@@ -144,7 +166,7 @@ function regimeBadgeToneClass(tone?: string) {
   return 'border-zinc-700 bg-zinc-900 text-zinc-200';
 }
 
-function RegimeSignalBadge({ badge }: { badge: RegimeBadge }) {
+function RegimeSignalBadge({ badge, symmetric }: { badge: RegimeBadge; symmetric?: boolean }) {
   const showBook =
     badge.kind !== 'powertrend' &&
     badge.kind !== 'sharp-pause' &&
@@ -156,7 +178,9 @@ function RegimeSignalBadge({ badge }: { badge: RegimeBadge }) {
 
   return (
     <div
-      className={`min-w-[160px] flex-1 rounded-lg border px-3 py-2 ${regimeBadgeToneClass(badge.tone)}`}
+      className={`rounded-lg border px-3 py-2 ${regimeBadgeToneClass(badge.tone)} ${
+        symmetric ? 'flex h-full min-h-[6rem] flex-col' : 'min-w-[160px] flex-1'
+      }`}
       title={badge.detail || badge.regimeReason}
     >
       <div className="text-[11px] uppercase tracking-wide opacity-70">{badge.name}</div>
@@ -168,19 +192,33 @@ function RegimeSignalBadge({ badge }: { badge: RegimeBadge }) {
   );
 }
 
+function formatDashboardDate(iso?: string): string {
+  if (!iso) return '';
+  const day = iso.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : iso;
+}
+
 type ScannerPageClientProps = {
   googleClientId: string;
+  /** Design preview: Dream Tree header + balanced grids only — same data and sections. */
+  previewPolish?: boolean;
 };
 
-export default function ScannerPageClient({ googleClientId: initialGoogleClientId }: ScannerPageClientProps) {
+export default function ScannerPageClient({
+  googleClientId: initialGoogleClientId,
+  previewPolish = false,
+}: ScannerPageClientProps) {
   const [user, setUser] = useState<ScannerUser | null>(null);
   const [data, setData] = useState<ScannerData | null>(null);
   const [ewOverlay, setEwOverlay] = useState<EwOverlay | null>(null);
   const [fedwatch, setFedwatch] = useState<FedWatchPayload | null>(null);
+  const [pickContextByTicker, setPickContextByTicker] = useState<Record<string, PickContext>>({});
+  const [lensSnapshots, setLensSnapshots] = useState<LensForwardSnapshot[]>([]);
   const [developerMessage, setDeveloperMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedSystemId, setSelectedSystemId] = useState('');
+  const [agentLeaderboard, setAgentLeaderboard] = useState<AgentLeaderboardRow[]>([]);
   const [googleClientId, setGoogleClientId] = useState(initialGoogleClientId);
   const [downloadUrl, setDownloadUrl] = useState('');
   const [scannerFileCount, setScannerFileCount] = useState(0);
@@ -189,45 +227,80 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   const tryRenderGoogleButtonRef = useRef<() => void>(() => {});
 
   const loadScannerData = useCallback(async () => {
-    const [scannerResponse, ewResponse, fedResponse] = await Promise.all([
-      fetch('/api/scanner/data', scannerFetchInit),
-      fetch('/api/scanner/ew', scannerFetchInit),
-      fetch('/api/scanner/fedwatch', scannerFetchInit),
-    ]);
-    // The session effect owns the signed-out UI; a 401 here just means we
-    // fired the data fetch in parallel before the session resolved, so stay
-    // quiet instead of flashing an error.
-    if (scannerResponse.status === 401) return;
-    const payload = await scannerResponse.json();
-    if (!scannerResponse.ok) {
-      setError(payload.error || 'Could not load scanner data.');
-      return;
+    try {
+      const [scannerResponse, ewResponse, fedResponse, agentsResponse] = await Promise.all([
+        fetch('/api/scanner/data', scannerFetchInit),
+        fetch('/api/scanner/ew', scannerFetchInit),
+        fetch('/api/scanner/fedwatch', scannerFetchInit),
+        fetch('/api/scanner/agents', scannerFetchInit),
+      ]);
+      if (scannerResponse.status === 401) return;
+      const payload = await readResponseJson(scannerResponse, { error: 'Could not load scanner data.' } as {
+        user?: ScannerUser | null;
+        data?: ScannerData | null;
+        pickContext?: { byTicker?: Record<string, PickContext>; lenses?: LensForwardSnapshot[] };
+        error?: string;
+      });
+      if (!scannerResponse.ok) {
+        setError(payload.error || 'Could not load scanner data.');
+        return;
+      }
+      const ewPayload = ewResponse.ok
+        ? await readResponseJson(ewResponse, { overlay: { labelsBySystem: {} } })
+        : { overlay: { labelsBySystem: {} } };
+      const fedPayload = fedResponse.ok
+        ? await readResponseJson(fedResponse, { data: null })
+        : { data: null };
+      const agentsPayload = agentsResponse.ok
+        ? await readResponseJson(agentsResponse, { data: { leaderboard: [] } })
+        : { data: { leaderboard: [] } };
+      const leaderboard = (agentsPayload.data?.leaderboard || []) as AgentLeaderboardRow[];
+      setError('');
+      setUser(payload.user || null);
+      setData(payload.data || null);
+      setEwOverlay(ewPayload.overlay || { labelsBySystem: {} });
+      setFedwatch(fedPayload.data || null);
+      setPickContextByTicker(payload.pickContext?.byTicker || {});
+      setLensSnapshots(payload.pickContext?.lenses || []);
+      setAgentLeaderboard(leaderboard);
+      const systems = (payload.data?.systems || []) as ScannerSystem[];
+      if (systems.length) {
+        const topSystemId = leaderboard[0]?.systemId;
+        setSelectedSystemId((current) => {
+          if (current) return current;
+          if (topSystemId && systems.some((system) => system.id === topSystemId)) return topSystemId;
+          return systems[0].id;
+        });
+      }
+    } catch {
+      setError('Could not load scanner data.');
     }
-    const ewPayload = ewResponse.ok ? await ewResponse.json() : { overlay: { labelsBySystem: {} } };
-    const fedPayload = fedResponse.ok ? await fedResponse.json() : { data: null };
-    setError('');
-    setUser(payload.user || null);
-    setData(payload.data || null);
-    setEwOverlay(ewPayload.overlay || { labelsBySystem: {} });
-    setFedwatch(fedPayload.data || null);
-    const systems = (payload.data?.systems || []) as ScannerSystem[];
-    if (systems.length) setSelectedSystemId((current) => current || systems[0].id);
   }, []);
 
   const refreshSession = useCallback(async () => {
-    const response = await fetch('/api/scanner/session', scannerFetchInit);
-    const payload = await response.json();
-    setUser(payload.user || null);
-    setLoading(false);
-    return payload.user as ScannerUser | null;
+    try {
+      const response = await fetch('/api/scanner/session', scannerFetchInit);
+      const payload = await readResponseJson(response, { user: null as ScannerUser | null });
+      setUser(payload.user || null);
+      return payload.user as ScannerUser | null;
+    } catch {
+      setUser(null);
+      return null;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadDeveloperTools = useCallback(async () => {
-    const response = await fetch('/api/scanner/developer', scannerFetchInit);
-    const payload = await response.json();
-    setDeveloperMessage(payload.message || payload.error || '');
-    setDownloadUrl(payload.downloadUrl || '');
-    setScannerFileCount(Number(payload.scannerCount || 0));
+    try {
+      const response = await fetch('/api/scanner/developer', scannerFetchInit);
+      const payload = await readResponseJson(response, { message: '', error: '', downloadUrl: '', scannerCount: 0 });
+      setDeveloperMessage(payload.message || payload.error || '');
+      setDownloadUrl(payload.downloadUrl || '');
+      setScannerFileCount(Number(payload.scannerCount || 0));
+    } catch {
+      // Optional developer panel.
+    }
   }, []);
 
   const handleCredential = useCallback(
@@ -239,12 +312,15 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential }),
       });
-      const payload = await response.json();
+      const payload = await readResponseJson(response, { error: 'Sign-in failed.' } as {
+        user?: ScannerUser;
+        error?: string;
+      });
       if (!response.ok) {
         setError(payload.error || 'Sign-in failed.');
         return;
       }
-      setUser(payload.user);
+      setUser(payload.user || null);
       await loadScannerData();
     },
     [loadScannerData],
@@ -297,7 +373,7 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   useEffect(() => {
     if (initialGoogleClientId) return;
     fetch('/api/scanner/config', scannerFetchInit)
-      .then((response) => response.json())
+      .then((response) => readResponseJson(response, { googleClientId: '' }))
       .then((payload) => {
         if (payload.googleClientId) setGoogleClientId(String(payload.googleClientId));
       })
@@ -333,6 +409,11 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   }, [loadDeveloperTools, user?.role]);
 
   const systems = data?.systems || [];
+  const agentRanks = useMemo(() => agentRankBySystemId(agentLeaderboard), [agentLeaderboard]);
+  const systemsForSelect = useMemo(
+    () => sortSystemsByAgentRank(systems, agentRanks),
+    [systems, agentRanks],
+  );
   const selectedSystem = systems.find((system) => system.id === selectedSystemId) || systems[0];
   const ewLabels = (selectedSystem && ewOverlay?.labelsBySystem?.[selectedSystem.id]) || {};
   const powerBadge = (data?.regimeBadges || []).find((badge) => badge.kind === 'powertrend');
@@ -354,6 +435,118 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
       : healthVerdict === 'watch'
         ? 'border-amber-800 bg-amber-950/40 text-amber-100'
         : 'border-emerald-800 bg-emerald-950/40 text-emerald-100';
+
+  const regimeSignalsPanel =
+    previewPolish && ((data?.regimeBadges || []).length > 0 || selectedSystem) ? (
+      <div className="space-y-3 rounded-2xl border border-emerald-900/25 bg-zinc-900/90 p-5 shadow-inner shadow-emerald-950/10">
+        <h2 className="text-lg font-semibold text-zinc-100">Regime signals</h2>
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          What each overlay says right now
+        </p>
+        {selectedSystem ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              title="Based on IBD's Power Trend methodology (21-day EMA / 50-day MA trend conditions). Not affiliated with Investor's Business Daily."
+              className={`rounded-full border px-3 py-1 text-sm font-semibold ${
+                powerOn
+                  ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
+                  : 'border-red-800 bg-red-950 text-red-200'
+              }`}
+            >
+              {powerLabel}
+            </span>
+            <span className="text-sm text-zinc-400">
+              {selectedSystem.isLive ? 'Live scan' : 'Saved scan'} · as of{' '}
+              {formatDashboardDate(selectedSystem.asOf || selectedSystem.date) ||
+                selectedSystem.asOf ||
+                selectedSystem.date ||
+                'n/a'}
+            </span>
+            {nextLean && nextMeeting ? (
+              <Link
+                href="/scanner/fedwatch"
+                title="Market-implied odds for the next FOMC meeting"
+                className={`rounded-full border px-3 py-1 text-sm font-semibold transition hover:brightness-110 ${
+                  nextLean.tone === 'hike'
+                    ? 'border-amber-700 bg-amber-950 text-amber-200'
+                    : nextLean.tone === 'cut'
+                      ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
+                      : 'border-zinc-700 bg-zinc-900 text-zinc-300'
+                }`}
+              >
+                {nextLean.tone === 'hike' ? '↑ ' : nextLean.tone === 'cut' ? '↓ ' : ''}
+                {nextLean.direction === 'hold'
+                  ? `Fed hold ${nextLean.prob.toFixed(0)}%`
+                  : `Upcoming ${nextLean.label.toLowerCase()} ${nextLean.prob.toFixed(0)}%`}
+                <span className="ml-1 font-normal text-zinc-400">· {formatMeetingDate(nextMeeting.meetingDate)}</span>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
+        {(data?.regimeBadges || []).length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(data?.regimeBadges || []).map((badge) => (
+              <RegimeSignalBadge key={`${badge.kind}-${badge.name}`} badge={badge} symmetric />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    ) : !previewPolish && (data?.regimeBadges || []).length > 0 ? (
+      <div className="space-y-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Regime signals — what each overlay says right now
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(data?.regimeBadges || []).map((badge) => (
+            <RegimeSignalBadge key={`${badge.kind}-${badge.name}`} badge={badge} />
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  const scaleOperatorPanel = health?.operator ? (
+    <div className={`rounded-xl border p-4 ${healthTone}`}>
+      <div
+        className={
+          previewPolish
+            ? 'grid grid-cols-1 items-center gap-2 md:grid-cols-[1fr_auto]'
+            : 'flex flex-wrap items-center justify-between gap-2'
+        }
+      >
+        <h3 className={`text-sm font-semibold uppercase tracking-wide ${previewPolish ? 'text-center md:text-left' : ''}`}>
+          Scale operator
+        </h3>
+        <span
+          className={`rounded-full border border-current px-3 py-1 text-xs font-bold uppercase ${previewPolish ? 'justify-self-center md:justify-self-end' : ''}`}
+        >
+          {healthVerdict}
+        </span>
+      </div>
+      <p className="mt-2 text-sm">{health.operator.headline}</p>
+      {health.forwardPaper?.metrics?.roll20dPct != null ? (
+        <p className="mt-2 text-xs opacity-90">
+          Core paper book 20d: {health.forwardPaper.metrics.roll20dPct}% vs backtest band p10{' '}
+          {health.forwardPaper.interpretation?.roll20dBand?.p10 ?? 'n/a'}%
+        </p>
+      ) : null}
+      {!!health.alerts?.length && (
+        <ul className="mt-3 space-y-1 text-sm">
+          {health.alerts.slice(0, 4).map((alert) => (
+            <li key={alert.code}>
+              <span className="font-semibold uppercase">{alert.severity}</span>: {alert.message}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href="/scanner/monitor" className="mt-3 inline-flex text-sm text-violet-300 hover:text-violet-200">
+        Full adaptive monitor →
+      </Link>
+    </div>
+  ) : null;
+
+  const forwardPaperPanel = lensSnapshots.length ? (
+    <ExecutionStatusBar lenses={lensSnapshots} symmetric={previewPolish} />
+  ) : null;
 
   if (!loading && !user) {
     const features: { title: string; desc: string; chip: string }[] = [
@@ -554,31 +747,99 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
+    <main className={`min-h-screen bg-zinc-950 px-6 text-zinc-100 ${previewPolish ? 'py-8' : 'py-10'}`}>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner</p>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
-            {data?.generatedAt ? (
-              <p className="mt-2 text-sm text-zinc-400">
-                Dashboard last updated: <span className="font-semibold text-emerald-300">{data.generatedAt}</span>
-              </p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/scanner/charts"
-                className="rounded-full border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:border-amber-500 hover:text-amber-200"
-              >
-                Charts
-              </Link>
-              <Link
-                href="/scanner/requests"
-                className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
-              >
-                Request a scan
-              </Link>
+        {previewPolish ? (
+          <div className="mb-6 flex items-center justify-center gap-2 rounded-full border border-emerald-700/50 bg-emerald-950/30 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-300">
+            Polish preview — compare with{' '}
+            <Link href="/scanner" className="underline underline-offset-2 hover:text-emerald-200">
+              original layout
+            </Link>
+          </div>
+        ) : null}
+
+        <div
+          className={
+            previewPolish
+              ? 'mb-6 overflow-hidden rounded-2xl border border-emerald-800/40 bg-gradient-to-br from-zinc-900 via-zinc-900 to-emerald-950/20 shadow-lg shadow-emerald-950/30'
+              : 'mb-8 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl'
+          }
+        >
+          {previewPolish ? <div className="h-1 bg-gradient-to-r from-transparent via-emerald-500/80 to-transparent" /> : null}
+          <div className={previewPolish ? 'p-6' : ''}>
+          {previewPolish ? (
+            <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-3">
+              <div className="flex items-center justify-center gap-3 md:justify-start">
+                <DreamTreeHeaderLogo className="h-12 w-[4.25rem]" />
+                <div className="text-center md:text-left">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-emerald-400">
+                    Private scanner
+                  </p>
+                  <h1 className="text-2xl font-bold tracking-tight text-zinc-100 md:text-3xl">
+                    Dream Tree Stocks
+                  </h1>
+                </div>
+              </div>
+              <div className="text-center">
+                {data?.generatedAt ? (
+                  <p className="text-sm text-zinc-400">
+                    Last updated
+                    <span className="mt-1 block font-semibold text-emerald-300">
+                      {formatDashboardDate(data.generatedAt)}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 md:justify-end">
+                <Link
+                  href="/scanner/charts"
+                  className="rounded-full border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:border-amber-500 hover:text-amber-200"
+                >
+                  Charts
+                </Link>
+                <Link
+                  href="/scanner/requests"
+                  className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+                >
+                  Request a scan
+                </Link>
+                {user ? (
+                  <button
+                    onClick={logout}
+                    className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 hover:border-zinc-500"
+                  >
+                    Sign out
+                  </button>
+                ) : null}
+              </div>
             </div>
+          ) : (
+            <>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner</p>
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
+                {data?.generatedAt ? (
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Dashboard last updated: <span className="font-semibold text-emerald-300">{data.generatedAt}</span>
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/scanner/charts"
+                    className="rounded-full border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:border-amber-500 hover:text-amber-200"
+                  >
+                    Charts
+                  </Link>
+                  <Link
+                    href="/scanner/requests"
+                    className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+                  >
+                    Request a scan
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
           </div>
         </div>
 
@@ -593,118 +854,123 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
           <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">Checking session...</section>
         ) : !user ? null : (
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold">Scanner Dashboard</h2>
-                  <p className="text-sm text-zinc-400">Logged in as {user.email}</p>
-                </div>
-                <button
-                  onClick={logout}
-                  className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500"
-                >
-                  Sign out
-                </button>
-              </div>
-
-              {health?.operator ? (
-                <div className={`mb-6 rounded-xl border p-4 ${healthTone}`}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide">Scale operator</h3>
-                    <span className="rounded-full border border-current px-3 py-1 text-xs font-bold uppercase">
-                      {healthVerdict}
-                    </span>
+            <section
+              className={
+                previewPolish
+                  ? 'rounded-2xl border border-emerald-900/25 bg-zinc-900/90 p-6 shadow-inner shadow-emerald-950/10'
+                  : 'rounded-2xl border border-zinc-800 bg-zinc-900 p-6'
+              }
+            >
+              {!previewPolish ? (
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold">Scanner Dashboard</h2>
+                    <p className="text-sm text-zinc-400">Logged in as {user.email}</p>
                   </div>
-                  <p className="mt-2 text-sm">{health.operator.headline}</p>
-                  {health.forwardPaper?.metrics?.roll20dPct != null ? (
-                    <p className="mt-2 text-xs opacity-90">
-                      Core paper book 20d: {health.forwardPaper.metrics.roll20dPct}% vs backtest band p10{' '}
-                      {health.forwardPaper.interpretation?.roll20dBand?.p10 ?? 'n/a'}%
-                    </p>
-                  ) : null}
-                  {!!health.alerts?.length && (
-                    <ul className="mt-3 space-y-1 text-sm">
-                      {health.alerts.slice(0, 4).map((alert) => (
-                        <li key={alert.code}>
-                          <span className="font-semibold uppercase">{alert.severity}</span>: {alert.message}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <Link href="/scanner/monitor" className="mt-3 inline-flex text-sm text-violet-300 hover:text-violet-200">
-                    Full adaptive monitor →
-                  </Link>
+                  <button
+                    onClick={logout}
+                    className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500"
+                  >
+                    Sign out
+                  </button>
                 </div>
               ) : null}
 
+              {previewPolish ? (
+                <>
+                  {regimeSignalsPanel ? <div className="mb-6">{regimeSignalsPanel}</div> : null}
+                  {systemsForSelect.length ? (
+                    <label className="mb-6 block">
+                      <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
+                      <select
+                        value={selectedSystem?.id || selectedSystemId}
+                        onChange={(event) => setSelectedSystemId(event.target.value)}
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100"
+                      >
+                        {systemsForSelect.map((system) => (
+                          <option key={system.id} value={system.id}>
+                            {system.label}
+                            {formatAgentRankSuffix(agentRanks[system.id])}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                </>
+              ) : null}
+
+              {!previewPolish && scaleOperatorPanel ? <div className="mb-6">{scaleOperatorPanel}</div> : null}
+
+              {!previewPolish && forwardPaperPanel ? <div className="mb-6">{forwardPaperPanel}</div> : null}
+
               {selectedSystem ? (
                 <div className="space-y-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span
-                      title="Based on IBD's Power Trend methodology (21-day EMA / 50-day MA trend conditions). Not affiliated with Investor's Business Daily."
-                      className={`rounded-full border px-3 py-1 text-sm font-semibold ${
-                        powerOn
-                          ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
-                          : 'border-red-800 bg-red-950 text-red-200'
-                      }`}
-                    >
-                      {powerLabel}
-                    </span>
-                    <span className="text-sm text-zinc-400">
-                      {selectedSystem.isLive ? 'Live scan' : 'Saved scan'} · as of {selectedSystem.asOf || selectedSystem.date || 'n/a'}
-                    </span>
-                    {nextLean && nextMeeting ? (
-                      <Link
-                        href="/scanner/fedwatch"
-                        title="Market-implied odds for the next FOMC meeting"
-                        className={`rounded-full border px-3 py-1 text-sm font-semibold transition hover:brightness-110 ${
-                          nextLean.tone === 'hike'
-                            ? 'border-amber-700 bg-amber-950 text-amber-200'
-                            : nextLean.tone === 'cut'
-                              ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
-                              : 'border-zinc-700 bg-zinc-900 text-zinc-300'
+                  {!previewPolish ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span
+                        title="Based on IBD's Power Trend methodology (21-day EMA / 50-day MA trend conditions). Not affiliated with Investor's Business Daily."
+                        className={`rounded-full border px-3 py-1 text-sm font-semibold ${
+                          powerOn
+                            ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
+                            : 'border-red-800 bg-red-950 text-red-200'
                         }`}
                       >
-                        {nextLean.tone === 'hike' ? '↑ ' : nextLean.tone === 'cut' ? '↓ ' : ''}
-                        {nextLean.direction === 'hold'
-                          ? `Fed hold ${nextLean.prob.toFixed(0)}%`
-                          : `Upcoming ${nextLean.label.toLowerCase()} ${nextLean.prob.toFixed(0)}%`}
-                        <span className="ml-1 font-normal text-zinc-400">· {formatMeetingDate(nextMeeting.meetingDate)}</span>
-                      </Link>
-                    ) : null}
-                  </div>
-
-                  {(data?.regimeBadges || []).length ? (
-                    <div className="space-y-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Regime signals — what each overlay says right now
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {(data?.regimeBadges || []).map((badge) => (
-                          <RegimeSignalBadge key={`${badge.kind}-${badge.name}`} badge={badge} />
-                        ))}
-                      </div>
+                        {powerLabel}
+                      </span>
+                      <span className="text-sm text-zinc-400">
+                        {selectedSystem.isLive ? 'Live scan' : 'Saved scan'} · as of{' '}
+                        {selectedSystem.asOf || selectedSystem.date || 'n/a'}
+                      </span>
+                      {nextLean && nextMeeting ? (
+                        <Link
+                          href="/scanner/fedwatch"
+                          title="Market-implied odds for the next FOMC meeting"
+                          className={`rounded-full border px-3 py-1 text-sm font-semibold transition hover:brightness-110 ${
+                            nextLean.tone === 'hike'
+                              ? 'border-amber-700 bg-amber-950 text-amber-200'
+                              : nextLean.tone === 'cut'
+                                ? 'border-emerald-700 bg-emerald-950 text-emerald-300'
+                                : 'border-zinc-700 bg-zinc-900 text-zinc-300'
+                          }`}
+                        >
+                          {nextLean.tone === 'hike' ? '↑ ' : nextLean.tone === 'cut' ? '↓ ' : ''}
+                          {nextLean.direction === 'hold'
+                            ? `Fed hold ${nextLean.prob.toFixed(0)}%`
+                            : `Upcoming ${nextLean.label.toLowerCase()} ${nextLean.prob.toFixed(0)}%`}
+                          <span className="ml-1 font-normal text-zinc-400">· {formatMeetingDate(nextMeeting.meetingDate)}</span>
+                        </Link>
+                      ) : null}
                     </div>
                   ) : null}
 
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
-                    <select
-                      value={selectedSystem.id}
-                      onChange={(event) => setSelectedSystemId(event.target.value)}
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100"
-                    >
-                      {systems.map((system) => (
-                        <option key={system.id} value={system.id}>
-                          {system.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {!previewPolish ? regimeSignalsPanel : null}
 
-                  <div className="grid gap-3 sm:grid-cols-4">
+                  {!previewPolish ? (
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
+                      <select
+                        value={selectedSystem.id}
+                        onChange={(event) => setSelectedSystemId(event.target.value)}
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100"
+                      >
+                        {systemsForSelect.map((system) => (
+                          <option key={system.id} value={system.id}>
+                            {system.label}
+                            {formatAgentRankSuffix(agentRanks[system.id])}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  <div className={`grid gap-3 ${previewPolish ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-4'}`}>
                     {Object.entries(selectedSystem.stats || {}).map(([label, value]) => (
-                      <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                      <div
+                        key={label}
+                        className={`rounded-xl border border-zinc-800 bg-zinc-950 p-4 ${
+                          previewPolish ? 'flex min-h-[5.5rem] flex-col justify-center text-center' : ''
+                        }`}
+                      >
                         <div className="text-2xl font-bold">{value}</div>
                         <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
                       </div>
@@ -737,8 +1003,8 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                       <h3 className="mb-1 text-lg font-semibold">Top Names</h3>
                       <p className="mb-3 text-xs text-zinc-600">
                         {selectedSystem.dailyUniverses?.length
-                          ? 'Daily quality top 10 per fundamentals universe.'
-                          : 'Optional ew tags (weekly structure) — context only.'}
+                          ? 'Daily quality top 10 per fundamentals universe. Chips: animal, runway, risk, flow, earnings.'
+                          : 'Chips show animal, runway, music-stops risk, flow, and upcoming earnings when on the calendar.'}
                       </p>
                       {selectedSystem.dailyUniverses?.length ? (
                         <div className="space-y-5">
@@ -752,18 +1018,15 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                               </p>
                               <div className="mt-3 space-y-2">
                                 {(group.top || []).map((ticker, index) => (
-                                  <div
+                                  <PickNameRow
                                     key={`${group.key}-${ticker}-${index}`}
-                                    className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                                      index < 3 ? 'bg-emerald-950/50 text-emerald-200' : 'bg-zinc-900 text-zinc-200'
-                                    }`}
-                                  >
-                                    <span>#{index + 1}</span>
-                                    <TickerLink ticker={ticker} ewLabel={ewLabels[ticker]} />
-                                    <span className="text-xs text-zinc-400">
-                                      {index < 3 ? 'Highest priority' : 'Portfolio name'}
-                                    </span>
-                                  </div>
+                                    ticker={ticker}
+                                    index={index}
+                                    ewLabel={ewLabels[ticker]}
+                                    context={pickContextByTicker[ticker.toUpperCase()]}
+                                    highlight={index < 3}
+                                    priorityLabel={index < 3 ? 'Highest priority' : 'Portfolio name'}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -772,16 +1035,15 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                       ) : (
                         <div className="space-y-2">
                           {(selectedSystem.top || []).map((ticker, index) => (
-                            <div
+                            <PickNameRow
                               key={`${ticker}-${index}`}
-                              className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                                index < 3 ? 'bg-emerald-950/50 text-emerald-200' : 'bg-zinc-900 text-zinc-200'
-                              }`}
-                            >
-                              <span>#{index + 1}</span>
-                              <TickerLink ticker={ticker} ewLabel={ewLabels[ticker]} />
-                              <span className="text-xs text-zinc-400">{index < 3 ? 'Highest priority' : 'Portfolio name'}</span>
-                            </div>
+                              ticker={ticker}
+                              index={index}
+                              ewLabel={ewLabels[ticker]}
+                              context={pickContextByTicker[ticker.toUpperCase()]}
+                              highlight={index < 3}
+                              priorityLabel={index < 3 ? 'Highest priority' : 'Portfolio name'}
+                            />
                           ))}
                         </div>
                       )}
@@ -793,10 +1055,13 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                         <p className="mb-3 text-sm text-zinc-500">Weekly date: {selectedSystem.watchDate || 'n/a'}</p>
                         <div className="space-y-2">
                           {selectedSystem.watch.map((ticker, index) => (
-                            <div key={`${ticker}-${index}`} className="flex items-center justify-between rounded-lg bg-zinc-900 px-3 py-2">
-                              <span>#{index + 1}</span>
-                              <TickerLink ticker={ticker} ewLabel={ewLabels[ticker]} />
-                            </div>
+                            <PickNameRow
+                              key={`${ticker}-${index}`}
+                              ticker={ticker}
+                              index={index}
+                              ewLabel={ewLabels[ticker]}
+                              context={pickContextByTicker[ticker.toUpperCase()]}
+                            />
                           ))}
                         </div>
                       </div>
@@ -816,49 +1081,118 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
               )}
             </section>
 
-            <aside className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <h2 className="text-xl font-semibold">Access</h2>
-              <p className="mt-2 text-sm text-zinc-400">
-                This page is tied to the signed-in Google account, not a shared password.
-              </p>
-              <a
-                href="/scanner/requests"
-                className="mt-5 inline-flex rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+            <aside
+              className={
+                previewPolish
+                  ? 'rounded-2xl border border-zinc-800/80 bg-zinc-950/80 p-6'
+                  : 'rounded-2xl border border-zinc-800 bg-zinc-900 p-6'
+              }
+            >
+              {!previewPolish ? (
+                <>
+                  <h2 className="text-xl font-semibold">Access</h2>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    This page is tied to the signed-in Google account, not a shared password.
+                  </p>
+                  <a
+                    href="/scanner/requests"
+                    className="mt-5 inline-flex rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+                  >
+                    Request a scan
+                  </a>
+                </>
+              ) : null}
+              <div
+                className={
+                  previewPolish
+                    ? 'space-y-2 text-sm'
+                    : 'mt-5 space-y-2 border-t border-zinc-800 pt-5 text-sm'
+                }
               >
-                Request a scan
-              </a>
-              <div className="mt-5 space-y-2 border-t border-zinc-800 pt-5 text-sm">
-                <p className="font-semibold text-zinc-300">Separate tools</p>
-                <Link href="/scanner/charts" className="block text-amber-300 hover:text-amber-200">
-                  Charts
-                </Link>
-                <Link href="/scanner/top100" className="block text-emerald-300 hover:text-emerald-200">
-                  Top 100 stocks
-                </Link>
-                <Link href="/scanner/instructions" className="block text-emerald-300 hover:text-emerald-200">
-                  Instructions
-                </Link>
-                <Link href="/scanner/fundamentals" className="block text-emerald-300 hover:text-emerald-200">
-                  Proprietary fundamentals
-                </Link>
-                <Link href="/scanner/calendar" className="block text-emerald-300 hover:text-emerald-200">
-                  Earnings calendar
-                </Link>
-                <Link href="/scanner/macro" className="block text-emerald-300 hover:text-emerald-200">
-                  Macro calendar
-                </Link>
-                <Link href="/scanner/fedwatch" className="block text-emerald-300 hover:text-emerald-200">
-                  Fed rate odds
-                </Link>
-                <Link href="/scanner/monitor" className="block text-emerald-300 hover:text-emerald-200">
-                  Adaptive monitor
-                </Link>
-                <Link href="/scanner/agents" className="block text-emerald-300 hover:text-emerald-200">
-                  Agent tournament
-                </Link>
-                <Link href="/scanner/cot" className="block text-emerald-300 hover:text-emerald-200">
-                  COT report
-                </Link>
+                {previewPolish ? (
+                  <div className="space-y-5">
+                    {SIDEBAR_NAV_GROUPS.map((group) => {
+                      const items = group.items.filter(
+                        (item) => !item.developerOnly || user.role === 'developer',
+                      );
+                      if (!items.length) return null;
+                      return (
+                        <div key={group.id} className="space-y-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                            {group.label}
+                          </p>
+                          <div className="space-y-2">
+                            {items.map((item) => (
+                              <Link key={item.href} href={item.href} className={sidebarLinkClass(item.tone)}>
+                                {item.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <>
+                    <p className="font-semibold text-zinc-300">Separate tools</p>
+                    <Link href="/scanner/charts" className="block text-amber-300 hover:text-amber-200">
+                      Charts
+                    </Link>
+                    <Link href="/scanner/options-institutions" className="block text-amber-300 hover:text-amber-200">
+                      Options/institutions
+                    </Link>
+                    <Link href="/scanner/forest" className="block text-amber-300 hover:text-amber-200">
+                      Forest
+                    </Link>
+                    <Link href="/scanner/gallery" className="block text-amber-300 hover:text-amber-200">
+                      Price as art
+                    </Link>
+                    <Link href="/scanner/top100" className="block text-emerald-300 hover:text-emerald-200">
+                      Top 100 stocks
+                    </Link>
+                    <Link href="/scanner/top-ten" className="block text-emerald-300 hover:text-emerald-200">
+                      Top Ten
+                    </Link>
+                    <Link href="/scanner/journal" className="block text-emerald-300 hover:text-emerald-200">
+                      Trade journal
+                    </Link>
+                    <Link href="/scanner/daytrade" className="block text-amber-300 hover:text-amber-200">
+                      Day trade (3× ETFs)
+                    </Link>
+                    <Link href="/scanner/valuations" className="block text-emerald-300 hover:text-emerald-200">
+                      Valuations
+                    </Link>
+                    {user.role === 'developer' ? (
+                      <Link href="/scanner/catalysts" className="block text-emerald-300 hover:text-emerald-200">
+                        Catalysts
+                      </Link>
+                    ) : null}
+                    <Link href="/scanner/instructions" className="block text-emerald-300 hover:text-emerald-200">
+                      Instructions
+                    </Link>
+                    <Link href="/scanner/fundamentals" className="block text-emerald-300 hover:text-emerald-200">
+                      Proprietary fundamentals
+                    </Link>
+                    <Link href="/scanner/calendar" className="block text-emerald-300 hover:text-emerald-200">
+                      Earnings calendar
+                    </Link>
+                    <Link href="/scanner/macro" className="block text-emerald-300 hover:text-emerald-200">
+                      Macro calendar
+                    </Link>
+                    <Link href="/scanner/fedwatch" className="block text-emerald-300 hover:text-emerald-200">
+                      Fed rate odds
+                    </Link>
+                    <Link href="/scanner/monitor" className="block text-emerald-300 hover:text-emerald-200">
+                      Adaptive monitor
+                    </Link>
+                    <Link href="/scanner/agents" className="block text-emerald-300 hover:text-emerald-200">
+                      Agent tournament
+                    </Link>
+                    <Link href="/scanner/cot" className="block text-emerald-300 hover:text-emerald-200">
+                      COT report
+                    </Link>
+                  </>
+                )}
               </div>
               {user.role === 'developer' ? (
                 <div className="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4">
@@ -879,9 +1213,17 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
                   <p className="mt-2 text-sm text-zinc-400">This account can view scanner results but cannot download code.</p>
                 </div>
               )}
+              <PickContextLegend />
             </aside>
           </div>
         )}
+
+        {previewPolish && user && !loading && (forwardPaperPanel || scaleOperatorPanel) ? (
+          <div className="mt-6 space-y-6">
+            {forwardPaperPanel}
+            {scaleOperatorPanel}
+          </div>
+        ) : null}
       </div>
     </main>
   );

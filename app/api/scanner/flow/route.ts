@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireScannerSession } from '@/lib/scanner-auth';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 import {
   loadFlowTicker,
   loadScannerFlowData,
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
       tickers: summaries,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load flow data.';
+    const message = toScannerUserMessage(error, 'Could not load flow data.');
     return NextResponse.json({ user, connected: false, message, tickers: {} });
   }
 }
