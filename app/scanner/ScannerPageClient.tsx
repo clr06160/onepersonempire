@@ -749,15 +749,6 @@ export default function ScannerPageClient({
   return (
     <main className={`min-h-screen bg-zinc-950 px-6 text-zinc-100 ${previewPolish ? 'py-8' : 'py-10'}`}>
       <div className="mx-auto max-w-7xl">
-        {previewPolish ? (
-          <div className="mb-6 flex items-center justify-center gap-2 rounded-full border border-emerald-700/50 bg-emerald-950/30 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-300">
-            Polish preview — compare with{' '}
-            <Link href="/scanner" className="underline underline-offset-2 hover:text-emerald-200">
-              original layout
-            </Link>
-          </div>
-        ) : null}
-
         <div
           className={
             previewPolish
