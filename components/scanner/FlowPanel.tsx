@@ -30,7 +30,7 @@ export default function FlowPanel({ data }: { data: FlowTickerPayload }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-zinc-900">{data.label}</h2>
-            <p className="text-sm text-zinc-600">Accumulation vs distribution — developer view (licensed FMP data)</p>
+            <p className="text-sm text-zinc-600">Institutions, options, and volume flow</p>
           </div>
           <span className={`text-sm font-semibold ${signalClass(data.signal)}`}>{data.signal}</span>
         </div>
@@ -101,20 +101,32 @@ export default function FlowPanel({ data }: { data: FlowTickerPayload }) {
               <span>{inst.holdersCount?.toLocaleString()} holders</span>
               <span>{inst.buyersCount?.toLocaleString()} net buyers</span>
               <span>{inst.sellersCount?.toLocaleString()} net sellers</span>
+              {inst.ownershipPct != null ? (
+                <span className={inst.ownershipPct >= 90 ? 'font-semibold text-amber-800' : ''}>
+                  {inst.ownershipPct.toFixed(1)}% inst. owned
+                  {inst.ownershipPct >= 90 ? ' (crowded)' : ''}
+                </span>
+              ) : null}
             </div>
             <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
               <FlowBarChart
-                series={inst.quarters || []}
+                series={inst.chartQuarters?.length ? inst.chartQuarters : inst.quarters || []}
                 longLabel="Institutional buying $"
                 shortLabel="Institutional selling $"
+                scaleMode="ratio"
               />
-              <FlowPieChart
-                long={inst.yearBuying || 0}
-                short={inst.yearSelling || 0}
-                longLabel="Buying"
-                shortLabel="Selling"
-                centerLabel="13F"
-              />
+              <div>
+                <FlowPieChart
+                  long={inst.latestQuarterBuying ?? inst.yearBuying ?? 0}
+                  short={inst.latestQuarterSelling ?? inst.yearSelling ?? 0}
+                  longLabel="Buying"
+                  shortLabel="Selling"
+                  centerLabel="13F"
+                />
+                <p className="mt-2 text-center text-[11px] text-zinc-500">
+                  Latest filing quarter · bar chart shows up to {inst.quarterCount ?? 1} quarter(s)
+                </p>
+              </div>
             </div>
             {inst.note ? <p className="mt-3 text-xs text-zinc-500">{inst.note}</p> : null}
           </>

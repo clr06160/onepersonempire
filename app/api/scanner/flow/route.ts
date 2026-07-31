@@ -2,19 +2,9 @@ import { NextResponse } from 'next/server';
 
 import { requireScannerSession } from '@/lib/scanner-auth';
 import { toScannerUserMessage } from '@/lib/scanner-user-error';
-import {
-  loadFlowTicker,
-  loadScannerFlowData,
-  toViewerFlowPayload,
-  type FlowPayload,
-  type FlowTickerPayload,
-} from '@/lib/scanner-flow-data';
+import { loadFlowTicker, loadScannerFlowData } from '@/lib/scanner-flow-data';
 
 export const runtime = 'nodejs';
-
-function stripForViewer(row: FlowTickerPayload) {
-  return toViewerFlowPayload(row.id, row);
-}
 
 export async function GET(request: Request) {
   const user = await requireScannerSession();
@@ -22,9 +12,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   }
 
+  if (user.role !== 'developer') {
+    return NextResponse.json(
+      { error: 'Flow data is restricted to the owner account.', restricted: true },
+      { status: 403 },
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const ticker = (searchParams.get('ticker') || '').trim().toUpperCase();
-  const isDeveloper = user.role === 'developer';
 
   try {
     if (ticker) {
@@ -35,27 +31,11 @@ export async function GET(request: Request) {
           { status: 404 },
         );
       }
-      if (isDeveloper) {
-        return NextResponse.json({ user, connected: true, ticker: row });
-      }
-      return NextResponse.json(stripForViewer(row));
+      return NextResponse.json({ user, connected: true, ticker: row });
     }
 
-    const data: FlowPayload = await loadScannerFlowData();
-    if (isDeveloper) {
-      return NextResponse.json({ user, data });
-    }
-
-    const summaries: Record<string, ReturnType<typeof stripForViewer>> = {};
-    for (const [symbol, row] of Object.entries(data.tickers || {})) {
-      summaries[symbol] = stripForViewer(row);
-    }
-    return NextResponse.json({
-      user,
-      connected: data.connected,
-      generatedAt: data.generatedAt,
-      tickers: summaries,
-    });
+    const data = await loadScannerFlowData();
+    return NextResponse.json({ user, data });
   } catch (error) {
     const message = toScannerUserMessage(error, 'Could not load flow data.');
     return NextResponse.json({ user, connected: false, message, tickers: {} });

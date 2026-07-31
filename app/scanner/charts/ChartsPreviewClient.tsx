@@ -10,6 +10,8 @@ import type { FlowPublicSummary } from '@/lib/scanner-flow-data';
 import FlowSummaryStrip from '@/components/scanner/FlowSummaryStrip';
 import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 import ChartPanelErrorBoundary from './ChartPanelErrorBoundary';
+import { canAccessDreamTreeChartData } from '@/lib/scanner-chart-access';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 const StockChartPanel = dynamic(() => import('./StockChartPanel'), {
   ssr: false,
@@ -80,8 +82,8 @@ export default function ChartsPreviewClient() {
     return tickers.includes(query) ? query : null;
   }, [search, tickers]);
 
-  // Only the owner (developer) sees the in-house chart fed by our data source.
-  // Everyone else gets the TradingView widget, which serves its own market data.
+  // Dream Tree charts for developer always; for viewers when redistribution license is active.
+  const useDreamTreeCharts = canAccessDreamTreeChartData(user);
   const isDeveloper = user?.role === 'developer';
 
   const loadManifest = useCallback(async () => {
@@ -109,7 +111,7 @@ export default function ChartsPreviewClient() {
       const response = await fetch(`/api/scanner/charts/${encodeURIComponent(ticker)}`, scannerFetchInit);
       const payload = await response.json();
       if (!response.ok) {
-        setChartError(payload.error || `Could not load chart for ${ticker}.`);
+        setChartError(toScannerUserMessage(payload.error, `Could not load chart for ${ticker}.`));
         return;
       }
       setUser(payload.user || null);
@@ -168,7 +170,7 @@ export default function ChartsPreviewClient() {
 
   useEffect(() => {
     loadManifest()
-      .catch((error: Error) => setManifestError(error.message || 'Could not load scanner tickers.'))
+      .catch((error: Error) => setManifestError(toScannerUserMessage(error, 'Could not load scanner tickers.')))
       .finally(() => setBootLoading(false));
   }, [loadManifest]);
 
@@ -178,25 +180,24 @@ export default function ChartsPreviewClient() {
   }, [isDeveloper, loadNews]);
 
   useEffect(() => {
-    if (!pendingTicker || !isDeveloper) return;
+    if (!pendingTicker || !useDreamTreeCharts) return;
     const timer = window.setTimeout(() => {
       loadChart(pendingTicker);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [loadChart, pendingTicker, isDeveloper]);
+  }, [loadChart, pendingTicker, useDreamTreeCharts]);
 
-  // Non-owner view (TradingView widget) has no data fetch to advance the active
-  // ticker, so keep it in sync with the current selection here.
+  // TradingView fallback: no server chart fetch; sync selection locally.
   useEffect(() => {
-    if (isDeveloper || !pendingTicker) return;
+    if (useDreamTreeCharts || !pendingTicker) return;
     setActiveTicker(pendingTicker);
-  }, [isDeveloper, pendingTicker]);
+  }, [useDreamTreeCharts, pendingTicker]);
 
   useEffect(() => {
     const ticker = activeTicker || pendingTicker;
-    if (!ticker) return;
+    if (!ticker || !isDeveloper) return;
     void loadFlowSummary(ticker);
-  }, [activeTicker, pendingTicker, loadFlowSummary]);
+  }, [activeTicker, pendingTicker, isDeveloper, loadFlowSummary]);
 
   // Exact symbol typed → load chart without clicking a pill.
   useEffect(() => {
@@ -317,12 +318,14 @@ export default function ChartsPreviewClient() {
               </div>
 
               <div className="flex flex-col gap-4 lg:w-96 lg:flex-shrink-0">
-                <FlowSummaryStrip
-                  ticker={newsTicker}
-                  summary={flowSummary}
-                  loading={flowLoading}
-                  isDeveloper={isDeveloper}
-                />
+                {isDeveloper ? (
+                  <FlowSummaryStrip
+                    ticker={newsTicker}
+                    summary={flowSummary}
+                    loading={flowLoading}
+                    isDeveloper={isDeveloper}
+                  />
+                ) : null}
 
               {isDeveloper ? (
                 <aside className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm">
@@ -381,13 +384,13 @@ export default function ChartsPreviewClient() {
               </div>
             </div>
 
-            {isDeveloper && chartError && pendingTicker !== activeTicker ? (
+            {useDreamTreeCharts && chartError && pendingTicker !== activeTicker ? (
               <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {chartError} Showing {activeTicker || 'previous'} chart.
               </div>
             ) : null}
 
-            {isDeveloper ? (
+            {useDreamTreeCharts ? (
               <ChartPanelErrorBoundary ticker={activeTicker || pendingTicker}>
                 <StockChartPanel
                   ticker={activeTicker || pendingTicker}

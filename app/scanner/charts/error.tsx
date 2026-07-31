@@ -22,9 +22,6 @@ export default function ChartsError({ error, reset }: ChartsErrorProps) {
         <p className="mt-3 text-zinc-600">
           Something went wrong loading the chart module. The main scanner and other tools are unaffected.
         </p>
-        {error.message ? (
-          <p className="mt-3 rounded-lg bg-zinc-100 px-3 py-2 font-mono text-sm text-zinc-700">{error.message}</p>
-        ) : null}
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"

@@ -50,27 +50,85 @@ export type FmpScreenerPayload = {
   message?: string;
 };
 
-function fmpObjectName() {
+function liveObjectName() {
   return process.env.SCANNER_RESULTS_GCS_FMP_OBJECT || 'scanner/fmp_growth_screener.json';
+}
+
+function edgarObjectName() {
+  return process.env.SCANNER_RESULTS_GCS_EDGAR_OBJECT || 'scanner/edgar_growth_screener.json';
+}
+
+function gcsObjectCandidates(): string[] {
+  const live = liveObjectName();
+  const edgar = edgarObjectName();
+  return live === edgar ? [live] : [live, edgar];
 }
 
 function bucketName() {
   return process.env.SCANNER_RESULTS_GCS_BUCKET || process.env.PUBLISHED_ASSETS_BUCKET || '';
 }
 
-async function loadFromGcs(): Promise<FmpScreenerPayload | null> {
+function hasScreenerRows(payload: FmpScreenerPayload | null | undefined): boolean {
+  if (!payload) return false;
+  if (payload.connected === false) return false;
+  if (Array.isArray(payload.rows) && payload.rows.length > 0) return true;
+  const universes = payload.universes;
+  if (!universes) return false;
+  return Object.values(universes).some((u) => (u.rows?.length ?? 0) > 0);
+}
+
+async function loadFromGcsObject(objectName: string): Promise<FmpScreenerPayload | null> {
   const name = bucketName();
-  if (!name) return null;
+  if (!name) {
+    console.error('[fundamentals-debug] no bucket name resolved');
+    return null;
+  }
   initializeFirebaseAdmin();
-  const [content] = await getStorage().bucket(name).file(fmpObjectName()).download();
-  return JSON.parse(content.toString('utf8')) as FmpScreenerPayload;
+  const [content] = await getStorage().bucket(name).file(objectName).download();
+  const parsed = JSON.parse(content.toString('utf8')) as FmpScreenerPayload;
+  console.error(
+    `[fundamentals-debug] GCS read OK bucket=${name} obj=${objectName} rows=${parsed.rows?.length ?? 'n/a'} connected=${parsed.connected}`,
+  );
+  return parsed;
+}
+
+async function loadFromGcs(): Promise<FmpScreenerPayload | null> {
+  let lastError: unknown = null;
+  for (const objectName of gcsObjectCandidates()) {
+    try {
+      const parsed = await loadFromGcsObject(objectName);
+      if (hasScreenerRows(parsed)) return parsed;
+      console.error(`[fundamentals-debug] GCS object empty or disconnected: ${objectName}`);
+    } catch (e) {
+      lastError = e;
+      console.error(
+        `[fundamentals-debug] GCS read FAILED obj=${objectName} err=${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+  if (lastError) throw lastError;
+  return null;
 }
 
 async function loadFromFile(): Promise<FmpScreenerPayload | null> {
   const jsonPath = process.env.SCANNER_FMP_JSON_PATH;
-  if (!jsonPath) return null;
-  const raw = await readFile(jsonPath, 'utf8');
-  return JSON.parse(raw) as FmpScreenerPayload;
+  if (jsonPath) {
+    const raw = await readFile(jsonPath, 'utf8');
+    return JSON.parse(raw) as FmpScreenerPayload;
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    for (const rel of ['scanners/edgar_growth_screener.json', 'scanners/fmp_growth_screener.json']) {
+      const localPath = `${process.cwd()}/../Projects/stocks/${rel}`;
+      try {
+        const raw = await readFile(localPath, 'utf8');
+        return JSON.parse(raw) as FmpScreenerPayload;
+      } catch {
+        // try next candidate
+      }
+    }
+  }
+  return null;
 }
 
 export async function loadFmpScreenerData(): Promise<FmpScreenerPayload> {
@@ -79,15 +137,16 @@ export async function loadFmpScreenerData(): Promise<FmpScreenerPayload> {
     if (cloud) return cloud;
   } catch {
     const file = await loadFromFile().catch(() => null);
-    if (file) return file;
+    if (file && hasScreenerRows(file)) return file;
   }
 
   const file = await loadFromFile().catch(() => null);
-  if (file) return file;
+  if (file && hasScreenerRows(file)) return file;
 
   return {
     connected: false,
-    message: 'Fundamentals screener not uploaded yet. Run the daily fundamentals refresh on your PC, then upload.',
+    message:
+      'Fundamentals screener not uploaded yet. Run the weekly EDGAR refresh on your PC (scanners/morning_weekly_edgar_refresh.py --go-live), then upload.',
     rows: [],
   };
 }

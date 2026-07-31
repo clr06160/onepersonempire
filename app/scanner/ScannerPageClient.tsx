@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentLeaderboardRow } from '@/lib/scanner-agents';
 import {
@@ -97,12 +98,23 @@ type RegimeBadge = {
   scalePct?: number;
 };
 
+type DailyUniverseRow = {
+  ticker: string;
+  rank?: number;
+  accelScore?: number;
+  roc20Pct?: number;
+  accel20Pct?: number;
+  close?: number;
+};
+
 type DailyUniverseGroup = {
   key: string;
   universe?: string;
   label: string;
   top?: string[];
+  rows?: DailyUniverseRow[];
   eligibleCount?: number;
+  negativeCount?: number;
 };
 
 type ScannerSystem = {
@@ -113,6 +125,7 @@ type ScannerSystem = {
   date?: string;
   top?: string[];
   dailyUniverses?: DailyUniverseGroup[];
+  dailyBearUniverses?: DailyUniverseGroup[];
   watchDate?: string;
   watch?: string[];
   method?: string[];
@@ -126,7 +139,21 @@ type ScannerSystem = {
   regimeBadge?: string;
   regimeReason?: string;
   overlayModule?: { line?: string };
+  parentId?: string;
+  isHoldVariant?: boolean;
+  usesLedgerHoldings?: boolean;
+  holdSince?: string;
+  holdCadenceLabel?: string;
+  holdReturnPct?: number;
+  holdTickerReturns?: Record<string, number>;
 };
+
+function holdReturnToneClass(value?: number) {
+  if (value == null || Number.isNaN(value)) return 'text-zinc-200';
+  if (value > 0) return 'text-emerald-400';
+  if (value < 0) return 'text-red-400';
+  return 'text-zinc-300';
+}
 
 type EwOverlay = {
   generatedAt?: string;
@@ -208,6 +235,9 @@ export default function ScannerPageClient({
   googleClientId: initialGoogleClientId,
   previewPolish = false,
 }: ScannerPageClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const stayOnSystems = searchParams.get('systems') === '1';
   const [user, setUser] = useState<ScannerUser | null>(null);
   const [data, setData] = useState<ScannerData | null>(null);
   const [ewOverlay, setEwOverlay] = useState<EwOverlay | null>(null);
@@ -223,8 +253,59 @@ export default function ScannerPageClient({
   const [downloadUrl, setDownloadUrl] = useState('');
   const [scannerFileCount, setScannerFileCount] = useState(0);
   const [googleScriptReady, setGoogleScriptReady] = useState(false);
+  const [interestEmail, setInterestEmail] = useState('');
+  const [interestMessage, setInterestMessage] = useState('');
+  const [interestSaving, setInterestSaving] = useState(false);
+  const [interestMessageOut, setInterestMessageOut] = useState('');
+  const [interestError, setInterestError] = useState('');
+  const interestOpenedAtRef = useRef(Date.now());
   const renderAttemptsRef = useRef(0);
   const tryRenderGoogleButtonRef = useRef<() => void>(() => {});
+
+  const submitInterest = useCallback(
+    async (honeypot?: { company?: string; website?: string }) => {
+      setInterestSaving(true);
+      setInterestError('');
+      setInterestMessageOut('');
+      try {
+        const response = await fetch('/api/scanner/waitlist', {
+          ...scannerFetchInit,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: interestEmail,
+            message: interestMessage,
+            company: honeypot?.company || '',
+            website: honeypot?.website || '',
+            dwellMs: Date.now() - interestOpenedAtRef.current,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          setInterestError(payload.error || 'Could not send.');
+          return;
+        }
+        setInterestMessageOut(payload.message || 'Thanks — we got your note.');
+        setInterestMessage('');
+      } catch {
+        setInterestError('Could not send.');
+      } finally {
+        setInterestSaving(false);
+      }
+    },
+    [interestEmail, interestMessage],
+  );
+
+  const onScannerSelect = useCallback(
+    (value: string) => {
+      if (value === '__flight-deck__') {
+        router.push('/scanner/cockpit');
+        return;
+      }
+      setSelectedSystemId(value);
+    },
+    [router],
+  );
 
   const loadScannerData = useCallback(async () => {
     try {
@@ -321,9 +402,13 @@ export default function ScannerPageClient({
         return;
       }
       setUser(payload.user || null);
+      if (!stayOnSystems) {
+        router.replace('/scanner/cockpit');
+        return;
+      }
       await loadScannerData();
     },
-    [loadScannerData],
+    [loadScannerData, router, stayOnSystems],
   );
 
   const renderGoogleButton = useCallback(() => {
@@ -394,6 +479,12 @@ export default function ScannerPageClient({
     return () => window.clearTimeout(timer);
   }, [loadScannerData, refreshSession]);
 
+  // Flight Deck is the subscriber home. Systems warehouse stays one click away via ?systems=1.
+  useEffect(() => {
+    if (loading || !user || stayOnSystems) return;
+    router.replace('/scanner/cockpit');
+  }, [loading, user, stayOnSystems, router]);
+
   useEffect(() => {
     if (loading || user || !googleClientId || !googleScriptReady) return;
     renderAttemptsRef.current = 0;
@@ -415,6 +506,8 @@ export default function ScannerPageClient({
     [systems, agentRanks],
   );
   const selectedSystem = systems.find((system) => system.id === selectedSystemId) || systems[0];
+  const isBearScanner = selectedSystem?.id === 'daily-raw-bear';
+  const bearUniverseGroups = selectedSystem?.dailyBearUniverses;
   const ewLabels = (selectedSystem && ewOverlay?.labelsBySystem?.[selectedSystem.id]) || {};
   const powerBadge = (data?.regimeBadges || []).find((badge) => badge.kind === 'powertrend');
   const powerLabel =
@@ -549,10 +642,24 @@ export default function ScannerPageClient({
   ) : null;
 
   if (!loading && !user) {
+    const dreamTreeHost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'dreamtreestocks.com' ||
+        window.location.hostname === 'www.dreamtreestocks.com');
     const features: { title: string; desc: string; chip: string }[] = [
       {
+        title: 'Market Trees',
+        desc: 'Watch whole indices as one living canopy — scrub year by year as the tree blooms or withers with returns.',
+        chip: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
+      },
+      {
+        title: 'Flight Deck',
+        desc: 'Your home book — one meta-agent synthesis with a live scoreboard and clear next step.',
+        chip: 'bg-amber-500/10 text-amber-300 ring-amber-500/30',
+      },
+      {
         title: 'System Scanner',
-        desc: 'Daily ranked picks, quality-filtered across universes — the names the system wants today.',
+        desc: 'Daily ranked picks, quality-filtered across universes — the warehouse behind the Flight Deck.',
         chip: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
       },
       {
@@ -614,7 +721,15 @@ export default function ScannerPageClient({
                 ⌁
               </span>
               <span className="text-sm font-semibold tracking-tight text-zinc-200">
-                OnePersonEmpire <span className="text-zinc-500">Scanner</span>
+                {dreamTreeHost ? (
+                  <>
+                    Dream Tree <span className="text-emerald-400">Stocks</span>
+                  </>
+                ) : (
+                  <>
+                    OnePersonEmpire <span className="text-zinc-500">Scanner</span>
+                  </>
+                )}
               </span>
             </div>
             <span className="rounded-full border border-zinc-700/80 bg-zinc-900/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 backdrop-blur">
@@ -626,29 +741,48 @@ export default function ScannerPageClient({
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Private market intelligence
+                {dreamTreeHost ? 'Private · invite only' : 'Private market intelligence'}
               </div>
 
               <h1 className="text-balance text-5xl font-black leading-[1.03] tracking-tight sm:text-6xl">
-                Where serious traders
-                <span className="block bg-gradient-to-r from-emerald-300 via-emerald-400 to-sky-400 bg-clip-text pb-2 leading-[1.12] text-transparent">
-                  find their edge.
-                </span>
+                {dreamTreeHost ? (
+                  <>
+                    One book.
+                    <span className="block bg-gradient-to-r from-emerald-300 via-emerald-400 to-sky-400 bg-clip-text pb-2 leading-[1.12] text-transparent">
+                      Every morning.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Where serious traders
+                    <span className="block bg-gradient-to-r from-emerald-300 via-emerald-400 to-sky-400 bg-clip-text pb-2 leading-[1.12] text-transparent">
+                      find their edge.
+                    </span>
+                  </>
+                )}
               </h1>
 
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-                A private stock scanner that ranks the market every morning — quality-filtered,
-                regime-aware, and forward-tracked. No hype. No hindsight. Just the names worth your
-                attention, with the discipline to tell you when to sit in cash.
+                {dreamTreeHost
+                  ? 'Dream Tree Stocks turns the market into a living canopy and a single Flight Deck book — momentum with a survival brake. Built for traders who hate big drawdowns.'
+                  : 'A private stock scanner that ranks the market every morning — quality-filtered, regime-aware, and forward-tracked. No hype. No hindsight. Just the names worth your attention, with the discipline to tell you when to sit in cash.'}
               </p>
 
               <ul className="mt-8 space-y-3">
-                {[
-                  'Daily ranked picks across multiple universes — rebuilt before the open',
-                  'Regime-aware scaling that says when to push and when to hold cash',
-                  'Charts, fundamentals, and COT positioning in one private cockpit',
-                  'An adaptive monitor that grades the system against its own backtest — honestly',
-                ].map((line) => (
+                {(dreamTreeHost
+                  ? [
+                      'Flight Deck — one meta-agent book with a clear “what to do today” line',
+                      'Market Trees — watch whole indices bloom or wither year by year',
+                      'Monthly cash brake when the stretch gets ugly (−5%)',
+                      'Invite-only access — no public free-for-all',
+                    ]
+                  : [
+                      'Daily ranked picks across multiple universes — rebuilt before the open',
+                      'Regime-aware scaling that says when to push and when to hold cash',
+                      'Charts, fundamentals, and COT positioning in one private cockpit',
+                      'An adaptive monitor that grades the system against its own backtest — honestly',
+                    ]
+                ).map((line) => (
                   <li key={line} className="flex items-start gap-3 text-[15px] text-zinc-300">
                     <svg className="mt-0.5 h-5 w-5 flex-none text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
                       <path
@@ -676,12 +810,80 @@ export default function ScannerPageClient({
               </div>
             </div>
 
-            <div className="lg:justify-self-end">
+            <div className="lg:justify-self-end space-y-4">
+              <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/40 to-zinc-950/80 p-8 shadow-2xl backdrop-blur-xl">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-emerald-400">
+                  Get on the list
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-50">Tell us you’re interested</h2>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                  Email + a short note beats cold spam. Real traders write a sentence. We’ll invite from here — not a public open door.
+                </p>
+                <form
+                  className="mt-5 space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const fd = new FormData(event.currentTarget);
+                    void submitInterest({
+                      company: String(fd.get('company') || ''),
+                      website: String(fd.get('website') || ''),
+                    });
+                  }}
+                >
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] uppercase tracking-wide text-zinc-500">Email</span>
+                    <input
+                      type="email"
+                      required
+                      value={interestEmail}
+                      onChange={(e) => setInterestEmail(e.target.value)}
+                      placeholder="you@email.com"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-950/80 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] uppercase tracking-wide text-zinc-500">
+                      Why you’re interested
+                    </span>
+                    <textarea
+                      value={interestMessage}
+                      onChange={(e) => setInterestMessage(e.target.value)}
+                      placeholder="How you trade, what you want from Flight Deck / the trees…"
+                      rows={4}
+                      className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950/80 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500"
+                    />
+                  </label>
+                  {/* Honeypots — off-screen; bots fill them, humans never see them */}
+                  <div
+                    aria-hidden
+                    style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}
+                  >
+                    <input type="text" name="company" tabIndex={-1} autoComplete="off" defaultValue="" />
+                    <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={interestSaving}
+                    className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-zinc-950 hover:bg-emerald-400 disabled:opacity-60"
+                  >
+                    {interestSaving ? 'Sending…' : 'Request an invite'}
+                  </button>
+                </form>
+                {interestMessageOut ? (
+                  <p className="mt-3 text-sm text-emerald-300">{interestMessageOut}</p>
+                ) : null}
+                {interestError ? <p className="mt-3 text-sm text-red-300">{interestError}</p> : null}
+                <p className="mt-4 text-[11px] leading-relaxed text-zinc-600">
+                  We score submissions for bots (speed, spam patterns, fake fields). Empty notes still work — a real sentence ranks higher.
+                </p>
+              </div>
+
               <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl backdrop-blur-xl">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-                <h2 className="text-2xl font-bold tracking-tight">Members enter here</h2>
+                <h2 className="text-2xl font-bold tracking-tight">Already invited?</h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  Access is tied to your Google account — approved emails only. One click and you&apos;re in.
+                  Sign in with Google. After login you land on Flight Deck.
                 </p>
 
                 <div className="mt-7">
@@ -699,23 +901,11 @@ export default function ScannerPageClient({
                   )}
                 </div>
 
-                <div className="mt-7 border-t border-white/10 pt-5">
-                  <p className="text-sm text-zinc-400">
-                    Not on the list yet?{' '}
-                    <a
-                      href="/scanner/requests"
-                      className="font-semibold text-emerald-300 underline-offset-4 hover:text-emerald-200 hover:underline"
-                    >
-                      Request access
-                    </a>
-                  </p>
-                </div>
-
                 <div className="mt-6 flex items-center gap-2 text-[11px] uppercase tracking-wider text-zinc-600">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 1l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V4l7-3z" clipRule="evenodd" />
                   </svg>
-                  Private · encrypted · no shared passwords
+                  Private · invite only · no shared passwords
                 </div>
               </div>
             </div>
@@ -739,9 +929,22 @@ export default function ScannerPageClient({
           </section>
 
           <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
-            OnePersonEmpire Scanner — private research tool. For informational purposes only; not investment advice.
+            {dreamTreeHost
+              ? 'Dream Tree Stocks — private research tool. For informational purposes only; not investment advice.'
+              : 'OnePersonEmpire Scanner — private research tool. For informational purposes only; not investment advice.'}
           </footer>
         </div>
+      </main>
+    );
+  }
+
+  if (!loading && user && !stayOnSystems) {
+    return (
+      <main className="min-h-screen bg-zinc-950 px-6 py-16 text-center text-zinc-300">
+        <p className="text-lg">Opening Flight Deck…</p>
+        <Link href="/scanner/cockpit" className="mt-4 inline-block text-amber-300 underline">
+          Continue
+        </Link>
       </main>
     );
   }
@@ -872,12 +1075,21 @@ export default function ScannerPageClient({
                   {regimeSignalsPanel ? <div className="mb-6">{regimeSignalsPanel}</div> : null}
                   {systemsForSelect.length ? (
                     <label className="mb-6 block">
-                      <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
+                      <span className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
+                        <span>Scanner</span>
+                        <Link
+                          href="/scanner/cockpit"
+                          className="rounded-full border border-amber-600/70 bg-amber-950/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200 hover:border-amber-400 hover:text-amber-100"
+                        >
+                          Flight Deck →
+                        </Link>
+                      </span>
                       <select
                         value={selectedSystem?.id || selectedSystemId}
-                        onChange={(event) => setSelectedSystemId(event.target.value)}
+                        onChange={(event) => onScannerSelect(event.target.value)}
                         className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100"
                       >
+                        <option value="__flight-deck__">★ Flight Deck · meta-agent</option>
                         {systemsForSelect.map((system) => (
                           <option key={system.id} value={system.id}>
                             {system.label}
@@ -938,12 +1150,21 @@ export default function ScannerPageClient({
 
                   {!previewPolish ? (
                     <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-zinc-300">Scanner</span>
+                      <span className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm font-medium text-zinc-300">
+                        <span>Scanner</span>
+                        <Link
+                          href="/scanner/cockpit"
+                          className="rounded-full border border-amber-600/70 bg-amber-950/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200 hover:border-amber-400 hover:text-amber-100"
+                        >
+                          Flight Deck →
+                        </Link>
+                      </span>
                       <select
                         value={selectedSystem.id}
-                        onChange={(event) => setSelectedSystemId(event.target.value)}
+                        onChange={(event) => onScannerSelect(event.target.value)}
                         className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100"
                       >
+                        <option value="__flight-deck__">★ Flight Deck · meta-agent</option>
                         {systemsForSelect.map((system) => (
                           <option key={system.id} value={system.id}>
                             {system.label}
@@ -955,23 +1176,41 @@ export default function ScannerPageClient({
                   ) : null}
 
                   <div className={`grid gap-3 ${previewPolish ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-4'}`}>
-                    {Object.entries(selectedSystem.stats || {}).map(([label, value]) => (
+                    {Object.entries(selectedSystem.stats || {}).map(([label, value]) => {
+                      const isHoldReturn = label === 'Hold return';
+                      const holdTone = isHoldReturn ? holdReturnToneClass(selectedSystem.holdReturnPct) : 'text-zinc-200';
+                      return (
                       <div
                         key={label}
                         className={`rounded-xl border border-zinc-800 bg-zinc-950 p-4 ${
                           previewPolish ? 'flex min-h-[5.5rem] flex-col justify-center text-center' : ''
-                        }`}
+                        } ${isHoldReturn ? 'border-amber-800/50 bg-amber-950/20' : ''}`}
                       >
-                        <div className="text-2xl font-bold">{value}</div>
+                        <div className={`text-2xl font-bold ${holdTone}`}>{value}</div>
                         <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
                     <h3 className="text-lg font-semibold">{selectedSystem.label}</h3>
+                    {selectedSystem.isHoldVariant || selectedSystem.usesLedgerHoldings ? (
+                      <p className="mt-2 inline-flex rounded-full border border-amber-700/60 bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-200">
+                        {selectedSystem.usesLedgerHoldings ? 'Live ledger hold' : 'Scheduled hold basket'}
+                        {selectedSystem.holdSince ? ` · since ${formatDashboardDate(selectedSystem.holdSince)}` : ''}
+                        {selectedSystem.holdCadenceLabel ? ` · ${selectedSystem.holdCadenceLabel}` : ''}
+                        {selectedSystem.holdReturnPct != null
+                          ? ` · ${selectedSystem.holdReturnPct > 0 ? '+' : ''}${selectedSystem.holdReturnPct.toFixed(2)}%`
+                          : ''}
+                      </p>
+                    ) : null}
                     <p className="mt-2 text-zinc-300">{selectedSystem.note}</p>
-                    <p className="mt-2 text-sm text-zinc-500">Saved rebalance date: {selectedSystem.date || 'n/a'}</p>
+                    <p className="mt-2 text-sm text-zinc-500">
+                      {selectedSystem.isHoldVariant || selectedSystem.usesLedgerHoldings
+                        ? `Held since: ${formatDashboardDate(selectedSystem.holdSince || selectedSystem.date) || 'n/a'}`
+                        : `Saved rebalance date: ${selectedSystem.date || 'n/a'}`}
+                    </p>
                     {selectedSystem.overlayModule?.line ? (
                       <p className="mt-3 rounded-lg border border-sky-800/40 bg-sky-950/20 p-3 text-sm text-sky-100/90">
                         {selectedSystem.overlayModule.line}
@@ -991,13 +1230,63 @@ export default function ScannerPageClient({
 
                   <div className="grid gap-5 lg:grid-cols-2">
                     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5 lg:col-span-2">
-                      <h3 className="mb-1 text-lg font-semibold">Top Names</h3>
+                      <h3 className="mb-1 text-lg font-semibold">
+                        {isBearScanner
+                          ? 'Defense Picks'
+                          : selectedSystem.isHoldVariant || selectedSystem.usesLedgerHoldings
+                            ? 'Held Stocks'
+                            : 'Top Names'}
+                      </h3>
                       <p className="mb-3 text-xs text-zinc-600">
-                        {selectedSystem.dailyUniverses?.length
-                          ? 'Daily quality top 10 per fundamentals universe. Chips: animal, runway, risk, flow, earnings.'
-                          : 'Chips show animal, runway, music-stops risk, flow, and upcoming earnings when on the calendar.'}
+                        {isBearScanner
+                          ? 'Bottom 10 negative momentum per universe. Simulated-short radar — not broker shorts.'
+                          : selectedSystem.dailyUniverses?.length
+                            ? 'Daily raw top 10 per universe (positive momentum). Chips: animal, runway, risk, flow, earnings.'
+                            : 'Chips show animal, runway, music-stops risk, flow, and upcoming earnings when on the calendar.'}
                       </p>
-                      {selectedSystem.dailyUniverses?.length ? (
+                      {isBearScanner && bearUniverseGroups?.length ? (
+                        <div className="space-y-5">
+                          <div className="flex flex-wrap items-baseline justify-end gap-2">
+                            <Link
+                              href="/scanner/raw-bear"
+                              className="text-xs font-semibold text-red-300 hover:text-red-200"
+                            >
+                              Forward test →
+                            </Link>
+                          </div>
+                          {bearUniverseGroups.map((group) => (
+                            <div
+                              key={`bear-${group.key}`}
+                              className="rounded-lg border border-red-900/30 bg-red-950/20 p-4"
+                            >
+                              <p className="text-sm font-semibold text-red-200">
+                                {group.label}:{' '}
+                                <span className="font-normal text-zinc-300">
+                                  {(group.top || []).length ? (group.top || []).join(', ') : 'No picks'}
+                                </span>
+                              </p>
+                              <p className="mt-1 text-xs text-zinc-600">
+                                {group.negativeCount ?? group.rows?.length ?? 0} negative ·{' '}
+                                {group.eligibleCount ?? '—'} eligible
+                              </p>
+                              <div className="mt-3 space-y-2">
+                                {(group.rows?.length ? group.rows.map((row) => row.ticker) : group.top || []).map(
+                                  (ticker, index) => (
+                                    <PickNameRow
+                                      key={`bear-only-${group.key}-${ticker}-${index}`}
+                                      ticker={ticker}
+                                      index={index}
+                                      ewLabel={ewLabels[ticker]}
+                                      context={pickContextByTicker[ticker.toUpperCase()]}
+                                      priorityLabel="Weak momentum"
+                                    />
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : selectedSystem.dailyUniverses?.length ? (
                         <div className="space-y-5">
                           {selectedSystem.dailyUniverses.map((group) => (
                             <div key={group.key} className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
@@ -1025,7 +1314,13 @@ export default function ScannerPageClient({
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {(selectedSystem.top || []).map((ticker, index) => (
+                          {(selectedSystem.top || []).map((ticker, index) => {
+                            const holdRet = selectedSystem.holdTickerReturns?.[ticker.toUpperCase()];
+                            const holdLabel =
+                              holdRet != null
+                                ? `${holdRet > 0 ? '+' : ''}${holdRet.toFixed(1)}% since hold`
+                                : undefined;
+                            return (
                             <PickNameRow
                               key={`${ticker}-${index}`}
                               ticker={ticker}
@@ -1033,11 +1328,67 @@ export default function ScannerPageClient({
                               ewLabel={ewLabels[ticker]}
                               context={pickContextByTicker[ticker.toUpperCase()]}
                               highlight={index < 3}
-                              priorityLabel={index < 3 ? 'Highest priority' : 'Portfolio name'}
+                              priorityLabel={
+                                holdLabel ||
+                                (index < 3 ? 'Highest priority' : 'Portfolio name')
+                              }
                             />
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
+
+                      {bearUniverseGroups?.length && !isBearScanner ? (
+                        <div className="mt-8 border-t border-red-900/40 pt-6">
+                          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                            <div>
+                              <h4 className="text-base font-semibold text-red-200">Defense — negative momentum</h4>
+                              <p className="mt-1 text-xs text-zinc-500">
+                                Simulated-short radar only (not broker shorts). Profit in forward test when names fall.
+                              </p>
+                            </div>
+                            <Link
+                              href="/scanner/raw-bear"
+                              className="text-xs font-semibold text-red-300 hover:text-red-200"
+                            >
+                              Forward test →
+                            </Link>
+                          </div>
+                          <div className="space-y-5">
+                            {bearUniverseGroups.map((group) => (
+                              <div
+                                key={`bear-${group.key}`}
+                                className="rounded-lg border border-red-900/30 bg-red-950/20 p-4"
+                              >
+                                <p className="text-sm font-semibold text-red-200">
+                                  {group.label}:{' '}
+                                  <span className="font-normal text-zinc-300">
+                                    {(group.top || []).length ? (group.top || []).join(', ') : 'No picks'}
+                                  </span>
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-600">
+                                  {group.negativeCount ?? group.rows?.length ?? 0} negative ·{' '}
+                                  {group.eligibleCount ?? '—'} eligible
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                  {(group.rows?.length ? group.rows.map((row) => row.ticker) : group.top || []).map(
+                                    (ticker, index) => (
+                                      <PickNameRow
+                                        key={`bear-${group.key}-${ticker}-${index}`}
+                                        ticker={ticker}
+                                        index={index}
+                                        ewLabel={ewLabels[ticker]}
+                                        context={pickContextByTicker[ticker.toUpperCase()]}
+                                        priorityLabel="Weak momentum"
+                                      />
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
 
                     {!!selectedSystem.watch?.length && (
@@ -1126,6 +1477,9 @@ export default function ScannerPageClient({
                 ) : (
                   <>
                     <p className="font-semibold text-zinc-300">Separate tools</p>
+                    <Link href="/scanner/cockpit" className="block text-amber-300 hover:text-amber-200">
+                      Flight Deck
+                    </Link>
                     <Link href="/scanner/charts" className="block text-amber-300 hover:text-amber-200">
                       Charts
                     </Link>
@@ -1134,6 +1488,9 @@ export default function ScannerPageClient({
                     </Link>
                     <Link href="/scanner/forest" className="block text-amber-300 hover:text-amber-200">
                       Forest
+                    </Link>
+                    <Link href="/scanner/trees" className="block text-amber-300 hover:text-amber-200">
+                      Market trees
                     </Link>
                     <Link href="/scanner/gallery" className="block text-amber-300 hover:text-amber-200">
                       Price as art
@@ -1181,6 +1538,9 @@ export default function ScannerPageClient({
                     </Link>
                     <Link href="/scanner/cot" className="block text-emerald-300 hover:text-emerald-200">
                       COT report
+                    </Link>
+                    <Link href="/scanner/probabilities" className="block text-emerald-300 hover:text-emerald-200">
+                      Probabilities
                     </Link>
                   </>
                 )}

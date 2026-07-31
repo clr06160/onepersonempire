@@ -5,15 +5,24 @@ import { useEffect, useState } from 'react';
 
 /** Shared nav across all scanner pages (picks, instructions, fundamentals, COT, monitor). */
 const links = [
-  { href: '/scanner', label: 'System scanner' },
+  { href: '/scanner/core', label: 'Core' },
+  { href: '/scanner?systems=1', label: 'System scanner' },
+  { href: '/scanner/cockpit', label: 'Flight Deck' },
+  { href: '/scanner/chess-selection', label: 'Chess Selection' },
   { href: '/scanner/mistakes', label: 'Mistakes' },
+  { href: '/scanner/desk-trainer', label: 'Risk Trainer' },
   { href: '/scanner/charts', label: 'Charts' },
   { href: '/scanner/options-institutions', label: 'Options/institutions' },
   { href: '/scanner/trees', label: 'Market trees' },
   { href: '/scanner/forest', label: 'Forest' },
   { href: '/scanner/gallery', label: 'Price as art' },
   { href: '/scanner/top100', label: 'Top 100' },
+  { href: '/scanner/top-ten', label: 'Top Ten' },
+  { href: '/scanner/daytrade', label: 'Day trade' },
+  { href: '/scanner/journal', label: 'Trade journal' },
   { href: '/scanner/valuations', label: 'Valuations' },
+  { href: '/scanner/earnings-glass', label: 'Earnings glass' },
+  { href: '/scanner/raw-bear', label: 'Raw bear' },
   { href: '/scanner/catalysts', label: 'Catalysts', developerOnly: true },
   { href: '/scanner/cup-handle', label: 'Cup & handle' },
   { href: '/scanner/news', label: 'News', developerOnly: true },
@@ -25,7 +34,10 @@ const links = [
   { href: '/scanner/macro', label: 'Macro calendar' },
   { href: '/scanner/fedwatch', label: 'Fed rate odds' },
   { href: '/scanner/cot', label: 'COT report' },
+  { href: '/scanner/probabilities', label: 'Probabilities' },
+  { href: '/scanner/elliott-wave', label: 'Elliott Wave' },
   { href: '/scanner/requests', label: 'Request a scan' },
+  { href: '/scanner/waitlist', label: 'Interest waitlist', developerOnly: true },
 ];
 
 type ScannerExtrasNavProps = {
@@ -59,7 +71,9 @@ export default function ScannerExtrasNav({ active, theme = 'dark' }: ScannerExtr
   return (
     <nav className="mb-6 flex flex-wrap gap-2">
       {visibleLinks.map((link) => {
-        const isActive = active === link.href;
+        const isActive =
+          active === link.href ||
+          (active === '/scanner' && link.href.startsWith('/scanner?systems='));
         const className = isActive
           ? isLight
             ? 'border-emerald-700 bg-emerald-700 text-white shadow-sm'

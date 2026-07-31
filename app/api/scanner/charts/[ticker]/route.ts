@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { loadChartData, loadChartManifest } from '@/lib/charts/load-chart-data';
+import { canAccessDreamTreeChartData } from '@/lib/scanner-chart-access';
 import { requireScannerSession, type ScannerUser } from '@/lib/scanner-auth';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -31,10 +33,9 @@ export async function GET(
       return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
     }
 
-    // Our in-house chart payload (prices + fundamentals) is sourced from a
-    // licensed provider that we may not redistribute. Only the owner/developer
-    // role receives it; everyone else uses the TradingView widget client-side.
-    if (user.role !== 'developer') {
+    // Dream Tree OHLC is licensed for display to members only after redistribution
+    // terms are in place (Tiingo etc.). Set SCANNER_DREAM_TREE_CHARTS_FOR_MEMBERS=true.
+    if (!canAccessDreamTreeChartData(user)) {
       return NextResponse.json(
         { error: 'Chart data is restricted for this account.', restricted: true },
         { status: 403 },
@@ -48,9 +49,11 @@ export async function GET(
         { status: 404 },
       );
     }
-    return NextResponse.json({ user, data });
+    const attribution = process.env.SCANNER_CHART_DATA_ATTRIBUTION?.trim() || null;
+    return NextResponse.json({ user, data, attribution });
+
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load chart data.';
+    const message = toScannerUserMessage(error, 'Could not load chart data.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

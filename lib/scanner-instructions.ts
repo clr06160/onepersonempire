@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export type LearnedPainOverlay = {
   title?: string;
@@ -86,7 +87,7 @@ export async function loadScannerInstructions(): Promise<ScannerInstructionsPayl
     const cloudData = await loadInstructionsFromGcs();
     if (cloudData) return cloudData;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load instructions from cloud storage.';
+    const message = toScannerUserMessage(error, 'Could not load instructions from cloud storage.');
     const fileData = await loadInstructionsFromFile().catch(() => null);
     if (fileData) return fileData;
     return { connected: false, message, systems: [] };

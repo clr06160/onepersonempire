@@ -125,6 +125,30 @@ export const sharedConcepts: InstructionSection[] = [
 
 export const systemInstructions: InstructionSection[] = [
   {
+    id: 'cup-handle',
+    title: 'Cup & Handle (Liquid Leaders)',
+    subtitle: 'Real-time breakout finder · human-discretionary',
+    backtest: 'Mechanical 2014–2026 OOS: ~9% CAGR · ~−21% max DD · ~42% win rate — lags S&P buy-and-hold (~13.5%/yr)',
+    body: [
+      'IBD / O’Neil **cup-with-handle** breakouts across **IWM Top 200, NASDAQ-100, MidCap 100, and the S&P 500**, restricted to **liquid leaders** (≥ $10, ≥ $20M/day average dollar volume, relative strength positive vs the benchmark).',
+      'This is a **real-time finder**, not a hands-off strategy: it surfaces **today’s breakouts**. A name stays “fresh” for ~21 calendar days after its breakout; when nothing is fresh, the most recent setups are shown.',
+      '**Be honest about the numbers:** traded mechanically (fixed −8% stop / +20% target, one pooled portfolio) it earns about **9% CAGR with a −21% max drawdown** — it **lags simply buying and holding the index** (~13.5%/yr). As an automated computer system it is weak.',
+      '**Why it’s still here:** the breakout *signal* is sound — point-in-time forward returns are positive at 1/3/6 months (63d hit ~63%, avg ~+5%, profit factor ~2.3) and strengthen in the recent 3-year holdout. A **disciplined human picking the best setups by hand and holding the trend can beat the mechanical numbers.** Use it as a finder, not autopilot.',
+    ],
+    steps: [
+      'Each weekday, read the breakouts per universe in the **Top Names** section of the Cup & Handle system.',
+      'Enter near the **pivot** (highest price in the handle + $0.10) on the breakout day, on volume **≥ 1.4×** the 50-day average. Avoid chasing names already extended well past the pivot.',
+      'Be selective — the edge comes from *you* picking the cleanest setups, not from buying every name on the list.',
+      'Use **Full backtest & breakout detail →** for the per-name table (pivot, % vs pivot, cup/handle measurements).',
+      'Hold for the move — the forward-return edge keeps building out to ~3–6 months — rather than the tight mechanical stop.',
+    ],
+    cautions: [
+      'As a mechanical system it **lags buy-and-hold** (~9% vs ~13.5%/yr). The value is human selection + holding the trend, not the automated stop/target.',
+      'Backtests use **current index constituents over full history (survivorship bias)** — absolute figures are optimistic.',
+      'Geometric cup/handle detection approximates, but does not replicate, an IBD analyst’s eye. Educational research only — not advice.',
+    ],
+  },
+  {
     id: 'core',
     title: 'Core: IWM Quality 2-Month',
     subtitle: 'Best core candidate · 64.15% CAGR · −25.91% max DD',
@@ -183,14 +207,14 @@ export const systemInstructions: InstructionSection[] = [
     subtitle: 'Best risk-adjusted core overlay',
     backtest: 'Learned daily scale × sharp pause override to cash on crash days',
     body: [
-      'Both overlays on the same core book: **Layer 1** learned pain (FULL/HALF/CASH) · **Layer 2** sharp pause (forces 0% on crash days).',
-      'Effective scale = learned scale when sharp is CLEAR; **0% when sharp pause is active** (sharp wins).',
-      'Badge shows **STACK: FULL / HALF / CASH** with effective book %.',
+      'Three sizing layers on the same Core book: **Macro · QQQ200** × **Learned pain** × **Sharp pause**.',
+      'STACK multiplies them for you. Sharp cash forces **0%** even if the other layers say FULL/HALF.',
+      'Badge shows **STACK: FULL / HALF / CASH / nn%** with effective book %.',
     ],
     steps: [
       'Two-month rebalance: same Top Names as Core.',
-      'Daily: read **STACK** badge — apply effective book % to total capital.',
-      'If STACK: CASH from sharp pause, stay flat even if learned would say FULL or HALF.',
+      'Daily: read **STACK** badge — apply effective book % to total capital (already includes Macro/QQQ200).',
+      'If STACK: CASH from sharp pause, stay flat even if learned or macro would say FULL or HALF.',
     ],
     cautions: [
       'Lower CAGR than sharp-only (~56% vs ~70%) but best max DD in stack tests (~−14%).',
@@ -329,6 +353,12 @@ export const systemInstructions: InstructionSection[] = [
 ];
 
 export const quickReference: { system: string; when: string; basket: string; sizing: string }[] = [
+  {
+    system: 'Cup & Handle',
+    when: 'Daily breakouts (fresh ~21 days)',
+    basket: 'Real-time finder — hand-pick the best setups',
+    sizing: 'Enter near pivot, hold the trend (mechanical ~9% CAGR lags B&H)',
+  },
   {
     system: 'Core 2-month',
     when: 'Jan/Mar/May/Jul/Sep/Nov month-open',

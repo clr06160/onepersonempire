@@ -28,7 +28,7 @@ export function agentRankBySystemId(leaderboard: AgentLeaderboardRow[]): Record<
 export function formatAgentRankSuffix(meta?: AgentSystemRank): string {
   if (!meta?.rank) return '';
   const sign = meta.totalReturnPct > 0 ? '+' : '';
-  return ` (agent #${meta.rank} · ${sign}${meta.totalReturnPct.toFixed(1)}%)`;
+  return ` (agent #${meta.rank} · ${sign}${meta.totalReturnPct.toFixed(2)}%)`;
 }
 
 export function sortSystemsByAgentRank<T extends { id: string }>(

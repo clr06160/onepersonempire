@@ -7,16 +7,232 @@ import type {
   EarningsCalendarDay,
   EarningsCalendarPayload,
   EarningsCalendarStock,
+  EarningsForwardTest,
+  EarningsForwardTrade,
 } from '@/lib/scanner-earnings-data';
 
 type ScannerUser = { email: string; role: string };
 
 const fetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
 
+function money(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function returnClass(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return 'text-zinc-400';
+  if (value >= 10) return 'text-emerald-300 font-semibold';
+  if (value > 0) return 'text-emerald-400/90';
+  if (value <= -10) return 'text-red-300 font-semibold';
+  if (value < 0) return 'text-red-400/90';
+  return 'text-zinc-300';
+}
+
+function pctSigned(value?: number | null, digits = 1) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`;
+}
+
 function pct(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
   const fixed = Number(value).toFixed(1);
   return `${Number(value) > 0 ? '+' : ''}${fixed}%`;
+}
+
+function ForwardTestPanel({ forward }: { forward?: EarningsForwardTest }) {
+  if (!forward) return null;
+  if (forward.error) {
+    return (
+      <section className="rounded-2xl border border-red-900/60 bg-red-950/20 p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-300">Forward test</p>
+        <p className="mt-2 text-red-200">{forward.error}</p>
+      </section>
+    );
+  }
+
+  const live = forward.live;
+  const openPositions = live?.openPositions?.length
+    ? live.openPositions
+    : live?.openPosition
+      ? [live.openPosition]
+      : [];
+  const openReturns = openPositions
+    .map((p) => p.currentReturnPct)
+    .filter((v): v is number => v != null && !Number.isNaN(v));
+  const openAvgReturnPct =
+    openReturns.length > 0 ? openReturns.reduce((a, b) => a + b, 0) / openReturns.length : null;
+  const avgLabel = (live?.closedCount ?? 0) > 0 ? 'Avg closed' : 'Avg open';
+  const avgValue = (live?.closedCount ?? 0) > 0 ? live?.avgReturnPct : openAvgReturnPct;
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-emerald-900/60 bg-emerald-950/20 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-emerald-400">Live paper test</p>
+            <h2 className="mt-2 text-3xl font-bold text-zinc-50">{money(live?.equity)}</h2>
+            <p className={`mt-1 text-lg ${returnClass(live?.totalReturnPct)}`}>{pctSigned(live?.totalReturnPct, 2)} total</p>
+            {(live?.closedCount ?? 0) === 0 ? (
+              <p className="mt-1 text-xs text-zinc-500">
+                No closed trades yet — total is mark-to-market on the open book (entry day counts as 0% by rule).
+              </p>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
+            <div>
+              <p className="text-zinc-500">Started</p>
+              <p className="font-semibold text-zinc-200">{live?.startedAt || '—'}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">As of</p>
+              <p className="font-semibold text-zinc-200">{live?.asOf || '—'}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Open / invested</p>
+              <p className="font-semibold text-zinc-200">
+                {live?.openCount ?? openPositions.length}
+                {live?.investedPct != null ? <span className="ml-1 text-zinc-500">({live.investedPct}%)</span> : null}
+              </p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Closed trades</p>
+              <p className="font-semibold text-zinc-200">
+                {live?.closedCount ?? 0}
+                {live?.hitRatePct != null ? <span className="ml-1 text-zinc-500">({live.hitRatePct}% wins)</span> : null}
+              </p>
+            </div>
+            <div>
+              <p className="text-zinc-500">{avgLabel}</p>
+              <p className={`font-semibold ${returnClass(avgValue)}`}>{pctSigned(avgValue)}</p>
+            </div>
+          </div>
+        </div>
+        {live?.note ? <p className="mt-4 text-sm text-emerald-100/80">{live.note}</p> : null}
+      </section>
+
+      {openPositions.length ? (
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h3 className="text-lg font-semibold text-zinc-100">Open book</h3>
+          <p className="mt-1 text-sm text-zinc-400">
+            {openPositions.length} position{openPositions.length === 1 ? '' : 's'}
+            {live?.cash != null ? ` · $${Math.round(live.cash).toLocaleString()} cash` : ''}
+          </p>
+          <div className="mt-4 space-y-3">
+            {openPositions.map((open) => (
+              <div key={open.ticker} className="rounded-xl border border-emerald-800/50 bg-zinc-950 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <TickerLink ticker={open.ticker} className="text-lg font-semibold text-emerald-200" />
+                    <p className="text-sm text-zinc-400">{open.company || '—'}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xl font-semibold ${returnClass(open.currentReturnPct)}`}>
+                      {pctSigned(open.currentReturnPct)}
+                    </div>
+                    {open.weightPct != null ? (
+                      <p className="text-xs text-zinc-500">{open.weightPct.toFixed(1)}% of book</p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-400">
+                  <span>Entry {open.entryDate} @ ${open.entryPrice ?? '—'}</span>
+                  <span>Stop ${open.stopPrice ?? '—'}</span>
+                  <span>Exit target {open.exitDate}</span>
+                  <span>Earnings {open.earningsDate}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {(live?.scheduled?.length || 0) > 0 ? (
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h3 className="text-lg font-semibold text-zinc-100">Next scheduled entries</h3>
+          <p className="mt-1 text-sm text-zinc-400">
+            All names entering on each session (equal-weight book). Missed refresh days skip that entry.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-zinc-700 text-left text-zinc-400">
+                  <th className="px-3 py-2 font-semibold">Ticker</th>
+                  <th className="px-3 py-2 font-semibold">Entry</th>
+                  <th className="px-3 py-2 font-semibold">Earnings</th>
+                  <th className="px-3 py-2 font-semibold">Exit</th>
+                  <th className="px-3 py-2 font-semibold">Last 3-day</th>
+                </tr>
+              </thead>
+              <tbody>
+                {live?.scheduled?.map((row) => (
+                  <tr key={`${row.ticker}-${row.entryDate}`} className="border-b border-zinc-800/80">
+                    <td className="px-3 py-3">
+                      <TickerLink ticker={row.ticker} className="text-zinc-200 hover:text-emerald-200" />
+                    </td>
+                    <td className="px-3 py-3 text-zinc-300">{row.entryDate}</td>
+                    <td className="px-3 py-3 text-zinc-400">
+                      {row.earningsDate}
+                      {row.timeLabel ? ` · ${row.timeLabel}` : ''}
+                    </td>
+                    <td className="px-3 py-3 text-zinc-400">{row.exitDate}</td>
+                    <td className={`px-3 py-3 ${moveClass(row.threeDayReactionPct)}`}>{pct(row.threeDayReactionPct)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {(live?.recentClosed?.length || 0) > 0 ? (
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h3 className="text-lg font-semibold text-zinc-100">Live closed trades</h3>
+          <ClosedTradesTable trades={live?.recentClosed || []} />
+        </section>
+      ) : null}
+
+      {forward.method?.length ? (
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h3 className="text-lg font-semibold text-zinc-100">Rules</h3>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-400">
+            {forward.method.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function ClosedTradesTable({ trades }: { trades: EarningsForwardTrade[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-zinc-700 text-left text-zinc-400">
+            <th className="px-3 py-2 font-semibold">Ticker</th>
+            <th className="px-3 py-2 font-semibold">Held</th>
+            <th className="px-3 py-2 font-semibold">Return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {trades.map((trade) => (
+            <tr key={`${trade.ticker}-${trade.entryDate}-${trade.exitDate}`} className="border-b border-zinc-800/80">
+              <td className="px-3 py-3">
+                <TickerLink ticker={trade.ticker} className="text-zinc-200 hover:text-emerald-200" />
+              </td>
+              <td className="px-3 py-3 text-zinc-400">
+                {trade.entryDate} → {trade.exitDate}
+              </td>
+              <td className={`px-3 py-3 ${returnClass(trade.returnPct)}`}>{pctSigned(trade.returnPct)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function moveClass(value?: number | null) {
@@ -135,7 +351,10 @@ export default function EarningsCalendarClient() {
           </a>
         </section>
       ) : (
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <div className="space-y-6">
+          <ForwardTestPanel forward={data?.forwardTest} />
+
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-semibold">Upcoming reports — strong reactors</h2>
@@ -185,7 +404,8 @@ export default function EarningsCalendarClient() {
           </div>
 
           {data?.note ? <p className="mt-6 text-xs text-zinc-600">{data.note}</p> : null}
-        </section>
+          </section>
+        </div>
       )}
     </>
   );

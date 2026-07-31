@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { buildScannerSessionCookie, getScannerRole, verifyGoogleCredential } from '@/lib/scanner-auth';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     response.cookies.set(sessionCookie.name, sessionCookie.value, sessionCookie.options);
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Login failed.';
+    const message = toScannerUserMessage(error, 'Login failed.');
     return NextResponse.json({ error: message }, { status: 401 });
   }
 }

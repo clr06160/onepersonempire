@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export type AgentTrade = {
   date?: string;
@@ -34,6 +35,9 @@ export type AgentLeaderboardRow = {
   holdingsCount?: number;
   backtestCagr?: string;
   backtestMaxDd?: string;
+  isHoldVariant?: boolean;
+  usesLedgerHoldings?: boolean;
+  holdSince?: string;
 };
 
 export type AgentDetail = {
@@ -57,6 +61,11 @@ export type AgentDetail = {
   equitySeries?: AgentEquityPoint[];
   regimeLabel?: string;
   regimeBadge?: string;
+  isHoldVariant?: boolean;
+  usesLedgerHoldings?: boolean;
+  holdSince?: string;
+  holdCadenceLabel?: string;
+  parentId?: string;
 };
 
 export type ScannerAgentsPayload = {
@@ -120,7 +129,7 @@ export async function loadScannerAgents(): Promise<ScannerAgentsPayload> {
     const cloudData = await loadAgentsFromGcs();
     if (cloudData) return cloudData;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load agents from cloud storage.';
+    const message = toScannerUserMessage(error, 'Could not load agents from cloud storage.');
     const fileData = await loadAgentsFromFile().catch(() => null);
     if (fileData) return fileData;
     return { connected: false, message, leaderboard: [], agents: {} };

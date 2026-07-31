@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import PickNameRow from '@/components/scanner/PickNameRow';
+import type { PickContext } from '@/lib/scanner-pick-context';
 import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 import type { AgentDetail, AgentLeaderboardRow, AgentTrade, ScannerAgentsPayload } from '@/lib/scanner-agents';
 
@@ -38,11 +40,13 @@ export default function ScannerAgentsClient() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [pickContextByTicker, setPickContextByTicker] = useState<Record<string, PickContext>>({});
 
   const loadAgents = useCallback(async () => {
-    const [sessionResponse, agentsResponse] = await Promise.all([
+    const [sessionResponse, agentsResponse, pickResponse] = await Promise.all([
       fetch('/api/scanner/session', fetchInit),
       fetch('/api/scanner/agents', fetchInit),
+      fetch('/api/scanner/pick-context', fetchInit),
     ]);
     const sessionPayload = await sessionResponse.json();
     setUser(sessionPayload.user || null);
@@ -52,8 +56,10 @@ export default function ScannerAgentsClient() {
       setError(payload.error || 'Could not load agent tournament.');
       return;
     }
+    const pickPayload = pickResponse.ok ? await pickResponse.json() : { data: { byTicker: {} } };
     setError('');
     setData(payload.data || null);
+    setPickContextByTicker(pickPayload.data?.byTicker || {});
     const rows = (payload.data?.leaderboard || []) as AgentLeaderboardRow[];
     if (rows.length) {
       setSelectedId((current) => current || rows[0].agentId);
@@ -177,7 +183,12 @@ export default function ScannerAgentsClient() {
                       <td className="px-3 py-3 font-mono text-zinc-400">{row.rank}</td>
                       <td className="px-3 py-3">
                         <p className="font-semibold text-zinc-100">{row.label}</p>
-                        <p className="text-xs text-zinc-500">{row.role}</p>
+                        <p className="text-xs text-zinc-500">
+                          {row.role}
+                          {row.isHoldVariant ? ' · hold basket' : ''}
+                          {row.usesLedgerHoldings ? ' · ledger hold' : ''}
+                          {row.holdSince ? ` · since ${row.holdSince.slice(0, 10)}` : ''}
+                        </p>
                       </td>
                       <td className={`px-3 py-3 font-mono font-semibold ${returnTone(row.totalReturnPct)}`}>
                         {row.totalReturnPct > 0 ? '+' : ''}
@@ -201,20 +212,27 @@ export default function ScannerAgentsClient() {
             <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                 <h2 className="text-xl font-semibold">{selected.label}</h2>
+                {selected.isHoldVariant || selected.usesLedgerHoldings ? (
+                  <p className="mt-2 inline-flex rounded-full border border-amber-700/60 bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-200">
+                    {selected.usesLedgerHoldings ? 'Live ledger hold' : 'Scheduled hold basket'}
+                    {selected.holdSince ? ` · since ${selected.holdSince.slice(0, 10)}` : ''}
+                    {selected.holdCadenceLabel ? ` · ${selected.holdCadenceLabel}` : ''}
+                  </p>
+                ) : null}
                 {selected.regimeBadge ? (
                   <span className="mt-2 inline-block rounded-full border border-violet-800 bg-violet-950/50 px-3 py-1 text-xs font-semibold text-violet-200">
                     {selected.regimeBadge}
                   </span>
                 ) : null}
                 <p className="mt-2 text-sm text-zinc-400">{selected.exposureReason}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(selected.holdings || []).map((ticker) => (
-                    <span
+                <div className="mt-4 space-y-2">
+                  {(selected.holdings || []).map((ticker, index) => (
+                    <PickNameRow
                       key={ticker}
-                      className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 font-mono text-sm text-zinc-200"
-                    >
-                      {ticker}
-                    </span>
+                      ticker={ticker}
+                      index={index}
+                      context={pickContextByTicker[ticker]}
+                    />
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-zinc-500">
@@ -230,7 +248,11 @@ export default function ScannerAgentsClient() {
                     <dd className="font-mono font-semibold">${formatMoney(selected.metrics.equity)}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-zinc-500">Return</dt>
+                    <dt className="text-zinc-500">
+                      {selected.isHoldVariant || selected.usesLedgerHoldings
+                        ? `Hold return${selected.holdSince ? ` (since ${selected.holdSince.slice(0, 10)})` : ''}`
+                        : 'Return'}
+                    </dt>
                     <dd className={`font-mono font-semibold ${returnTone(selected.metrics.totalReturnPct)}`}>
                       {selected.metrics.totalReturnPct > 0 ? '+' : ''}
                       {selected.metrics.totalReturnPct.toFixed(2)}%

@@ -34,7 +34,7 @@ export default class ChartPanelErrorBoundary extends Component<Props, State> {
       return (
         <div className="rounded-xl border border-red-300 bg-red-50 p-6 text-red-800">
           <p className="font-semibold">Could not render chart for {this.props.ticker}</p>
-          <p className="mt-2 text-sm text-red-700">{this.state.error.message}</p>
+          <p className="mt-2 text-sm text-red-700">Chart data could not be loaded. Try again or pick another ticker.</p>
           <button
             type="button"
             onClick={() => this.setState({ error: null })}

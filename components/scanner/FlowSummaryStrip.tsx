@@ -197,9 +197,6 @@ export default function FlowSummaryStrip({
         ))}
       </div>
 
-      <p className="mt-3 text-[11px] leading-snug text-zinc-500">
-        Qualitative summary only{isDeveloper ? ' — open Details for licensed FMP numbers.' : '.'}
-      </p>
     </aside>
   );
 }

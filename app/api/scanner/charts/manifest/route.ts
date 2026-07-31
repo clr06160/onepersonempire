@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loadChartManifest } from '@/lib/charts/load-chart-data';
 import { requireScannerSession, type ScannerUser } from '@/lib/scanner-auth';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -33,7 +34,7 @@ export async function GET() {
 
     return NextResponse.json({ user, manifest });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load chart manifest.';
+    const message = toScannerUserMessage(error, 'Could not load chart manifest.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

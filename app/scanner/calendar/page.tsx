@@ -10,8 +10,8 @@ export default function EarningsCalendarPage() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner · extras</p>
           <h1 className="text-4xl font-bold tracking-tight">Earnings Calendar</h1>
           <p className="mt-3 max-w-3xl text-zinc-300">
-            Upcoming earnings dates — filtered to names that were strong reactors last time, with each
-            stock&apos;s last reaction shown so you can decide whether to play it.
+            Upcoming earnings for strong reactors, plus a forward paper test: enter 2 sessions before the report,
+            exit 3 sessions after (or 2×ATR stop), 100% one position at a time.
           </p>
         </div>
         <EarningsCalendarClient />

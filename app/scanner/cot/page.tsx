@@ -10,7 +10,8 @@ export default function CotReportPage() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner · extras</p>
           <h1 className="text-4xl font-bold tracking-tight">Holy COT Report</h1>
           <p className="mt-3 max-w-3xl text-zinc-300">
-            From HolyCotReport.ipynb — weekly CFTC positioning for equity index futures and key commodities.
+            Weekly CFTC positioning with six-month long/short trend charts for S&amp;P 500, NASDAQ-100, crude,
+            natural gas, gold, silver, and copper.
           </p>
         </div>
         <CotReportClient />

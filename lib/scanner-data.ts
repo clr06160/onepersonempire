@@ -1,6 +1,8 @@
 import { readFile } from 'fs/promises';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { resolveScannerJsonCandidates } from '@/lib/scanner-local-paths';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 type ScannerPayload = {
   connected?: boolean;
@@ -42,20 +44,24 @@ async function loadScannerDataFromGcs(): Promise<ScannerPayload | null> {
 }
 
 async function loadScannerDataFromFiles(): Promise<ScannerPayload | null> {
-  const jsonPath = process.env.SCANNER_RESULTS_JSON_PATH;
   const htmlPath = process.env.SCANNER_RESULTS_HTML_PATH;
-  if (!jsonPath && !htmlPath) return null;
 
-  if (jsonPath) {
+  for (const jsonPath of resolveScannerJsonCandidates(
+    'SCANNER_RESULTS_JSON_PATH',
+    'stock_scanner_dashboard.json',
+  )) {
     try {
       const raw = await readFile(jsonPath, 'utf8');
       return normalizeScannerPayload(JSON.parse(raw));
     } catch (error) {
-      if (!htmlPath) throw error;
+      if (!htmlPath) continue;
+      throw error;
     }
   }
 
-  const html = await readFile(htmlPath as string, 'utf8');
+  if (!htmlPath) return null;
+
+  const html = await readFile(htmlPath, 'utf8');
   const match = html.match(/const systems = (\[[\s\S]*?\]);\s*const select =/);
   if (!match) {
     throw new Error('Could not find scanner systems in dashboard HTML.');
@@ -69,20 +75,18 @@ async function loadScannerDataFromFiles(): Promise<ScannerPayload | null> {
 }
 
 async function loadScannerDataUncached(): Promise<ScannerPayload> {
+  const fileData = await loadScannerDataFromFiles().catch(() => null);
+  if (fileData) return fileData;
+
   try {
     const cloudData = await loadScannerDataFromGcs();
     if (cloudData) {
       return { ...cloudData, source: cloudData.source || 'gcs' };
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load scanner data from cloud storage.';
-    const fileData = await loadScannerDataFromFiles().catch(() => null);
-    if (fileData) return fileData;
+    const message = toScannerUserMessage(error, 'Could not load scanner data from cloud storage.');
     return { connected: false, message, systems: [] };
   }
-
-  const fileData = await loadScannerDataFromFiles();
-  if (fileData) return fileData;
 
   return {
     connected: false,
