@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 /** Shared nav across all scanner pages (picks, instructions, fundamentals, COT, monitor). */
 const links = [
   { href: '/scanner', label: 'System scanner' },
+  { href: '/scanner/mistakes', label: 'Mistakes' },
   { href: '/scanner/charts', label: 'Charts' },
   { href: '/scanner/options-institutions', label: 'Options/institutions' },
   { href: '/scanner/trees', label: 'Market trees' },

@@ -22,6 +22,7 @@ export const SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
       { href: '/scanner/charts', label: 'Charts', tone: 'amber' },
       { href: '/scanner/daytrade', label: 'Day trade (3× ETFs)', tone: 'amber' },
       { href: '/scanner/agents', label: 'Agent tournament', tone: 'emerald' },
+      { href: '/scanner/mistakes', label: 'Mistakes (rules)', tone: 'amber' },
     ],
   },
   {
