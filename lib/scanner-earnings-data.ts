@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { resolveScannerJsonCandidates } from '@/lib/scanner-local-paths';
 
 export type EarningsCalendarStock = {
   ticker: string;
@@ -25,6 +26,61 @@ export type EarningsCalendarDay = {
   stocks: EarningsCalendarStock[];
 };
 
+export type EarningsForwardTrade = {
+  ticker: string;
+  earningsDate?: string;
+  timeLabel?: string;
+  entryDate?: string;
+  exitDate?: string;
+  entryPrice?: number | null;
+  exitPrice?: number | null;
+  stopPrice?: number | null;
+  atr14?: number | null;
+  returnPct?: number | null;
+  exitReason?: string;
+  stopped?: boolean;
+  equityAfter?: number | null;
+  company?: string;
+  currentReturnPct?: number | null;
+  lastPrice?: number | null;
+  weightPct?: number | null;
+  status?: string;
+  threeDayReactionPct?: number | null;
+};
+
+export type EarningsForwardLive = {
+  mode?: string;
+  asOf?: string;
+  startedAt?: string | null;
+  initialCapital?: number;
+  equity?: number;
+  cash?: number;
+  investedPct?: number | null;
+  totalReturnPct?: number | null;
+  openPosition?: EarningsForwardTrade | null;
+  openPositions?: EarningsForwardTrade[];
+  openCount?: number;
+  scheduled?: EarningsForwardTrade[];
+  recentClosed?: EarningsForwardTrade[];
+  closedCount?: number;
+  hitRatePct?: number | null;
+  avgReturnPct?: number | null;
+  equitySeries?: { date: string; equity: number; ticker?: string; returnPct?: number | null }[];
+  rules?: {
+    entryDaysBefore?: number;
+    exitDaysAfter?: number;
+    atrMultiple?: number;
+    positionSize?: string;
+  };
+  note?: string;
+};
+
+export type EarningsForwardTest = {
+  live?: EarningsForwardLive;
+  method?: string[];
+  error?: string;
+};
+
 export type EarningsCalendarPayload = {
   connected?: boolean;
   generatedAt?: string;
@@ -39,6 +95,7 @@ export type EarningsCalendarPayload = {
   days?: EarningsCalendarDay[];
   note?: string;
   message?: string;
+  forwardTest?: EarningsForwardTest;
 };
 
 function earningsObjectName() {
@@ -58,23 +115,30 @@ async function loadFromGcs(): Promise<EarningsCalendarPayload | null> {
 }
 
 async function loadFromFile(): Promise<EarningsCalendarPayload | null> {
-  const jsonPath = process.env.SCANNER_EARNINGS_JSON_PATH;
-  if (!jsonPath) return null;
-  const raw = await readFile(jsonPath, 'utf8');
-  return JSON.parse(raw) as EarningsCalendarPayload;
+  for (const jsonPath of resolveScannerJsonCandidates(
+    'SCANNER_EARNINGS_JSON_PATH',
+    'earnings_calendar_dashboard.json',
+  )) {
+    try {
+      const raw = await readFile(jsonPath, 'utf8');
+      return JSON.parse(raw) as EarningsCalendarPayload;
+    } catch {
+      // try next candidate
+    }
+  }
+  return null;
 }
 
 export async function loadEarningsCalendarData(): Promise<EarningsCalendarPayload> {
+  const local = await loadFromFile().catch(() => null);
+  if (local) return local;
+
   try {
     const cloud = await loadFromGcs();
     if (cloud) return cloud;
   } catch {
-    const file = await loadFromFile().catch(() => null);
-    if (file) return file;
+    // fall through to disconnected payload
   }
-
-  const file = await loadFromFile().catch(() => null);
-  if (file) return file;
 
   return {
     connected: false,
