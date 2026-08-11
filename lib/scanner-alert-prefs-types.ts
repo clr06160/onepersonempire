@@ -2,7 +2,7 @@ export type ScannerAlertEvents = {
   ptFlip: boolean;
   bookChange: boolean;
   cashBrake: boolean;
-  /** Soft morning postcard for Watchers / Garden mode — no desk noise. */
+  /** Soft morning postcard for Fun / Watchers — no desk noise. */
   morningPostcard?: boolean;
 };
 

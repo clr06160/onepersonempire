@@ -1,7 +1,7 @@
 import { isAlertMailConfigured, sendAlertEmail } from '@/lib/scanner-alert-mail';
 import { listEnabledAlertPrefs } from '@/lib/scanner-alert-store';
 import { loadLatestDeskBrief } from '@/lib/scanner-desk-brief';
-import { getGardenUrl, getMorningNoteUrl } from '@/lib/scanner-product-urls';
+import { getFunUrl, getMorningNoteUrl } from '@/lib/scanner-product-urls';
 
 export type PostcardDispatchResult = {
   mailConfigured: boolean;
@@ -27,7 +27,7 @@ function postcardBody(brief: Awaited<ReturnType<typeof loadLatestDeskBrief>>) {
     ...sectionBits,
     '',
     'You don’t have to trade — this is just today’s read.',
-    `Garden: ${getGardenUrl()}`,
+    `Fun: ${getFunUrl()}`,
     `Morning note: ${getMorningNoteUrl()}`,
   ].filter((line, idx, arr) => !(line === '' && arr[idx - 1] === ''));
 
@@ -41,7 +41,7 @@ function postcardBody(brief: Awaited<ReturnType<typeof loadLatestDeskBrief>>) {
         ${bullets.length ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
         ${sectionBits.map((bit) => `<p>${escapeHtml(bit)}</p>`).join('')}
         <p style="color:#71717a;font-size:14px">You don’t have to trade — this is just today’s read.</p>
-        <p><a href="${getGardenUrl()}">Open Today</a> · <a href="${getMorningNoteUrl()}">Morning note</a></p>
+        <p><a href="${getFunUrl()}">Open Fun</a> · <a href="${getMorningNoteUrl()}">Morning note</a></p>
       </div>
     `,
   };

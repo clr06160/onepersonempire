@@ -16,8 +16,13 @@ export function getFlightDeckUrl() {
   return `${getProductBaseUrl()}/scanner/cockpit`;
 }
 
+export function getFunUrl() {
+  return `${getProductBaseUrl()}/scanner/fun`;
+}
+
+/** @deprecated Prefer getFunUrl — Garden redirected to Fun. */
 export function getGardenUrl() {
-  return `${getProductBaseUrl()}/scanner/garden`;
+  return getFunUrl();
 }
 
 export function getMorningNoteUrl() {

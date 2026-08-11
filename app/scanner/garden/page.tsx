@@ -1,13 +1,8 @@
-import GardenClient from './GardenClient';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+/** Old Garden URL — Fun is the optional canopy hub now. */
 export default function GardenPage() {
-  return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
-      <div className="mx-auto max-w-5xl">
-        <GardenClient />
-      </div>
-    </main>
-  );
+  redirect('/scanner/fun');
 }

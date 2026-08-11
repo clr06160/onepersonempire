@@ -661,7 +661,7 @@ export default function ScannerCockpitClient() {
               ['ptFlip', 'PowerTrend flip'],
               ['bookChange', 'Book change'],
               ['cashBrake', 'Cash brake'],
-              ['morningPostcard', 'Morning postcard (Garden)'],
+              ['morningPostcard', 'Morning postcard (Fun)'],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="inline-flex items-center gap-2">

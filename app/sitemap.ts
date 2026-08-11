@@ -34,10 +34,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${base}/scanner/garden`,
+      url: `${base}/scanner/fun`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
+      changeFrequency: 'weekly',
+      priority: 0.6,
     },
     {
       url: `${base}/scanner/forest`,

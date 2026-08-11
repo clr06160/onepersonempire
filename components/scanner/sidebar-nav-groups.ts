@@ -14,31 +14,22 @@ export type SidebarNavGroup = {
 };
 
 /**
- * Invited viewers (Garden): Today, Forest, Trees, Gallery, Leaders, Morning note, Charts.
- * Developers: full lab under Desk extras / Workflow / Train / Research / Explore.
+ * Invited viewers: Leaders desk + Fun last (optional canopy / art — not the default home).
+ * Developers: full lab under Workflow / Train / Research / Explore.
  */
 export const SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
-  {
-    id: 'garden',
-    label: 'Garden',
-    items: [
-      { href: '/scanner/garden', label: 'Today', tone: 'emerald' },
-      { href: '/scanner/forest', label: 'Forest', tone: 'amber' },
-      { href: '/scanner/trees', label: 'Market trees', tone: 'amber' },
-      { href: '/scanner/gallery', label: 'Price as art', tone: 'amber' },
-      { href: '/scanner/leaders', label: 'Leaders', tone: 'emerald' },
-      { href: '/scanner/desk-brief', label: 'Morning note', tone: 'amber' },
-      { href: '/scanner/charts', label: 'Charts', tone: 'amber' },
-    ],
-  },
   {
     id: 'desk',
     label: 'Desk',
     items: [
-      { href: '/scanner/cockpit', label: 'Flight Deck', tone: 'amber', developerOnly: true },
-      { href: '/scanner/monthly-reports', label: 'Monthly reports', tone: 'emerald', developerOnly: true },
-      { href: '/scanner?systems=1', label: 'System scanner', tone: 'emerald', developerOnly: true },
-      { href: '/scanner/instructions', label: 'Instructions', tone: 'emerald', developerOnly: true },
+      { href: '/scanner/leaders', label: 'Leaders', tone: 'emerald' },
+      { href: '/scanner/monthly-reports', label: 'Monthly reports', tone: 'emerald' },
+      { href: '/scanner/cockpit', label: 'Flight Deck', tone: 'amber' },
+      { href: '/scanner/desk-brief', label: 'Morning note', tone: 'amber' },
+      { href: '/scanner?systems=1', label: 'System scanner', tone: 'emerald' },
+      { href: '/scanner/charts', label: 'Charts', tone: 'amber' },
+      { href: '/scanner/instructions', label: 'Instructions', tone: 'emerald' },
+      { href: '/scanner/fun', label: 'Fun', tone: 'amber' },
     ],
   },
   {
@@ -97,6 +88,9 @@ export const SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
     id: 'explore',
     label: 'Explore',
     items: [
+      { href: '/scanner/forest', label: 'Forest', tone: 'amber', developerOnly: true },
+      { href: '/scanner/trees', label: 'Market trees', tone: 'amber', developerOnly: true },
+      { href: '/scanner/gallery', label: 'Price as art', tone: 'amber', developerOnly: true },
       { href: '/scanner/journal', label: 'Trade journal', tone: 'emerald', developerOnly: true },
       { href: '/scanner/monitor', label: 'Adaptive monitor', tone: 'emerald', developerOnly: true },
       { href: '/scanner/waitlist', label: 'Interest waitlist', tone: 'emerald', developerOnly: true },

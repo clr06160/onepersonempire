@@ -57,7 +57,7 @@ function buildLeaves(leaders?: LeadersPayload | null): LeafPreview[] {
   return out;
 }
 
-export default function GardenClient() {
+export default function FunClient() {
   const [leaders, setLeaders] = useState<LeadersPayload | null>(null);
   const [brief, setBrief] = useState<DeskBriefPayload | null>(null);
   const [error, setError] = useState('');
@@ -73,7 +73,7 @@ export default function GardenClient() {
     ]);
     if (!leadersRes.ok) {
       const payload = await leadersRes.json().catch(() => ({}));
-      setError(payload.error || payload.message || 'Could not load today’s garden.');
+      setError(payload.error || payload.message || 'Could not load Fun.');
       return;
     }
     const leadersJson = await leadersRes.json();
@@ -136,13 +136,13 @@ export default function GardenClient() {
 
   return (
     <div>
-      <ScannerExtrasNav active="/scanner/garden" />
+      <ScannerExtrasNav active="/scanner/fun" />
 
-      <header className="mb-8 overflow-hidden rounded-3xl border border-emerald-800/40 bg-gradient-to-br from-zinc-900 via-zinc-900 to-emerald-950/30 p-8 shadow-2xl shadow-emerald-950/20">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-emerald-400">
-          Garden · you don’t have to trade
+      <header className="mb-8 overflow-hidden rounded-3xl border border-lime-800/40 bg-gradient-to-br from-zinc-900 via-zinc-900 to-lime-950/30 p-8 shadow-2xl shadow-lime-950/20">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-lime-400">
+          Optional · not the desk
         </p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-50">Today</h1>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-50">Fun</h1>
         <p className="mt-3 max-w-2xl text-lg leading-relaxed text-zinc-300">{mood}</p>
         <p className="mt-4 font-mono text-xs text-zinc-500">
           Updated <span className="text-zinc-300">{asOf}</span>
@@ -177,22 +177,42 @@ export default function GardenClient() {
         </div>
       </section>
 
-      <section className="mb-8 grid gap-3 sm:grid-cols-2">
+      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/scanner/forest"
           className="rounded-2xl border border-lime-800/50 bg-lime-950/20 p-6 transition hover:border-lime-500/60"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-lime-400">
-            Wander
-          </p>
-          <h2 className="mt-2 text-xl font-semibold text-zinc-50">Walk the Forest</h2>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-lime-400">Wander</p>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-50">Forest</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Leaves instead of tables — tap a name for plain English, not accel scores.
+            Leaves instead of tables — tap a name for plain English.
+          </p>
+        </Link>
+        <Link
+          href="/scanner/trees"
+          className="rounded-2xl border border-emerald-800/50 bg-emerald-950/20 p-6 transition hover:border-emerald-500/60"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-400">
+            Bloom
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-50">Market trees</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            Watch whole indices grow or wither year by year.
+          </p>
+        </Link>
+        <Link
+          href="/scanner/gallery"
+          className="rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-6 transition hover:border-cyan-500/60"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-400">Look</p>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-50">Price as art</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            Charts as pictures — atmosphere over spreadsheets.
           </p>
         </Link>
         <Link
           href="/scanner/desk-brief"
-          className="rounded-2xl border border-amber-800/50 bg-amber-950/20 p-6 transition hover:border-amber-500/60"
+          className="rounded-2xl border border-amber-800/50 bg-amber-950/20 p-6 transition hover:border-amber-500/60 sm:col-span-2 lg:col-span-3"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-400">
             Postcard
@@ -205,10 +225,10 @@ export default function GardenClient() {
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
-        <h2 className="text-lg font-semibold text-zinc-100">One optional action</h2>
+        <h2 className="text-lg font-semibold text-zinc-100">Back to the desk anytime</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          Follow what’s leading on the Leaders board — or do nothing and just watch the canopy. We
-          never ask for brokerage API keys or manage your account.
+          Fun is optional. Leaders is the usual home after login. We never ask for brokerage API keys
+          or manage your account.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
