@@ -508,11 +508,11 @@ export default function ScannerPageClient({
     return () => window.clearTimeout(timer);
   }, [loadScannerData, refreshSession]);
 
-  // Viewers land on Leaders (beta desk). Developers keep Flight Deck as home.
+  // Viewers land on Garden (Today). Developers keep Flight Deck as home.
   // Systems warehouse stays one click away via ?systems=1.
   useEffect(() => {
     if (loading || !user || stayOnSystems) return;
-    const home = user.role === 'developer' ? '/scanner/cockpit' : '/scanner/leaders';
+    const home = user.role === 'developer' ? '/scanner/cockpit' : '/scanner/garden';
     router.replace(home);
   }, [loading, user, stayOnSystems, router]);
 
@@ -795,17 +795,17 @@ export default function ScannerPageClient({
 
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
                 {dreamTreeHost
-                  ? 'Dream Tree Stocks turns the market into a living canopy and a single Flight Deck book — momentum with a survival brake. Built for traders who hate big drawdowns.'
+                  ? 'See what’s growing. Know when to rest. Dream Tree turns the market into a living canopy — a morning postcard and a Forest you can wander without living on a trading desk. We never ask for brokerage API keys.'
                   : 'A private stock scanner that ranks the market every morning — quality-filtered, regime-aware, and forward-tracked. No hype. No hindsight. Just the names worth your attention, with the discipline to tell you when to sit in cash.'}
               </p>
 
               <ul className="mt-8 space-y-3">
                 {(dreamTreeHost
                   ? [
-                      'Flight Deck — one meta-agent book with a clear “what to do today” line',
-                      'Market Trees — watch whole indices bloom or wither year by year',
-                      'Monthly cash brake when the stretch gets ugly (−5%)',
-                      'Invite-only access — no public free-for-all',
+                      'Today — one sentence on the market mood, then three leading leaves',
+                      'Forest & Price as art — wander the canopy instead of staring at tables',
+                      'Morning postcard — a short note; trading is optional',
+                      'Invite-only — no public free-for-all, no fake “AI broker”',
                     ]
                   : [
                       'Daily ranked picks across multiple universes — rebuilt before the open',
@@ -829,9 +829,11 @@ export default function ScannerPageClient({
 
               <div className="mt-10 flex flex-wrap gap-8">
                 {([
-                  ['6', 'intelligence tools'],
+                  dreamTreeHost ? (['1', 'job: see what’s leading'] as const) : (['6', 'intelligence tools'] as const),
                   ['Forward-tracked', 'real results, not just backtests'],
-                  ['Regime-aware', 'tells you when to sit in cash'],
+                  dreamTreeHost
+                    ? (['No API keys', 'we never manage your account'] as const)
+                    : (['Regime-aware', 'tells you when to sit in cash'] as const),
                 ] as const).map(([stat, label]) => (
                   <div key={label}>
                     <div className="text-2xl font-bold text-white">{stat}</div>
@@ -849,7 +851,7 @@ export default function ScannerPageClient({
                 </p>
                 <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-50">Tell us you’re interested</h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  Email + a short note beats cold spam. Real traders write a sentence. We’ll invite from here — not a public open door.
+                  Email + a short note beats cold spam. Curiosity and taste welcome — you don’t have to be a full-time trader. We’ll invite from here — not a public open door.
                 </p>
                 <form
                   className="mt-5 space-y-3"
@@ -914,18 +916,17 @@ export default function ScannerPageClient({
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
                 <h2 className="text-2xl font-bold tracking-tight">Already invited?</h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  Sign in with Google. After login you land on Leaders.
+                  Sign in with Google. After login you land on <span className="text-emerald-300">Today</span> — the Garden.
                 </p>
                 <ol className="mt-4 list-decimal space-y-2 pl-4 text-sm leading-6 text-zinc-400">
                   <li>
-                    <span className="text-cyan-300">Leaders</span> — find the leading microtheme, click it, review
-                    names.
+                    <span className="text-lime-300">Forest</span> — wander leaves; tap one for plain English.
                   </li>
                   <li>
-                    <span className="text-amber-300">Flight Deck</span> — today&apos;s book.
+                    <span className="text-cyan-300">Leaders</span> — see what’s leading (optional).
                   </li>
                   <li>
-                    <span className="text-emerald-300">System scanner</span> — ranked warehouse behind the book.
+                    <span className="text-amber-300">Morning note</span> — a short postcard; trading is optional.
                   </li>
                 </ol>
 
@@ -985,7 +986,7 @@ export default function ScannerPageClient({
     return (
       <main className="min-h-screen bg-zinc-950 px-6 py-16 text-center text-zinc-300">
         <p className="text-lg">
-          {user?.role === 'developer' ? 'Opening Flight Deck…' : 'Opening Leaders…'}
+          {user?.role === 'developer' ? 'Opening Flight Deck…' : 'Opening Garden…'}
         </p>
         <Link
           href={user?.role === 'developer' ? '/scanner/cockpit' : '/scanner/leaders'}

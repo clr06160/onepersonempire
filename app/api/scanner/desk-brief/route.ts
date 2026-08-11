@@ -43,6 +43,13 @@ export async function POST() {
 
   try {
     const data = await generateAndStoreDeskBrief();
+    // Best-effort postcard fanout for Watchers (never blocks the note save).
+    try {
+      const { dispatchMorningPostcards } = await import('@/lib/scanner-morning-postcard');
+      void dispatchMorningPostcards();
+    } catch (postcardError) {
+      console.warn('[desk-brief] postcard dispatch skipped', postcardError);
+    }
     return NextResponse.json({ user, data, regenerated: true });
   } catch (error) {
     const message = toScannerUserMessage(error, 'Could not generate morning note.');

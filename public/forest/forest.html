@@ -198,5 +198,82 @@
     tabs.forEach(t => t.classList.toggle('active', +t.dataset.i === i));
     grids.forEach(g => g.style.display = (+g.dataset.i === i) ? 'grid' : 'none');
   }));
+
+  function healthFromGlow(hex) {
+    const h = String(hex || '').replace('#', '');
+    if (h.length !== 6) return { label: 'Mixed', blurb: 'Still on the board — take a closer look if you want.' };
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    // Greens = healthy; yellows = stretched/cooling; oranges/reds = stressed.
+    if (g > r + 20 && g > b + 20) {
+      return { label: 'Healthy growth', blurb: 'Looking strong vs the pack — a name you can simply watch grow.' };
+    }
+    if (r > 180 && g > 140 && b < 80) {
+      return { label: 'Getting tired', blurb: 'Still interesting, but the leaf is yellowing — don’t force it.' };
+    }
+    if (r > g + 10) {
+      return { label: 'Stressed / withering', blurb: 'This one has taken damage. Fine to skip; nothing to prove.' };
+    }
+    return { label: 'Mixed', blurb: 'Neither screaming buy nor disaster — curiosity only.' };
+  }
+
+  function returnPlain(retText) {
+    const n = parseFloat(String(retText || '').replace('%', ''));
+    if (!Number.isFinite(n)) return 'Path so far is unclear.';
+    if (n >= 20) return 'Has already run a lot this year.';
+    if (n >= 5) return 'Modest climb this year.';
+    if (n > -5) return 'Roughly flat on the year.';
+    if (n > -20) return 'Down from earlier highs — recovering or resting.';
+    return 'Had a rough stretch — bruised leaf.';
+  }
+
+  const card = document.createElement('aside');
+  card.id = 'leaf-card';
+  card.setAttribute('hidden', '');
+  card.innerHTML = '<button type="button" class="close" aria-label="Close">×</button><p class="eyebrow">Leaf card</p><h2 class="tk"></h2><p class="health"></p><p class="path"></p><p class="blurb"></p><a class="chart" href="#">Look closer (chart)</a>';
+  document.body.appendChild(card);
+  const style = document.createElement('style');
+  style.textContent = `
+    #leaf-card { position:fixed; right:18px; bottom:18px; z-index:40; width:min(340px,calc(100vw - 24px));
+      padding:18px 18px 16px; border-radius:18px; border:1px solid rgba(52,211,153,.35);
+      background:linear-gradient(160deg,rgba(9,20,15,.96),rgba(24,24,27,.96)); color:#f4f4f5;
+      box-shadow:0 18px 50px rgba(0,0,0,.45); font-family:ui-sans-serif,system-ui,sans-serif; }
+    #leaf-card[hidden] { display:none; }
+    #leaf-card .eyebrow { margin:0; font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:#34d399; font-weight:700; }
+    #leaf-card .tk { margin:8px 0 4px; font-size:28px; font-family:ui-monospace,monospace; }
+    #leaf-card .health { margin:0; font-size:14px; font-weight:600; color:#a7f3d0; }
+    #leaf-card .path { margin:8px 0 0; font-size:13px; color:#d4d4d8; }
+    #leaf-card .blurb { margin:8px 0 14px; font-size:13px; line-height:1.45; color:#a1a1aa; }
+    #leaf-card .chart { display:inline-flex; font-size:13px; font-weight:600; color:#6ee7b7; text-decoration:none; }
+    #leaf-card .chart:hover { color:#a7f3d0; }
+    #leaf-card .close { position:absolute; top:8px; right:10px; border:0; background:transparent; color:#a1a1aa; font-size:22px; cursor:pointer; }
+    .leaf { cursor:pointer; }
+    .leaf.is-selected .frame { outline:2px solid rgba(52,211,153,.7); outline-offset:4px; }
+  `;
+  document.head.appendChild(style);
+
+  card.querySelector('.close').addEventListener('click', () => {
+    card.setAttribute('hidden', '');
+    document.querySelectorAll('.leaf.is-selected').forEach(el => el.classList.remove('is-selected'));
+  });
+
+  document.querySelectorAll('.leaf').forEach(leaf => {
+    leaf.addEventListener('click', () => {
+      const tk = leaf.querySelector('.tk')?.textContent?.trim() || '';
+      const ret = leaf.querySelector('.ret')?.textContent?.trim() || '';
+      const glow = getComputedStyle(leaf).getPropertyValue('--glow').trim() || leaf.style.getPropertyValue('--glow');
+      const health = healthFromGlow(glow);
+      document.querySelectorAll('.leaf.is-selected').forEach(el => el.classList.remove('is-selected'));
+      leaf.classList.add('is-selected');
+      card.querySelector('.tk').textContent = tk;
+      card.querySelector('.health').textContent = health.label;
+      card.querySelector('.path').textContent = returnPlain(ret) + (ret ? ` (${ret} YTD)` : '');
+      card.querySelector('.blurb').textContent = health.blurb;
+      const link = card.querySelector('.chart');
+      link.href = '/scanner/charts?ticker=' + encodeURIComponent(tk);
+      card.removeAttribute('hidden');
+    });
+  });
 </script>
 </body></html>

@@ -38,6 +38,7 @@ export async function listEnabledAlertPrefs(): Promise<ScannerAlertPrefs[]> {
         ptFlip: events.ptFlip !== false,
         bookChange: events.bookChange !== false,
         cashBrake: events.cashBrake !== false,
+        morningPostcard: Boolean(events.morningPostcard),
       },
       updatedAt: data.updatedAt?.toDate?.()?.toISOString?.(),
     });

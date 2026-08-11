@@ -11,6 +11,7 @@ const DEFAULT_EVENTS: ScannerAlertEvents = {
   ptFlip: true,
   bookChange: true,
   cashBrake: true,
+  morningPostcard: false,
 };
 
 function normalizeEmail(email: string) {
@@ -42,6 +43,7 @@ export async function getAlertPrefs(accountEmail: string): Promise<ScannerAlertP
       ptFlip: events.ptFlip !== false,
       bookChange: events.bookChange !== false,
       cashBrake: events.cashBrake !== false,
+      morningPostcard: Boolean(events.morningPostcard),
     },
     onboardingCompletedAt: data.onboardingCompletedAt
       ? String(data.onboardingCompletedAt)
@@ -79,6 +81,7 @@ export function validateAlertPrefsInput(input: {
         ptFlip: rawEvents.ptFlip !== false,
         bookChange: rawEvents.bookChange !== false,
         cashBrake: rawEvents.cashBrake !== false,
+        morningPostcard: Boolean(rawEvents.morningPostcard),
       },
       ...(onboardingCompletedAt ? { onboardingCompletedAt } : {}),
     },

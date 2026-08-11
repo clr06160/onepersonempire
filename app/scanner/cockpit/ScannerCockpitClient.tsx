@@ -269,6 +269,7 @@ export default function ScannerCockpitClient() {
     ptFlip: true,
     bookChange: true,
     cashBrake: true,
+    morningPostcard: false,
   });
   const [alertSaving, setAlertSaving] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -303,6 +304,7 @@ export default function ScannerCockpitClient() {
           ptFlip: prefs.events?.ptFlip !== false,
           bookChange: prefs.events?.bookChange !== false,
           cashBrake: prefs.events?.cashBrake !== false,
+          morningPostcard: Boolean(prefs.events?.morningPostcard),
         });
         setShowOnboarding(!prefs.onboardingCompletedAt);
       } else if (sessionPayload.user?.email) {
@@ -659,12 +661,13 @@ export default function ScannerCockpitClient() {
               ['ptFlip', 'PowerTrend flip'],
               ['bookChange', 'Book change'],
               ['cashBrake', 'Cash brake'],
+              ['morningPostcard', 'Morning postcard (Garden)'],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="inline-flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={alertEvents[key]}
+                checked={Boolean(alertEvents[key])}
                 onChange={(e) => setAlertEvents((prev) => ({ ...prev, [key]: e.target.checked }))}
                 className="accent-sky-500"
               />

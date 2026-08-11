@@ -16,6 +16,14 @@ export function getFlightDeckUrl() {
   return `${getProductBaseUrl()}/scanner/cockpit`;
 }
 
+export function getGardenUrl() {
+  return `${getProductBaseUrl()}/scanner/garden`;
+}
+
+export function getMorningNoteUrl() {
+  return `${getProductBaseUrl()}/scanner/desk-brief`;
+}
+
 export function getScannerLoginUrl() {
   return `${getProductBaseUrl()}/scanner`;
 }

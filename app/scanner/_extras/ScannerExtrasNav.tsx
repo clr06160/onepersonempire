@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-type NavAccent = 'leaders' | 'flight' | 'systems' | 'default';
+type NavAccent = 'garden' | 'leaders' | 'flight' | 'systems' | 'default';
 
 type NavLink = {
   href: string;
@@ -13,25 +13,26 @@ type NavLink = {
 };
 
 /**
- * Invited viewers: main desk + charts/instructions.
+ * Invited viewers: Garden path (Today, Forest, art, Leaders, Morning note, Charts).
  * Developers still get the full lab nav.
  */
 const links: NavLink[] = [
+  { href: '/scanner/garden', label: 'Today', accent: 'garden' },
+  { href: '/scanner/forest', label: 'Forest', accent: 'garden' },
+  { href: '/scanner/trees', label: 'Market trees', accent: 'garden' },
+  { href: '/scanner/gallery', label: 'Price as art', accent: 'garden' },
   { href: '/scanner/leaders', label: 'Leaders', accent: 'leaders' },
-  { href: '/scanner/monthly-reports', label: 'Monthly reports', accent: 'leaders' },
-  { href: '/scanner/cockpit', label: 'Flight Deck', accent: 'flight' },
   { href: '/scanner/desk-brief', label: 'Morning note', accent: 'flight' },
-  { href: '/scanner?systems=1', label: 'System scanner', accent: 'systems' },
   { href: '/scanner/charts', label: 'Charts' },
-  { href: '/scanner/instructions', label: 'Instructions' },
+  { href: '/scanner/cockpit', label: 'Flight Deck', accent: 'flight', developerOnly: true },
+  { href: '/scanner/monthly-reports', label: 'Monthly reports', accent: 'leaders', developerOnly: true },
+  { href: '/scanner?systems=1', label: 'System scanner', accent: 'systems', developerOnly: true },
+  { href: '/scanner/instructions', label: 'Instructions', developerOnly: true },
   { href: '/scanner/core', label: 'Core', developerOnly: true },
   { href: '/scanner/chess-selection', label: 'Chess Selection', developerOnly: true },
   { href: '/scanner/mistakes', label: 'Mistakes', developerOnly: true },
   { href: '/scanner/desk-trainer', label: 'Risk Trainer', developerOnly: true },
   { href: '/scanner/options-institutions', label: 'Options/institutions', developerOnly: true },
-  { href: '/scanner/trees', label: 'Market trees', developerOnly: true },
-  { href: '/scanner/forest', label: 'Forest', developerOnly: true },
-  { href: '/scanner/gallery', label: 'Price as art', developerOnly: true },
   { href: '/scanner/top100', label: 'Top 100', developerOnly: true },
   { href: '/scanner/top-ten', label: 'Top Ten', developerOnly: true },
   { href: '/scanner/daytrade', label: 'Day trade', developerOnly: true },
@@ -64,6 +65,11 @@ function linkClass(accent: NavAccent | undefined, isActive: boolean, isLight: bo
   const a = accent || 'default';
 
   if (isActive) {
+    if (a === 'garden') {
+      return isLight
+        ? 'border-lime-700 bg-lime-700 text-white shadow-sm'
+        : 'border-lime-400 bg-lime-950 text-lime-100';
+    }
     if (a === 'leaders') {
       return isLight
         ? 'border-cyan-700 bg-cyan-700 text-white shadow-sm'
@@ -84,6 +90,11 @@ function linkClass(accent: NavAccent | undefined, isActive: boolean, isLight: bo
       : 'border-emerald-500 bg-emerald-950 text-emerald-100';
   }
 
+  if (a === 'garden') {
+    return isLight
+      ? 'border-lime-600 bg-lime-50 text-lime-950 shadow-sm hover:border-lime-700 hover:bg-lime-100'
+      : 'border-lime-700/70 bg-lime-950/40 text-lime-200 hover:border-lime-400 hover:bg-lime-950';
+  }
   if (a === 'leaders') {
     return isLight
       ? 'border-cyan-600 bg-cyan-50 text-cyan-950 shadow-sm hover:border-cyan-700 hover:bg-cyan-100'

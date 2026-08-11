@@ -127,6 +127,31 @@ function Wave4MiniStrip({
   );
 }
 
+function HowIUseThis() {
+  return (
+    <section className="mb-6 rounded-2xl border border-lime-800/45 bg-lime-950/15 p-5 sm:p-6">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-lime-400">
+        How I use this
+      </p>
+      <h2 className="mt-2 text-lg font-semibold text-zinc-50">Three bullets — Cory’s desk</h2>
+      <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">
+        <li>
+          <span className="font-semibold text-zinc-100">Ride what’s leading.</span> Follow the
+          strongest microtheme; you don’t need twenty tools to know who’s in charge.
+        </li>
+        <li>
+          <span className="font-semibold text-zinc-100">Bank when names get tired.</span> After a
+          big run, the first real cool-off is enough — exact tops are hard, and that’s fine.
+        </li>
+        <li>
+          <span className="font-semibold text-zinc-100">You can just watch.</span> This board is a
+          map. If you don’t feel like trading, wander the Forest and read the morning note.
+        </li>
+      </ul>
+    </section>
+  );
+}
+
 function HowToRead() {
   return (
     <section className="mb-6 rounded-2xl border border-emerald-800/50 bg-emerald-950/20 p-5 sm:p-6">
@@ -880,6 +905,7 @@ export default function LeadersClient() {
             </p>
           ) : null}
 
+          <HowIUseThis />
           <HowToRead />
 
           <Wave4MiniStrip summary={data?.wave4Summary} />
