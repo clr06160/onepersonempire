@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pitch Decks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #070b10;
+      --paper: #f3efe8;
+      --muted: rgba(243, 239, 232, 0.72);
+      --display: "Syne", system-ui, sans-serif;
+      --body: "Instrument Sans", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--body);
+      color: var(--paper);
+      background: var(--ink);
+    }
+    .hero {
+      position: relative;
+      min-height: 42vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 3rem 1.5rem 2.5rem;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(7, 11, 16, 0.25), rgba(7, 11, 16, 0.92)),
+        url("/pitch-deck/images/motive-hero-atacama.webp") center / cover;
+      transform: scale(1.05);
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: scale(1.05) translateY(0); }
+      to { transform: scale(1.1) translateY(-1.5%); }
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 980px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #4ec4b4;
+      font-weight: 600;
+    }
+    h1 {
+      font-family: var(--display);
+      font-size: clamp(2.8rem, 7vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      margin: 0 0 0.75rem;
+    }
+    .lead {
+      margin: 0;
+      max-width: 36ch;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    .gallery {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 4rem;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
+    }
+    a.card {
+      position: relative;
+      display: block;
+      min-height: 320px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      border: 1px solid rgba(243, 239, 232, 0.12);
+    }
+    a.card .bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.7s ease;
+    }
+    a.card:hover .bg { transform: scale(1.06); }
+    a.card .veil {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(7, 11, 16, 0.15), rgba(7, 11, 16, 0.88));
+    }
+    a.card .copy {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .label {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin: 0 0 0.45rem;
+    }
+    a.card.motive .label { color: #4ec4b4; }
+    a.card.atelier .label { color: #ff6b4a; }
+    a.card h2 {
+      font-family: var(--display);
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      margin: 0 0 0.45rem;
+      letter-spacing: -0.03em;
+    }
+    a.card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: 32ch;
+    }
+    a.card .go {
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    @media (max-width: 800px) {
+      .gallery { grid-template-columns: 1fr; }
+      a.card { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">OnePerson Empire</p>
+      <h1>Pitch decks</h1>
+      <p class="lead">Partner materials for motivation-driven benefits and intentional corporate experiences.</p>
+    </div>
+  </header>
+
+  <main class="gallery">
+    <a class="card motive" href="/pitch-deck/motive/index.html">
+      <div class="bg" style="background-image:url('/pitch-deck/images/motive-patagonia-lodge.webp')"></div>
+      <div class="veil"></div>
+      <div class="copy">
+        <p class="label">Primary · Partner alignment</p>
+        <h2>Motive</h2>
+        <p>Motivation-driven benefits + intentional experiences — Chile Signature as the flagship.</p>
+        <p class="go">Open visual deck →</p>
+      </div>
+    </a>
+    <a class="card atelier" href="/pitch-deck/atelier/index.html">
+      <div class="bg" style="background-image:url('/pitch-deck/images/atelier-studio-hero.webp')"></div>
+      <div class="veil"></div>
+      <div class="copy">
+        <p class="label">Alternate framing</p>
+        <h2>Atelier</h2>
+        <p>Customizable benefits with exclusive personalized retreats as the high-emotion layer.</p>
+        <p class="go">Open visual deck →</p>
+      </div>
+    </a>
+  </main>
+</body>
+</html>

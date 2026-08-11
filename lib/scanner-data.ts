@@ -1,6 +1,8 @@
 import { readFile } from 'fs/promises';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { resolveScannerJsonCandidates } from '@/lib/scanner-local-paths';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 type ScannerPayload = {
   connected?: boolean;
@@ -42,20 +44,24 @@ async function loadScannerDataFromGcs(): Promise<ScannerPayload | null> {
 }
 
 async function loadScannerDataFromFiles(): Promise<ScannerPayload | null> {
-  const jsonPath = process.env.SCANNER_RESULTS_JSON_PATH;
   const htmlPath = process.env.SCANNER_RESULTS_HTML_PATH;
-  if (!jsonPath && !htmlPath) return null;
 
-  if (jsonPath) {
+  for (const jsonPath of resolveScannerJsonCandidates(
+    'SCANNER_RESULTS_JSON_PATH',
+    'stock_scanner_dashboard.json',
+  )) {
     try {
       const raw = await readFile(jsonPath, 'utf8');
       return normalizeScannerPayload(JSON.parse(raw));
     } catch (error) {
-      if (!htmlPath) throw error;
+      if (!htmlPath) continue;
+      throw error;
     }
   }
 
-  const html = await readFile(htmlPath as string, 'utf8');
+  if (!htmlPath) return null;
+
+  const html = await readFile(htmlPath, 'utf8');
   const match = html.match(/const systems = (\[[\s\S]*?\]);\s*const select =/);
   if (!match) {
     throw new Error('Could not find scanner systems in dashboard HTML.');
@@ -68,21 +74,19 @@ async function loadScannerDataFromFiles(): Promise<ScannerPayload | null> {
   };
 }
 
-export async function loadScannerData(): Promise<ScannerPayload> {
+async function loadScannerDataUncached(): Promise<ScannerPayload> {
+  const fileData = await loadScannerDataFromFiles().catch(() => null);
+  if (fileData) return fileData;
+
   try {
     const cloudData = await loadScannerDataFromGcs();
     if (cloudData) {
       return { ...cloudData, source: cloudData.source || 'gcs' };
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load scanner data from cloud storage.';
-    const fileData = await loadScannerDataFromFiles().catch(() => null);
-    if (fileData) return fileData;
+    const message = toScannerUserMessage(error, 'Could not load scanner data from cloud storage.');
     return { connected: false, message, systems: [] };
   }
-
-  const fileData = await loadScannerDataFromFiles();
-  if (fileData) return fileData;
 
   return {
     connected: false,
@@ -90,4 +94,26 @@ export async function loadScannerData(): Promise<ScannerPayload> {
       'Scanner login is working. Waiting for the first upload from your PC scanner refresh job.',
     systems: [],
   };
+}
+
+// Short-lived in-process cache so repeat page loads don't re-download the
+// dashboard JSON from Cloud Storage on every request. The data refreshes once
+// per day, so a brief TTL is safe and removes the per-load GCS round-trip.
+const SCANNER_CACHE_TTL_MS = 60_000;
+let scannerCache: { data: ScannerPayload; expires: number } | null = null;
+
+export async function loadScannerData(): Promise<ScannerPayload> {
+  if (scannerCache && scannerCache.expires > Date.now()) {
+    return scannerCache.data;
+  }
+
+  const data = await loadScannerDataUncached();
+
+  // Only cache successful loads; never cache an error/empty fallback so a
+  // transient failure can't get pinned for the full TTL.
+  if (data && data.connected !== false) {
+    scannerCache = { data, expires: Date.now() + SCANNER_CACHE_TTL_MS };
+  }
+
+  return data;
 }

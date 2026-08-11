@@ -1,0 +1,50 @@
+---
+description: Tops & bottoms research findings (holdout-tested)
+alwaysApply: true
+---
+
+# Tops & bottoms — remembered research
+
+Holdout = 50 random EDGAR names, seed 42. Hit = ±10% within 63 trading days after signal.
+
+## Works
+
+- **Tight double bottoms** (lows within ~0.5%): ~74% hit +10% (n≈50). Loose 2.5% twins ~53%.
+- **200-DMA extension** (top risk, first cross):
+  - +20–30% ≈ coin flip (~48–49%)
+  - +40% ≈ 64% | +50% ≈ 77% (n≈31) — often still runs higher first; danger zone not exact top
+  - Thumb: yellow ~30%, red 40%+; trim/don’t add
+- **EW bottoms** (5/C down near lows): modest ~62–64%
+- Tops are a **process**; violent downs often need a **catalyst**; upside ending often has no clear catalyst
+
+## Weak alone
+
+- EW wave 5 up (~45%); climax bars (~48–51%); TraderLion cluster (~35–49%)
+- Exact top call remains hard — good stocks keep grinding up
+- Fundamentals near highs (FCF/NI/sales down): ~45–53% as top timer
+
+## Wave 4 (practical) — bank after extension, don’t wait for wave-5 top
+
+- Formal EW “wave 5 up” tops stay weak (~45%). Better process: **ride wave 3, exit on wave 4**.
+- Trader tell: after extension, **first break of the stock’s 10- or 21-day MA** (character-dependent); after a full extension, **50-day break** confirms wave 4.
+- Wave-3 length priors (`backtest_wave3_length_by_sector.py`, n≈8300 impulses; tech n≈2000):
+  - Broad tech average move ~+45% (median +29%), avg ~2.0× wave1, ~105 sessions
+  - Semis avg **+41%** / 1.88× / ~122d; Software avg **+42%** / 1.88× / ~95d
+  - **Gold / Precious** avg **+43%** (med +30%), 1.84×, ~111d (n=95)
+  - **Oil & Gas** avg **+32%** (med +26%), 1.78×, ~103d (n=632) — integrated majors much smaller (~+18%)
+  - **Apparel** avg **+34%** (med +29%), 1.83×, ~90d (n=229)
+  - Hardware averages look huge (+70–100%) but medians ~34% — fat tails; use median for priors if already extended
+  - Tech by size (avg %): Small +75% > Micro +50% > Mid +45% > Large/Mega ~+35%
+  - Near the industry average %, tighten 10/21; MA break = wave 4
+
+## Momentum cohort / “growth dying together”
+
+Script: `Projects/stocks/scanners/backtest_momentum_cohort_break.py`  
+Sleeve = top 40 by 126d mom in top-400 dollar-volume charts.
+
+- **Base rate:** over 63d, majority of the momentum sleeve hitting −10% is *common* (~64%). That is churn, not a rare regime event.
+- **Better target:** 21d pack crash — majority −10% in 21d (~33% base); ≥40% of sleeve −15% in 21d (~22% base).
+- **Confirmation (works):** when ≥60% of sleeve already ≥10% off 63d highs → pack−15%/21d ~50% (lift ~+28pp). Use as risk-off confirm, not early tip.
+- **Leading breadth crashes** (sleeve % above 50-DMA plunging): rare in sample (n≈4); mild QQQ −10% lift, little near-term pack lift.
+- **Universe breadth alone** did not mark growth-sleeve death well.
+- Credit/VIX overlays not tested yet (no HYG/VIX in local `scanners/charts`).

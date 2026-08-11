@@ -9,11 +9,15 @@ export type ScannerUser = {
   name?: string;
   picture?: string;
   role: ScannerRole;
+  /** Google subject (`sub`) when available — used for RISC revocation. */
+  googleSub?: string;
 };
 
 // Firebase Hosting only forwards a cookie named __session to Cloud Run backends.
 export const SCANNER_SESSION_COOKIE = '__session';
 const SESSION_DAYS = 14;
+const NONCE_TTL_MS = 10 * 60 * 1000;
+const REVOCATIONS_COLLECTION = 'scannerAuthRevocations';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -27,7 +31,7 @@ function scannerSecret() {
   return secret;
 }
 
-function configuredGoogleClientId() {
+export function configuredGoogleClientId() {
   return process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 }
 
@@ -50,7 +54,16 @@ function signPayload(payload: string) {
 
 function makeCookieValue(user: ScannerUser) {
   const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const payload = base64Url(JSON.stringify({ ...user, expiresAt }));
+  const payload = base64Url(
+    JSON.stringify({
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      role: user.role,
+      googleSub: user.googleSub,
+      expiresAt,
+    }),
+  );
   return `${payload}.${signPayload(payload)}`;
 }
 
@@ -92,13 +105,47 @@ function verifyCookieValue(value: string | undefined): ScannerUser | null {
       name: parsed.name,
       picture: parsed.picture,
       role: parsed.role === 'developer' ? 'developer' : 'viewer',
+      googleSub: typeof parsed.googleSub === 'string' ? parsed.googleSub : undefined,
     };
   } catch {
     return null;
   }
 }
 
-export async function verifyGoogleCredential(credential: string) {
+/** Signed ticket so nonce works even when Firebase Hosting only forwards `__session`. */
+export function issueGoogleSignInNonce() {
+  const nonce = crypto.randomBytes(24).toString('base64url');
+  const expiresAt = Date.now() + NONCE_TTL_MS;
+  const payload = base64Url(JSON.stringify({ nonce, expiresAt }));
+  const ticket = `${payload}.${signPayload(payload)}`;
+  return { nonce, ticket, expiresAt };
+}
+
+export function consumeGoogleSignInTicket(ticket: string | undefined): string {
+  if (!ticket) {
+    throw new Error('Missing Google sign-in nonce ticket.');
+  }
+  const [payload, signature] = ticket.split('.');
+  if (!payload || !signature) {
+    throw new Error('Invalid Google sign-in nonce ticket.');
+  }
+  const expected = signPayload(payload);
+  const given = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (given.length !== expectedBuffer.length || !crypto.timingSafeEqual(given, expectedBuffer)) {
+    throw new Error('Invalid Google sign-in nonce ticket.');
+  }
+  const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+    nonce?: string;
+    expiresAt?: number;
+  };
+  if (!parsed.nonce || Date.now() > Number(parsed.expiresAt || 0)) {
+    throw new Error('Google sign-in nonce expired. Refresh and try again.');
+  }
+  return parsed.nonce;
+}
+
+export async function verifyGoogleCredential(credential: string, expectedNonce?: string) {
   const clientId = configuredGoogleClientId();
   if (!clientId) {
     throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID or GOOGLE_OAUTH_CLIENT_ID.');
@@ -113,10 +160,12 @@ export async function verifyGoogleCredential(credential: string) {
 
   const data = (await response.json()) as {
     aud?: string;
+    sub?: string;
     email?: string;
     email_verified?: string | boolean;
     name?: string;
     picture?: string;
+    nonce?: string;
   };
 
   if (data.aud !== clientId) {
@@ -125,12 +174,87 @@ export async function verifyGoogleCredential(credential: string) {
   if (!data.email || String(data.email_verified) !== 'true') {
     throw new Error('Google account email is not verified.');
   }
+  if (expectedNonce) {
+    if (!data.nonce || data.nonce !== expectedNonce) {
+      throw new Error('Google sign-in nonce mismatch.');
+    }
+  }
 
   return {
     email: normalizeEmail(data.email),
     name: data.name,
     picture: data.picture,
+    googleSub: data.sub || undefined,
   };
+}
+
+export async function isGoogleIdentityRevoked(identity: {
+  email?: string;
+  googleSub?: string;
+}): Promise<boolean> {
+  const email = identity.email ? normalizeEmail(identity.email) : '';
+  const sub = identity.googleSub?.trim() || '';
+  if (!email && !sub) return false;
+
+  try {
+    const db = getAdminFirestore();
+    const refs = [
+      ...(sub ? [db.collection(REVOCATIONS_COLLECTION).doc(`sub:${sub}`)] : []),
+      ...(email ? [db.collection(REVOCATIONS_COLLECTION).doc(`email:${email}`)] : []),
+    ];
+    const snaps = await Promise.all(refs.map((ref) => ref.get()));
+    return snaps.some((snap) => {
+      if (!snap.exists) return false;
+      const data = snap.data() || {};
+      if (data.active === false) return false;
+      return true;
+    });
+  } catch {
+    return false;
+  }
+}
+
+export async function recordGoogleIdentityRevocation(args: {
+  email?: string;
+  googleSub?: string;
+  eventType: string;
+  eventId?: string;
+  reason?: string;
+}) {
+  const email = args.email ? normalizeEmail(args.email) : '';
+  const sub = args.googleSub?.trim() || '';
+  if (!email && !sub) return;
+
+  const db = getAdminFirestore();
+  const now = new Date().toISOString();
+  const payload = {
+    active: true,
+    eventType: args.eventType,
+    eventId: args.eventId || null,
+    reason: args.reason || null,
+    email: email || null,
+    googleSub: sub || null,
+    updatedAt: now,
+  };
+
+  const writes: Array<Promise<unknown>> = [];
+  if (sub) {
+    writes.push(
+      db.collection(REVOCATIONS_COLLECTION).doc(`sub:${sub}`).set(
+        { ...payload, key: `sub:${sub}` },
+        { merge: true },
+      ),
+    );
+  }
+  if (email) {
+    writes.push(
+      db.collection(REVOCATIONS_COLLECTION).doc(`email:${email}`).set(
+        { ...payload, key: `email:${email}` },
+        { merge: true },
+      ),
+    );
+  }
+  await Promise.all(writes);
 }
 
 export async function getScannerRole(email: string): Promise<ScannerRole | null> {
@@ -138,18 +262,22 @@ export async function getScannerRole(email: string): Promise<ScannerRole | null>
   const developers = parseEmailList(process.env.SCANNER_DEVELOPER_EMAILS);
   const viewers = parseEmailList(process.env.SCANNER_ALLOWED_EMAILS);
 
-  if (developers.has(normalized)) return 'developer';
-  if (viewers.has(normalized)) return 'viewer';
-
   try {
     const snapshot = await getAdminFirestore().collection('scannerUsers').doc(normalized).get();
-    if (!snapshot.exists) return null;
-    const data = snapshot.data() || {};
-    if (data.active === false) return null;
-    return data.role === 'developer' ? 'developer' : 'viewer';
+    if (snapshot.exists) {
+      const data = snapshot.data() || {};
+      // Admin disable always wins — even over env allowlists.
+      if (data.active === false) return null;
+      if (data.role === 'developer' || developers.has(normalized)) return 'developer';
+      return 'viewer';
+    }
   } catch {
-    return null;
+    // Fall through to env lists if Firestore is unavailable.
   }
+
+  if (developers.has(normalized)) return 'developer';
+  if (viewers.has(normalized)) return 'viewer';
+  return null;
 }
 
 export async function createScannerSession(user: ScannerUser) {
@@ -165,7 +293,10 @@ export async function clearScannerSession() {
 
 export async function getScannerSession(): Promise<ScannerUser | null> {
   const cookieStore = await cookies();
-  return verifyCookieValue(cookieStore.get(SCANNER_SESSION_COOKIE)?.value);
+  const user = verifyCookieValue(cookieStore.get(SCANNER_SESSION_COOKIE)?.value);
+  if (!user) return null;
+  if (await isGoogleIdentityRevoked(user)) return null;
+  return user;
 }
 
 export async function requireScannerSession(role: ScannerRole = 'viewer') {

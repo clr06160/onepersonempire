@@ -6,3 +6,6 @@ coverage
 data/published-sites
 node_modules
 npm-debug.log*
+public/pitch-deck/images/*.png
+public/pitch-deck/images/*.jpg
+

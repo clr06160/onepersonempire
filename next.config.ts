@@ -9,8 +9,22 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_URL:
       process.env.NEXT_PUBLIC_BASE_URL || 'https://onepersonempire.web.app',
   },
+  async rewrites() {
+    return [
+      { source: '/pitch-deck', destination: '/pitch-deck/index.html' },
+      { source: '/pitch-deck/', destination: '/pitch-deck/index.html' },
+      { source: '/pitch-deck/motive', destination: '/pitch-deck/motive/index.html' },
+      { source: '/pitch-deck/motive/', destination: '/pitch-deck/motive/index.html' },
+      { source: '/pitch-deck/atelier', destination: '/pitch-deck/atelier/index.html' },
+      { source: '/pitch-deck/atelier/', destination: '/pitch-deck/atelier/index.html' },
+    ];
+  },
   async headers() {
     return [
+      {
+        source: '/((?!_next/static|_next/image|favicon.ico).*)',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
       {
         source: '/api/scanner/:path*',
         headers: [{ key: 'Cache-Control', value: 'private, no-store, max-age=0' }],
