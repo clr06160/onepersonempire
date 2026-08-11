@@ -66,7 +66,7 @@ export async function loadMacroCalendarData(): Promise<MacroCalendarPayload> {
 
   return {
     connected: false,
-    message: 'Macro calendar not uploaded yet. Run the daily refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     days: [],
   };
 }

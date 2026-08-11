@@ -26,6 +26,34 @@ type ScannerUser = { email: string; role: 'viewer' | 'developer' };
 
 const fetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
 
+function EarningsBadge({
+  badge,
+  threeDay,
+}: {
+  badge?: string | null;
+  threeDay?: number | null;
+}) {
+  if (badge !== 'pass' && badge !== 'fail') return null;
+  const title =
+    threeDay != null && !Number.isNaN(threeDay)
+      ? `Last day+3 ${threeDay >= 0 ? '+' : ''}${threeDay.toFixed(1)}%`
+      : badge === 'pass'
+        ? 'Day+3 ≥ +10%'
+        : 'Day+3 ≤ −10%';
+  return (
+    <span
+      title={title}
+      className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        badge === 'pass'
+          ? 'border-sky-600/70 bg-sky-950/70 text-sky-200'
+          : 'border-red-700/70 bg-red-950/60 text-red-200'
+      }`}
+    >
+      {badge === 'pass' ? 'PASS+' : 'FAIL−'}
+    </span>
+  );
+}
+
 function GaugeDial({ gauge }: { gauge: CockpitGauge }) {
   const angle = -120 + (Math.max(0, Math.min(100, gauge.value)) / 100) * 240;
   const tone =
@@ -463,16 +491,21 @@ export default function ScannerCockpitClient() {
 
       <ScannerExtrasNav active="/scanner/cockpit" />
 
-      <section className="rounded-2xl border border-emerald-800/50 bg-emerald-950/25 px-4 py-3 sm:px-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-emerald-400">
-          Satellite &amp; context desk
+      <section className="rounded-2xl border border-amber-800/50 bg-amber-950/25 px-4 py-3 sm:px-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-400">
+          Day 1 · what this page is
         </p>
-        <p className="mt-1 text-sm leading-6 text-emerald-50/90">
-          Main trading rules live on{' '}
-          <Link href="/scanner/core" className="font-semibold text-emerald-300 underline hover:text-emerald-200">
-            Core
+        <p className="mt-1 text-sm leading-6 text-amber-50/90">
+          This is <span className="font-semibold text-amber-100">today&apos;s book</span> — overlap, alerts, and what to
+          do next. Theme leadership lives on{' '}
+          <Link href="/scanner/leaders" className="font-semibold text-cyan-300 underline hover:text-cyan-200">
+            Leaders
           </Link>
-          . Use Flight Deck for overlap, alerts, and fun-budget ideas — not to replace Core Hold + QQQ50 + STACK.
+          ; the ranked warehouse is{' '}
+          <Link href="/scanner?systems=1" className="font-semibold text-emerald-300 underline hover:text-emerald-200">
+            System scanner
+          </Link>
+          .
         </p>
       </section>
 
@@ -717,7 +750,7 @@ export default function ScannerCockpitClient() {
           </div>
         ) : (
           <p className="mt-4 text-sm text-amber-200/80">
-            {forward?.message || 'Forward paper not uploaded yet. Run scanner_cockpit_crew.py --upload on your PC.'}
+            {forward?.message || 'Data is refreshing. Check back shortly.'}
           </p>
         )}
 
@@ -775,6 +808,7 @@ export default function ScannerCockpitClient() {
                 >
                   {name.ticker}
                 </Link>
+                <EarningsBadge badge={name.earningsBadge} threeDay={name.threeDayReactionPct} />
                 <span className="font-mono text-emerald-300">{name.weightPct.toFixed(1)}%</span>
                 {name.animal ? <span className="text-xs text-zinc-400">{name.animal}</span> : null}
                 {name.glassBucket ? (
@@ -803,9 +837,22 @@ export default function ScannerCockpitClient() {
           {data.watchList?.length ? (
             <div className="mt-5">
               <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Radar · next up</h3>
-              <p className="mt-2 font-mono text-sm text-zinc-400">
-                {data.watchList.map((w) => w.ticker).join(' · ')}
-              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {data.watchList.map((w) => (
+                  <span
+                    key={w.ticker}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/80 px-2 py-1 font-mono text-sm text-zinc-300"
+                  >
+                    <Link
+                      href={`/scanner/charts?ticker=${encodeURIComponent(w.ticker)}`}
+                      className="hover:text-amber-200"
+                    >
+                      {w.ticker}
+                    </Link>
+                    <EarningsBadge badge={w.earningsBadge} threeDay={w.threeDayReactionPct} />
+                  </span>
+                ))}
+              </div>
             </div>
           ) : null}
         </div>

@@ -465,7 +465,7 @@ export default function OptionsInstitutionsClient() {
           </>
         ) : (
           <div className="rounded-xl border border-zinc-300 bg-white p-5 text-sm text-zinc-700">
-            No scanner flow data yet. Run the morning scan refresh on your PC to populate picks.
+            Data is refreshing. Check back shortly.
           </div>
         )}
 

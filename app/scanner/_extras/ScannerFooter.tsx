@@ -23,7 +23,7 @@ export default function ScannerFooter() {
           </span>
           . All trademarks are the property of their respective owners.
         </p>
-        <p className="text-zinc-600">© {year} The Morning Scan. All rights reserved.</p>
+        <p className="text-zinc-600">© {year} Dream Tree Stocks. All rights reserved.</p>
       </div>
     </footer>
   );

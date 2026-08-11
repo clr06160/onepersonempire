@@ -84,6 +84,6 @@ export async function loadCockpitForward(): Promise<CockpitForwardPayload> {
   if (file) return file;
   return {
     connected: false,
-    message: 'Cockpit forward paper not uploaded yet. Run scanner_cockpit_crew.py --upload on your PC.',
+    message: 'Data is refreshing. Check back shortly.',
   };
 }

@@ -39,39 +39,72 @@ function isUnavailableModelError(error: unknown) {
   return /\b(404|not found|no longer available)\b/i.test(message);
 }
 
+function isMimeTypeUnsupportedError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return /\b(responseMimeType|mime type|application\/json|invalid.*config|400)\b/i.test(message);
+}
+
 export async function generateTextWithFallback(prompt: string, options?: {
   maxOutputTokens?: number;
+  responseMimeType?: string;
+  temperature?: number;
 }) {
   const apiKey = getApiKey();
   const client = new GoogleGenerativeAI(apiKey);
   let lastError: unknown;
 
   for (const modelName of getGeminiTextModelNames()) {
-    try {
-      if (DISABLED_TEXT_MODEL_PATTERNS.some((pattern) => pattern.test(modelName))) {
-        console.warn(`[gemini] skipping disabled text model: ${modelName}`);
-        continue;
+    if (DISABLED_TEXT_MODEL_PATTERNS.some((pattern) => pattern.test(modelName))) {
+      console.warn(`[gemini] skipping disabled text model: ${modelName}`);
+      continue;
+    }
+
+    const mimeAttempts = options?.responseMimeType
+      ? [options.responseMimeType, undefined]
+      : [undefined];
+
+    for (const mimeType of mimeAttempts) {
+      try {
+        console.info(
+          `[gemini] trying text model: ${modelName}${mimeType ? ` (${mimeType})` : ''}`,
+        );
+        const generationConfig: {
+          maxOutputTokens?: number;
+          responseMimeType?: string;
+          temperature?: number;
+        } = {};
+        if (options?.maxOutputTokens) generationConfig.maxOutputTokens = options.maxOutputTokens;
+        if (mimeType) generationConfig.responseMimeType = mimeType;
+        if (typeof options?.temperature === 'number') generationConfig.temperature = options.temperature;
+
+        const model = client.getGenerativeModel({
+          model: modelName,
+          generationConfig: Object.keys(generationConfig).length ? generationConfig : undefined,
+        });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text()?.trim();
+        if (!text) {
+          const block = result.response.promptFeedback?.blockReason;
+          throw new Error(block ? `Gemini blocked: ${block}` : `${modelName} returned no content`);
+        }
+        return { text, model: modelName };
+      } catch (error) {
+        lastError = error;
+        if (mimeType && isMimeTypeUnsupportedError(error)) {
+          console.warn(`[gemini] ${modelName} rejected JSON mime type; retrying plain text`, error);
+          continue;
+        }
+        if (isUnavailableModelError(error)) {
+          console.warn(`[gemini] ${modelName} is unavailable, trying fallback`, error);
+          break;
+        }
+        if (!isRetryableGeminiError(error)) {
+          // Try next model only if this wasn't a plain content/parse issue for this model.
+          break;
+        }
+        console.warn(`[gemini] ${modelName} failed, trying fallback`, error);
+        break;
       }
-      console.info(`[gemini] trying text model: ${modelName}`);
-      const model = client.getGenerativeModel({
-        model: modelName,
-        generationConfig: options?.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : undefined,
-      });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text()?.trim();
-      if (!text) {
-        const block = result.response.promptFeedback?.blockReason;
-        throw new Error(block ? `Gemini blocked: ${block}` : `${modelName} returned no content`);
-      }
-      return { text, model: modelName };
-    } catch (error) {
-      lastError = error;
-      if (isUnavailableModelError(error)) {
-        console.warn(`[gemini] ${modelName} is unavailable, trying fallback`, error);
-        continue;
-      }
-      if (!isRetryableGeminiError(error)) break;
-      console.warn(`[gemini] ${modelName} failed, trying fallback`, error);
     }
   }
 

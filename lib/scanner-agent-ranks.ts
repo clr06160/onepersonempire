@@ -9,15 +9,23 @@ export type AgentSystemRank = {
 
 export function agentRankBySystemId(leaderboard: AgentLeaderboardRow[]): Record<string, AgentSystemRank> {
   const out: Record<string, AgentSystemRank> = {};
-  for (const row of leaderboard) {
+  const asReturn = (value: unknown) => {
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) ? n : Number.NEGATIVE_INFINITY;
+  };
+  const ordered = [...leaderboard].sort((a, b) => {
+    const retA = asReturn(a.totalReturnPct);
+    const retB = asReturn(b.totalReturnPct);
+    if (retB !== retA) return retB - retA;
+    return (a.rank ?? 9999) - (b.rank ?? 9999);
+  });
+
+  for (const [index, row] of ordered.entries()) {
     const systemId = row.systemId;
-    if (!systemId) continue;
-    const rank = row.rank ?? 0;
-    const existing = out[systemId];
-    if (existing && existing.rank <= rank) continue;
+    if (!systemId || out[systemId]) continue;
     out[systemId] = {
-      rank,
-      totalReturnPct: row.totalReturnPct,
+      rank: row.rank ?? index + 1,
+      totalReturnPct: asReturn(row.totalReturnPct) === Number.NEGATIVE_INFINITY ? 0 : asReturn(row.totalReturnPct),
       agentId: row.agentId,
       label: row.label,
     };
@@ -36,8 +44,13 @@ export function sortSystemsByAgentRank<T extends { id: string }>(
   rankMap: Record<string, AgentSystemRank>,
 ): T[] {
   return [...systems].sort((a, b) => {
-    const rankA = rankMap[a.id]?.rank ?? 9999;
-    const rankB = rankMap[b.id]?.rank ?? 9999;
+    const metaA = rankMap[a.id];
+    const metaB = rankMap[b.id];
+    const retA = metaA ? metaA.totalReturnPct : Number.NEGATIVE_INFINITY;
+    const retB = metaB ? metaB.totalReturnPct : Number.NEGATIVE_INFINITY;
+    if (retB !== retA) return retB - retA;
+    const rankA = metaA?.rank ?? 9999;
+    const rankB = metaB?.rank ?? 9999;
     if (rankA !== rankB) return rankA - rankB;
     return a.id.localeCompare(b.id);
   });

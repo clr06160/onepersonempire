@@ -137,7 +137,7 @@ export async function loadScannerFlowData(): Promise<FlowPayload> {
 
   return {
     connected: false,
-    message: 'Flow data not uploaded yet. Run scanners/build_scanner_flow.py on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     tickers: {},
   };
 }

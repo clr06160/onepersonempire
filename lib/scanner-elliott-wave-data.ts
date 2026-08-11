@@ -209,8 +209,7 @@ export async function loadElliottWaveDashboard(): Promise<ElliottWavePayload> {
 
   return {
     connected: false,
-    message:
-      'Elliott Wave dashboard not uploaded yet. Run python scanners/elliott_wave_dashboard.py --upload on the PC.',
+    message: 'Data is refreshing. Check back shortly.',
     markets: [],
   };
 }

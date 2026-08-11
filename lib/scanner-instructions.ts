@@ -98,7 +98,7 @@ export async function loadScannerInstructions(): Promise<ScannerInstructionsPayl
 
   return {
     connected: false,
-    message: 'Instructions not uploaded yet. Run the stocks scanner refresh and upload instructions JSON.',
+    message: 'Data is refreshing. Check back shortly.',
     systems: [],
   };
 }

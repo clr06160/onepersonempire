@@ -106,7 +106,7 @@ export async function loadCupHandleData(): Promise<CupHandlePayload> {
 
   return {
     connected: false,
-    message: 'Cup with Handle scan not uploaded yet. Run scanners/cup_handle_dashboard.py on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     universes: [],
     recentBreakouts: [],
   };

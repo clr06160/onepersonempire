@@ -108,7 +108,7 @@ export async function loadRawBearDashboard(): Promise<RawBearPayload> {
 
   return {
     connected: false,
-    message: 'Raw Bear scan has not been built yet. Run build_raw_bear_scanner.py on your PC.',
+    message: 'Data is refreshing. Check back shortly.',
     universes: [],
   };
 }

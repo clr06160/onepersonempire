@@ -511,8 +511,7 @@ export default function CotReportClient() {
             </section>
           ) : (
             <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-              No trend charts yet — rebuild with <code className="text-zinc-300">python scanners/cot_report_dashboard.py</code>{' '}
-              and upload.
+              Data is refreshing. Check back shortly.
             </section>
           )}
 

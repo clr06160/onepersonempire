@@ -6,6 +6,7 @@ import PickNameRow from '@/components/scanner/PickNameRow';
 import type { PickContext } from '@/lib/scanner-pick-context';
 import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 import type { AgentDetail, AgentLeaderboardRow, AgentTrade, ScannerAgentsPayload } from '@/lib/scanner-agents';
+import { normalizeAgentLeaderboard } from '@/lib/scanner-agent-leaderboard';
 
 type ScannerUser = {
   email: string;
@@ -58,12 +59,21 @@ export default function ScannerAgentsClient() {
     }
     const pickPayload = pickResponse.ok ? await pickResponse.json() : { data: { byTicker: {} } };
     setError('');
-    setData(payload.data || null);
     setPickContextByTicker(pickPayload.data?.byTicker || {});
-    const rows = (payload.data?.leaderboard || []) as AgentLeaderboardRow[];
+    const rows = normalizeAgentLeaderboard(
+      (payload.data?.leaderboard || []) as AgentLeaderboardRow[],
+    );
     if (rows.length) {
       setSelectedId((current) => current || rows[0].agentId);
     }
+    setData(
+      payload.data
+        ? {
+            ...payload.data,
+            leaderboard: rows,
+          }
+        : null,
+    );
   }, []);
 
   useEffect(() => {
@@ -91,8 +101,12 @@ export default function ScannerAgentsClient() {
   }, [leaderboard]);
 
   const filteredLeaderboard = useMemo(() => {
-    if (roleFilter === 'All') return leaderboard;
-    return leaderboard.filter((row) => row.role === roleFilter);
+    const rows =
+      roleFilter === 'All'
+        ? leaderboard
+        : leaderboard.filter((row) => row.role === roleFilter);
+    // Always re-rank by % return at render time so a stale API payload cannot flip the table.
+    return normalizeAgentLeaderboard(rows as AgentLeaderboardRow[]);
   }, [leaderboard, roleFilter]);
 
   return (
@@ -128,7 +142,7 @@ export default function ScannerAgentsClient() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <p className="text-zinc-300">{data?.message || 'No agent data yet.'}</p>
           <p className="mt-2 text-sm text-zinc-500">
-            Run <code className="text-violet-300">python scanner_agent_crew.py --upload</code> after a scanner refresh.
+            Data is refreshing. Check back shortly.
           </p>
         </section>
       ) : (

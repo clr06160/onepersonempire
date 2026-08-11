@@ -1,5 +1,10 @@
 import type { EarningsCalendarPayload } from '@/lib/scanner-earnings-data';
 import { loadEarningsCalendarData } from '@/lib/scanner-earnings-data';
+import type {
+  EarningsReactionBadge,
+  EarningsReactionBadgesPayload,
+} from '@/lib/scanner-earnings-reaction';
+import { loadEarningsReactionBadges } from '@/lib/scanner-earnings-reaction';
 import type { CatalystPayload, CatalystThemeSummary } from '@/lib/scanner-catalysts-data';
 import { loadScannerCatalystsData } from '@/lib/scanner-catalysts-data';
 import { loadScannerFlowData } from '@/lib/scanner-flow-data';
@@ -13,6 +18,7 @@ export type PickEarningsContext = {
   threeDayReactionPct?: number | null;
   immediateReactionPct?: number | null;
   earningsReactionScore?: number | null;
+  reactionBadge?: EarningsReactionBadge | null;
 };
 
 export type PickThemeContext = {
@@ -339,6 +345,38 @@ function earningsByTicker(calendar: EarningsCalendarPayload): Record<string, Pic
   return out;
 }
 
+function mergeReactionBadges(
+  byTicker: Record<string, PickContext>,
+  earningsMap: Record<string, PickEarningsContext>,
+  badges: EarningsReactionBadgesPayload,
+) {
+  for (const [ticker, reaction] of Object.entries(badges.byTicker || {})) {
+    const key = String(ticker || '').toUpperCase();
+    if (!key) continue;
+    const existingEarn = earningsMap[key] || byTicker[key]?.earnings;
+    const merged: PickEarningsContext = {
+      earningsDate:
+        existingEarn?.earningsDate ||
+        reaction.lastEarningsDate ||
+        '',
+      threeDayReactionPct: reaction.threeDayReactionPct ?? existingEarn?.threeDayReactionPct,
+      immediateReactionPct: reaction.immediateReactionPct ?? existingEarn?.immediateReactionPct,
+      earningsReactionScore: reaction.earningsReactionScore ?? existingEarn?.earningsReactionScore,
+      reactionBadge: reaction.badge ?? null,
+    };
+    if (!merged.earningsDate && merged.threeDayReactionPct == null && !merged.reactionBadge) {
+      continue;
+    }
+    if (!merged.earningsDate) {
+      merged.earningsDate = reaction.lastEarningsDate || 'last';
+    }
+    earningsMap[key] = merged;
+    if (byTicker[key]) {
+      byTicker[key] = { ...byTicker[key], earnings: merged };
+    }
+  }
+}
+
 function lensSnapshots(shortlist: ShortlistPayload, calendar: EarningsCalendarPayload): LensForwardSnapshot[] {
   const lenses: LensForwardSnapshot[] = [];
 
@@ -368,10 +406,11 @@ function lensSnapshots(shortlist: ShortlistPayload, calendar: EarningsCalendarPa
 }
 
 export async function loadPickContextPayload(): Promise<PickContextPayload> {
-  const [shortlist, calendar, catalysts] = await Promise.all([
+  const [shortlist, calendar, catalysts, reactionBadges] = await Promise.all([
     loadScannerShortlistData(),
     loadEarningsCalendarData(),
     loadScannerCatalystsData().catch(() => ({ rows: [], themes: [] } as CatalystPayload)),
+    loadEarningsReactionBadges().catch(() => ({ byTicker: {} } as EarningsReactionBadgesPayload)),
   ]);
   const earningsMap = earningsByTicker(calendar);
   const themeMap = buildTickerThemeMap(catalysts);
@@ -400,6 +439,7 @@ export async function loadPickContextPayload(): Promise<PickContextPayload> {
   await mergeValuationFlowFallback(byTicker, earningsMap, themeMap);
   mergeThemeContext(byTicker, themeMap);
   mergeSectorFallback(byTicker, catalysts);
+  mergeReactionBadges(byTicker, earningsMap, reactionBadges);
 
   const topTenHoldings = new Set(
     (shortlist.forwardTest?.holdings || shortlist.portfolio?.map((row) => row.ticker) || []).map((t) =>

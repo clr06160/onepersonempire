@@ -201,7 +201,7 @@ export async function loadScannerValuationsData(): Promise<ValuationPayload> {
 
   return {
     connected: false,
-    message: 'Valuations have not been uploaded yet. Run the valuation refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     rows: [],
   };
 }

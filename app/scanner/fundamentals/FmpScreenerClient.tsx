@@ -23,6 +23,15 @@ function growthClass(value?: number | null) {
   return '';
 }
 
+function day3Class(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '';
+  if (value >= 10) return 'bg-sky-950/80 font-semibold text-sky-200';
+  if (value <= -10) return 'bg-red-950/70 font-semibold text-red-200';
+  if (value > 0) return 'text-emerald-400/90';
+  if (value < 0) return 'text-red-400/90';
+  return '';
+}
+
 function rule40Class(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return '';
   if (value >= 60) return 'bg-emerald-950/70 text-emerald-200 font-semibold';
@@ -186,7 +195,7 @@ export default function FmpScreenerClient() {
                       <td className={`py-2 pr-3 ${growthClass(row.immediateReactionPct)}`}>
                         {pct(row.immediateReactionPct)}
                       </td>
-                      <td className={`py-2 pr-3 ${growthClass(row.threeDayReactionPct)}`}>
+                      <td className={`py-2 pr-3 ${day3Class(row.threeDayReactionPct)}`}>
                         {pct(row.threeDayReactionPct)}
                       </td>
                       <td className={`py-2 pr-3 ${reactionClass(row.earningsReactionScore)}`}>

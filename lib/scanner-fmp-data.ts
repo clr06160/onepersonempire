@@ -145,8 +145,7 @@ export async function loadFmpScreenerData(): Promise<FmpScreenerPayload> {
 
   return {
     connected: false,
-    message:
-      'Fundamentals screener not uploaded yet. Run the weekly EDGAR refresh on your PC (scanners/morning_weekly_edgar_refresh.py --go-live), then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     rows: [],
   };
 }

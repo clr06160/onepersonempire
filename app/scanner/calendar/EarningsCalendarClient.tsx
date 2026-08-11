@@ -237,7 +237,8 @@ function ClosedTradesTable({ trades }: { trades: EarningsForwardTrade[] }) {
 
 function moveClass(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return 'text-zinc-500';
-  if (value >= 10) return 'text-emerald-300 font-semibold';
+  if (value >= 10) return 'bg-sky-950/80 font-semibold text-sky-200';
+  if (value <= -10) return 'bg-red-950/70 font-semibold text-red-200';
   if (value > 0) return 'text-emerald-400';
   if (value < 0) return 'text-red-400';
   return 'text-zinc-400';

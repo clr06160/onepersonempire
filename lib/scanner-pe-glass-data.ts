@@ -174,7 +174,7 @@ export async function loadPeGlassDashboard(): Promise<PeGlassPayload> {
 
   return {
     connected: false,
-    message: 'Earnings Glass has not been built yet. Run build_pe_glass_dashboard.py on your PC.',
+    message: 'Data is refreshing. Check back shortly.',
     rows: [],
   };
 }

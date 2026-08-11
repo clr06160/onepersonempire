@@ -136,11 +136,21 @@ export default function PickContextChips({ context, inline }: { context?: PickCo
       ) : null}
       {context.earnings ? (
         <Chip
-          label={`Earn ${context.earnings.earningsDate.slice(5)}`}
+          label={
+            context.earnings.reactionBadge === 'pass'
+              ? 'Earn PASS+'
+              : context.earnings.reactionBadge === 'fail'
+                ? 'Earn FAIL−'
+                : `Earn ${context.earnings.earningsDate.slice(5)}`
+          }
           className={
-            (context.earnings.earningsReactionScore ?? 0) >= 3
-              ? 'border-amber-700/70 bg-amber-950/50 text-amber-200'
-              : 'border-violet-800/60 bg-violet-950/40 text-violet-200'
+            context.earnings.reactionBadge === 'pass'
+              ? 'border-sky-600/70 bg-sky-950/70 text-sky-200'
+              : context.earnings.reactionBadge === 'fail'
+                ? 'border-red-700/70 bg-red-950/60 text-red-200'
+                : (context.earnings.earningsReactionScore ?? 0) >= 3
+                  ? 'border-amber-700/70 bg-amber-950/50 text-amber-200'
+                  : 'border-violet-800/60 bg-violet-950/40 text-violet-200'
           }
           title={`Earnings ${context.earnings.earningsDate} · last 3d ${context.earnings.threeDayReactionPct ?? '—'}% · react ${context.earnings.earningsReactionScore ?? '—'}`}
         />

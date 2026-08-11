@@ -198,7 +198,7 @@ export async function loadCotReportData(): Promise<CotReportPayload> {
   if (file) return file;
   return {
     connected: false,
-    message: 'COT report not uploaded yet. Run scanners/cot_report_dashboard.py on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     equities: [],
     charts: [],
   };

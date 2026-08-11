@@ -49,8 +49,11 @@ export default function ScannerWaitlistClient() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">Developer</p>
         <h1 className="mt-2 text-3xl font-bold">Interest waitlist</h1>
         <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-          People who dropped email + a note on the brochure before they have access. Approve them in Cloud Run /
-          Firestore <code className="text-zinc-300">scannerUsers</code> when ready.
+          People who dropped email + a note on the brochure. Sign-in is open now — cut access from{' '}
+          <Link href="/scanner/users" className="text-emerald-300 hover:text-emerald-200">
+            Users
+          </Link>
+          .
         </p>
       </header>
 

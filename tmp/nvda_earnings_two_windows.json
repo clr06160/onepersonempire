@@ -1,0 +1,431 @@
+{
+  "ticker": "NVDA",
+  "binWidthPct": 4.0,
+  "windows": {
+    "hot": {
+      "label": "Oct 2022 \u2013 Jun 2024",
+      "lo": "2022-10-01",
+      "hi": "2024-06-30",
+      "events": [
+        {
+          "reportDate": "2022-11-16",
+          "day0Pct": -1.45,
+          "day3Pct": 0.82
+        },
+        {
+          "reportDate": "2023-02-22",
+          "day0Pct": 14.0,
+          "day3Pct": 11.88
+        },
+        {
+          "reportDate": "2023-05-24",
+          "day0Pct": 24.34,
+          "day3Pct": 23.85
+        },
+        {
+          "reportDate": "2023-08-23",
+          "day0Pct": 0.09,
+          "day3Pct": 3.53
+        },
+        {
+          "reportDate": "2023-11-21",
+          "day0Pct": -2.45,
+          "day3Pct": -4.23
+        },
+        {
+          "reportDate": "2024-02-21",
+          "day0Pct": 16.41,
+          "day3Pct": 16.64
+        },
+        {
+          "reportDate": "2024-05-22",
+          "day0Pct": 9.32,
+          "day3Pct": 20.93
+        }
+      ],
+      "stats": {
+        "day0": {
+          "n": 7,
+          "mean": 8.61,
+          "median": 9.32,
+          "min": -2.45,
+          "max": 24.34,
+          "pctPositive": 71.4
+        },
+        "day3": {
+          "n": 7,
+          "mean": 10.49,
+          "median": 11.88,
+          "min": -4.23,
+          "max": 23.85,
+          "pctPositive": 85.7
+        }
+      },
+      "histograms": {
+        "day0": [
+          {
+            "label": "-20",
+            "count": 0,
+            "from": -20.0,
+            "to": -16.0
+          },
+          {
+            "label": "-16",
+            "count": 0,
+            "from": -16.0,
+            "to": -12.0
+          },
+          {
+            "label": "-12",
+            "count": 0,
+            "from": -12.0,
+            "to": -8.0
+          },
+          {
+            "label": "-8",
+            "count": 0,
+            "from": -8.0,
+            "to": -4.0
+          },
+          {
+            "label": "-4",
+            "count": 2,
+            "from": -4.0,
+            "to": 0.0
+          },
+          {
+            "label": "0",
+            "count": 1,
+            "from": 0.0,
+            "to": 4.0
+          },
+          {
+            "label": "4",
+            "count": 0,
+            "from": 4.0,
+            "to": 8.0
+          },
+          {
+            "label": "8",
+            "count": 1,
+            "from": 8.0,
+            "to": 12.0
+          },
+          {
+            "label": "12",
+            "count": 1,
+            "from": 12.0,
+            "to": 16.0
+          },
+          {
+            "label": "16",
+            "count": 1,
+            "from": 16.0,
+            "to": 20.0
+          },
+          {
+            "label": "20",
+            "count": 0,
+            "from": 20.0,
+            "to": 24.0
+          },
+          {
+            "label": "24",
+            "count": 1,
+            "from": 24.0,
+            "to": 28.0
+          }
+        ],
+        "day3": [
+          {
+            "label": "-20",
+            "count": 0,
+            "from": -20.0,
+            "to": -16.0
+          },
+          {
+            "label": "-16",
+            "count": 0,
+            "from": -16.0,
+            "to": -12.0
+          },
+          {
+            "label": "-12",
+            "count": 0,
+            "from": -12.0,
+            "to": -8.0
+          },
+          {
+            "label": "-8",
+            "count": 1,
+            "from": -8.0,
+            "to": -4.0
+          },
+          {
+            "label": "-4",
+            "count": 0,
+            "from": -4.0,
+            "to": 0.0
+          },
+          {
+            "label": "0",
+            "count": 2,
+            "from": 0.0,
+            "to": 4.0
+          },
+          {
+            "label": "4",
+            "count": 0,
+            "from": 4.0,
+            "to": 8.0
+          },
+          {
+            "label": "8",
+            "count": 1,
+            "from": 8.0,
+            "to": 12.0
+          },
+          {
+            "label": "12",
+            "count": 0,
+            "from": 12.0,
+            "to": 16.0
+          },
+          {
+            "label": "16",
+            "count": 1,
+            "from": 16.0,
+            "to": 20.0
+          },
+          {
+            "label": "20",
+            "count": 2,
+            "from": 20.0,
+            "to": 24.0
+          },
+          {
+            "label": "24",
+            "count": 0,
+            "from": 24.0,
+            "to": 28.0
+          }
+        ]
+      }
+    },
+    "later": {
+      "label": "Jul 2024 \u2013 May 2026",
+      "lo": "2024-07-01",
+      "hi": "2026-06-30",
+      "events": [
+        {
+          "reportDate": "2024-08-28",
+          "day0Pct": -6.39,
+          "day3Pct": -15.45
+        },
+        {
+          "reportDate": "2024-11-20",
+          "day0Pct": 0.54,
+          "day3Pct": -6.15
+        },
+        {
+          "reportDate": "2025-02-26",
+          "day0Pct": -8.48,
+          "day3Pct": -11.65
+        },
+        {
+          "reportDate": "2025-05-28",
+          "day0Pct": 3.25,
+          "day3Pct": 4.75
+        },
+        {
+          "reportDate": "2025-08-27",
+          "day0Pct": -0.78,
+          "day3Pct": -6.04
+        },
+        {
+          "reportDate": "2025-11-19",
+          "day0Pct": -3.15,
+          "day3Pct": -4.66
+        },
+        {
+          "reportDate": "2026-02-25",
+          "day0Pct": -5.46,
+          "day3Pct": -7.93
+        },
+        {
+          "reportDate": "2026-05-20",
+          "day0Pct": -1.77,
+          "day3Pct": -4.87
+        }
+      ],
+      "stats": {
+        "day0": {
+          "n": 8,
+          "mean": -2.78,
+          "median": -2.46,
+          "min": -8.48,
+          "max": 3.25,
+          "pctPositive": 25.0
+        },
+        "day3": {
+          "n": 8,
+          "mean": -6.5,
+          "median": -6.1,
+          "min": -15.45,
+          "max": 4.75,
+          "pctPositive": 12.5
+        }
+      },
+      "histograms": {
+        "day0": [
+          {
+            "label": "-20",
+            "count": 0,
+            "from": -20.0,
+            "to": -16.0
+          },
+          {
+            "label": "-16",
+            "count": 0,
+            "from": -16.0,
+            "to": -12.0
+          },
+          {
+            "label": "-12",
+            "count": 1,
+            "from": -12.0,
+            "to": -8.0
+          },
+          {
+            "label": "-8",
+            "count": 2,
+            "from": -8.0,
+            "to": -4.0
+          },
+          {
+            "label": "-4",
+            "count": 3,
+            "from": -4.0,
+            "to": 0.0
+          },
+          {
+            "label": "0",
+            "count": 2,
+            "from": 0.0,
+            "to": 4.0
+          },
+          {
+            "label": "4",
+            "count": 0,
+            "from": 4.0,
+            "to": 8.0
+          },
+          {
+            "label": "8",
+            "count": 0,
+            "from": 8.0,
+            "to": 12.0
+          },
+          {
+            "label": "12",
+            "count": 0,
+            "from": 12.0,
+            "to": 16.0
+          },
+          {
+            "label": "16",
+            "count": 0,
+            "from": 16.0,
+            "to": 20.0
+          },
+          {
+            "label": "20",
+            "count": 0,
+            "from": 20.0,
+            "to": 24.0
+          },
+          {
+            "label": "24",
+            "count": 0,
+            "from": 24.0,
+            "to": 28.0
+          }
+        ],
+        "day3": [
+          {
+            "label": "-20",
+            "count": 0,
+            "from": -20.0,
+            "to": -16.0
+          },
+          {
+            "label": "-16",
+            "count": 1,
+            "from": -16.0,
+            "to": -12.0
+          },
+          {
+            "label": "-12",
+            "count": 1,
+            "from": -12.0,
+            "to": -8.0
+          },
+          {
+            "label": "-8",
+            "count": 5,
+            "from": -8.0,
+            "to": -4.0
+          },
+          {
+            "label": "-4",
+            "count": 0,
+            "from": -4.0,
+            "to": 0.0
+          },
+          {
+            "label": "0",
+            "count": 0,
+            "from": 0.0,
+            "to": 4.0
+          },
+          {
+            "label": "4",
+            "count": 1,
+            "from": 4.0,
+            "to": 8.0
+          },
+          {
+            "label": "8",
+            "count": 0,
+            "from": 8.0,
+            "to": 12.0
+          },
+          {
+            "label": "12",
+            "count": 0,
+            "from": 12.0,
+            "to": 16.0
+          },
+          {
+            "label": "16",
+            "count": 0,
+            "from": 16.0,
+            "to": 20.0
+          },
+          {
+            "label": "20",
+            "count": 0,
+            "from": 20.0,
+            "to": 24.0
+          },
+          {
+            "label": "24",
+            "count": 0,
+            "from": 24.0,
+            "to": 28.0
+          }
+        ]
+      }
+    }
+  }
+}

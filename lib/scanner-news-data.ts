@@ -68,7 +68,7 @@ export async function loadScannerNewsData(): Promise<ScannerNewsPayload> {
 
   return {
     connected: false,
-    message: 'Scanner news not uploaded yet. Run the daily refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     feed: [],
     byTicker: {},
     market: [],

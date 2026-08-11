@@ -1,0 +1,36 @@
+---
+description: Multi-agent deploy coordination + agent leaderboard must sort by % return
+alwaysApply: true
+---
+
+# Multi-agent deploys (critical)
+
+More than one Cursor agent may work on this repo at once. **Do not wipe each other's fixes.**
+
+## Before `gcloud run deploy`
+
+1. **Pull / read the working tree** — deploy from `C:\Users\CoryRoberts\onepersonempire` with **all current uncommitted scanner fixes included**. Do not deploy from a stale worktree, a clean checkout that lacks local changes, or an older branch that predates today's fixes.
+2. **Do not revert or overwrite** uncommitted changes you did not make unless the user explicitly asks.
+3. If another agent is mid-deploy, **wait** or tell the user — racing Cloud Run revisions causes flip-flops (good build → overwritten by old build).
+
+## Agent tournament leaderboard sort (do not regress)
+
+The agents leaderboard must rank by **`totalReturnPct` descending** (highest % return at #1), **never by equity / bankroll**.
+
+Required pieces (must exist in any deploy that touches scanner):
+
+| Path | Role |
+|------|------|
+| `lib/scanner-agent-leaderboard.ts` | Client-safe `normalizeAgentLeaderboard()` |
+| `lib/scanner-agents.ts` | Normalize on GCS/file load |
+| `app/api/scanner/agents/route.ts` | Normalize again + `Cache-Control: no-store` |
+| `app/scanner/agents/ScannerAgentsClient.tsx` | Normalize on client after fetch |
+| `app/scanner/ScannerPageClient.tsx` | Normalize before system ranking |
+
+**Symptom of regression:** Large-Cap / huge equity agents at top; MidCap Raw Quarterly Top10 Hold (~+13%) buried lower.
+
+**If you add scanner pages:** keep those normalize call sites. Do not remove `lib/scanner-agent-leaderboard.ts`.
+
+## Pitch deck
+
+`public/pitch-deck/` is separate from scanner/builder. Leave it alone unless the user asks.

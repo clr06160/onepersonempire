@@ -6,6 +6,8 @@ import {
   COCKPIT_SUMMARY,
 } from '@/lib/scanner-cockpit-constitution';
 import { loadScannerData } from '@/lib/scanner-data';
+import type { EarningsReactionBadge, EarningsReactionTicker } from '@/lib/scanner-earnings-reaction';
+import { loadEarningsReactionBadges } from '@/lib/scanner-earnings-reaction';
 import { loadPickContextPayload, type PickContext } from '@/lib/scanner-pick-context';
 import { loadPeGlassDashboard } from '@/lib/scanner-pe-glass-data';
 
@@ -28,6 +30,8 @@ export type CockpitCandidate = {
   animal?: string;
   runwayScore?: number | null;
   glassBucket?: string;
+  earningsBadge?: EarningsReactionBadge | null;
+  threeDayReactionPct?: number | null;
 };
 
 export type CockpitBook = {
@@ -119,6 +123,7 @@ function scoreCandidate(args: {
   context?: PickContext;
   roomToFill: boolean;
   earningsWin: boolean;
+  earningsBadge?: EarningsReactionBadge | null;
 }): { score: number; reasons: string[]; vetoed: boolean } {
   const reasons: string[] = [];
   let score = 0;
@@ -151,6 +156,13 @@ function scoreCandidate(args: {
   if (args.earningsWin) {
     score += 10;
     reasons.push('Prior earnings reaction positive');
+  }
+  if (args.earningsBadge === 'pass') {
+    score += 12;
+    reasons.push('Earn PASS+ (day+3 ≥ +10%)');
+  } else if (args.earningsBadge === 'fail') {
+    score -= 8;
+    reasons.push('Earn FAIL− (day+3 ≤ −10%)');
   }
 
   if (ctx?.inTopTenBook) {
@@ -194,7 +206,7 @@ function buildWeights(names: CockpitCandidate[], grossPct: number): CockpitCandi
 
 export async function buildCockpitPayload(): Promise<CockpitPayload> {
   const generatedAt = new Date().toISOString();
-  const [scanner, agents, pickContext, peGlass] = await Promise.all([
+  const [scanner, agents, pickContext, peGlass, reactionBadges] = await Promise.all([
     loadScannerData().catch(
       (): Awaited<ReturnType<typeof loadScannerData>> => ({
         connected: false,
@@ -216,6 +228,7 @@ export async function buildCockpitPayload(): Promise<CockpitPayload> {
       }),
     ),
     loadPeGlassDashboard().catch(() => null),
+    loadEarningsReactionBadges().catch(() => ({ byTicker: {} })),
   ]);
 
   const systems = (scanner.systems || []) as ScannerSystem[];
@@ -275,6 +288,7 @@ export async function buildCockpitPayload(): Promise<CockpitPayload> {
   }
 
   const byTicker = pickContext.byTicker || {};
+  const reactionByTicker: Record<string, EarningsReactionTicker> = reactionBadges.byTicker ?? {};
   const candidateTickers = new Set<string>([
     ...bestTop,
     ...agentHoldings,
@@ -285,6 +299,11 @@ export async function buildCockpitPayload(): Promise<CockpitPayload> {
   const scored: CockpitCandidate[] = [];
   for (const ticker of candidateTickers) {
     const ctx = byTicker[ticker];
+    const reaction = reactionByTicker[ticker];
+    const earningsBadge =
+      reaction?.badge ?? ctx?.earnings?.reactionBadge ?? null;
+    const threeDayReactionPct =
+      reaction?.threeDayReactionPct ?? ctx?.earnings?.threeDayReactionPct ?? null;
     const overlap = overlaps.get(ticker);
     const { score, reasons, vetoed } = scoreCandidate({
       ticker,
@@ -293,7 +312,11 @@ export async function buildCockpitPayload(): Promise<CockpitPayload> {
       inBestScanTop: bestTop.has(ticker),
       context: ctx,
       roomToFill: roomTickers.has(ticker),
-      earningsWin: (ctx?.earnings?.threeDayReactionPct ?? 0) > 0 || (ctx?.earnings?.immediateReactionPct ?? 0) > 0,
+      earningsWin:
+        earningsBadge === 'pass' ||
+        (threeDayReactionPct ?? 0) > 0 ||
+        (ctx?.earnings?.immediateReactionPct ?? 0) > 0,
+      earningsBadge,
     });
     scored.push({
       ticker,
@@ -305,6 +328,8 @@ export async function buildCockpitPayload(): Promise<CockpitPayload> {
       animal: ctx?.animal,
       runwayScore: ctx?.runwayScore,
       glassBucket: roomTickers.has(ticker) ? 'room' : undefined,
+      earningsBadge,
+      threeDayReactionPct,
     });
   }
 

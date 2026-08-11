@@ -63,6 +63,7 @@ export type CatalystPrice = {
   priceDate?: string | null;
   distanceFrom20dPct?: number | null;
   distanceFrom50dPct?: number | null;
+  return1dPct?: number | null;
   return1wPct?: number | null;
   return1mPct?: number | null;
   return3mPct?: number | null;
@@ -254,7 +255,7 @@ export async function loadScannerCatalystsData(): Promise<CatalystPayload> {
 
   return {
     connected: false,
-    message: 'Catalysts have not been uploaded yet. Run the catalyst refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     rows: [],
     themes: [],
     emergingPhrases: [],

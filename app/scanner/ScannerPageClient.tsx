@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentLeaderboardRow } from '@/lib/scanner-agents';
+import { normalizeAgentLeaderboard } from '@/lib/scanner-agent-leaderboard';
 import {
   agentRankBySystemId,
   formatAgentRankSuffix,
@@ -166,7 +167,13 @@ declare global {
     google?: {
       accounts: {
         id: {
-          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential: string }) => void;
+            nonce?: string;
+            use_fedcm_for_button?: boolean;
+            auto_select?: boolean;
+          }) => void;
           renderButton: (element: HTMLElement, options: Record<string, string | number | boolean>) => void;
         };
       };
@@ -335,7 +342,9 @@ export default function ScannerPageClient({
       const agentsPayload = agentsResponse.ok
         ? await readResponseJson(agentsResponse, { data: { leaderboard: [] } })
         : { data: { leaderboard: [] } };
-      const leaderboard = (agentsPayload.data?.leaderboard || []) as AgentLeaderboardRow[];
+      const leaderboard = normalizeAgentLeaderboard(
+        (agentsPayload.data?.leaderboard || []) as AgentLeaderboardRow[],
+      );
       setError('');
       setUser(payload.user || null);
       setData(payload.data || null);
@@ -385,13 +394,13 @@ export default function ScannerPageClient({
   }, []);
 
   const handleCredential = useCallback(
-    async (credential: string) => {
+    async (credential: string, ticket: string) => {
       setError('');
       const response = await fetch('/api/scanner/auth/login', {
         ...scannerFetchInit,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential }),
+        body: JSON.stringify({ credential, ticket }),
       });
       const payload = await readResponseJson(response, { error: 'Sign-in failed.' } as {
         user?: ScannerUser;
@@ -403,7 +412,9 @@ export default function ScannerPageClient({
       }
       setUser(payload.user || null);
       if (!stayOnSystems) {
-        router.replace('/scanner/cockpit');
+        const home =
+          payload.user?.role === 'developer' ? '/scanner/cockpit' : '/scanner/leaders';
+        router.replace(home);
         return;
       }
       await loadScannerData();
@@ -411,14 +422,30 @@ export default function ScannerPageClient({
     [loadScannerData, router, stayOnSystems],
   );
 
-  const renderGoogleButton = useCallback(() => {
+  const renderGoogleButton = useCallback(async () => {
     const target = document.getElementById('google-signin-button');
     if (!target || !window.google || !googleClientId) return false;
 
+    const nonceResponse = await fetch('/api/scanner/auth/google-nonce', scannerFetchInit);
+    const noncePayload = await readResponseJson(nonceResponse, { error: '' } as {
+      nonce?: string;
+      ticket?: string;
+      error?: string;
+    });
+    if (!nonceResponse.ok || !noncePayload.nonce || !noncePayload.ticket) {
+      setError(noncePayload.error || 'Could not start secure Google sign-in.');
+      return false;
+    }
+
+    const ticket = noncePayload.ticket;
     target.innerHTML = '';
     window.google.accounts.id.initialize({
       client_id: googleClientId,
-      callback: (response) => handleCredential(response.credential),
+      nonce: noncePayload.nonce,
+      use_fedcm_for_button: true,
+      callback: (response) => {
+        void handleCredential(response.credential, ticket);
+      },
     });
     window.google.accounts.id.renderButton(target, {
       theme: 'filled_black',
@@ -431,13 +458,15 @@ export default function ScannerPageClient({
 
   const tryRenderGoogleButton = useCallback(() => {
     if (user || !googleClientId) return;
-    if (renderGoogleButton()) {
-      renderAttemptsRef.current = 0;
-      return;
-    }
-    if (renderAttemptsRef.current >= 12) return;
-    renderAttemptsRef.current += 1;
-    window.setTimeout(() => tryRenderGoogleButtonRef.current(), 250);
+    void renderGoogleButton().then((ok) => {
+      if (ok) {
+        renderAttemptsRef.current = 0;
+        return;
+      }
+      if (renderAttemptsRef.current >= 12) return;
+      renderAttemptsRef.current += 1;
+      window.setTimeout(() => tryRenderGoogleButtonRef.current(), 250);
+    });
   }, [googleClientId, renderGoogleButton, user]);
 
   useEffect(() => {
@@ -479,10 +508,12 @@ export default function ScannerPageClient({
     return () => window.clearTimeout(timer);
   }, [loadScannerData, refreshSession]);
 
-  // Flight Deck is the subscriber home. Systems warehouse stays one click away via ?systems=1.
+  // Viewers land on Leaders (beta desk). Developers keep Flight Deck as home.
+  // Systems warehouse stays one click away via ?systems=1.
   useEffect(() => {
     if (loading || !user || stayOnSystems) return;
-    router.replace('/scanner/cockpit');
+    const home = user.role === 'developer' ? '/scanner/cockpit' : '/scanner/leaders';
+    router.replace(home);
   }, [loading, user, stayOnSystems, router]);
 
   useEffect(() => {
@@ -883,8 +914,20 @@ export default function ScannerPageClient({
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
                 <h2 className="text-2xl font-bold tracking-tight">Already invited?</h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  Sign in with Google. After login you land on Flight Deck.
+                  Sign in with Google. After login you land on Leaders.
                 </p>
+                <ol className="mt-4 list-decimal space-y-2 pl-4 text-sm leading-6 text-zinc-400">
+                  <li>
+                    <span className="text-cyan-300">Leaders</span> — find the leading microtheme, click it, review
+                    names.
+                  </li>
+                  <li>
+                    <span className="text-amber-300">Flight Deck</span> — today&apos;s book.
+                  </li>
+                  <li>
+                    <span className="text-emerald-300">System scanner</span> — ranked warehouse behind the book.
+                  </li>
+                </ol>
 
                 <div className="mt-7">
                   {!googleClientId ? (
@@ -941,8 +984,13 @@ export default function ScannerPageClient({
   if (!loading && user && !stayOnSystems) {
     return (
       <main className="min-h-screen bg-zinc-950 px-6 py-16 text-center text-zinc-300">
-        <p className="text-lg">Opening Flight Deck…</p>
-        <Link href="/scanner/cockpit" className="mt-4 inline-block text-amber-300 underline">
+        <p className="text-lg">
+          {user?.role === 'developer' ? 'Opening Flight Deck…' : 'Opening Leaders…'}
+        </p>
+        <Link
+          href={user?.role === 'developer' ? '/scanner/cockpit' : '/scanner/leaders'}
+          className="mt-4 inline-block text-amber-300 underline"
+        >
           Continue
         </Link>
       </main>

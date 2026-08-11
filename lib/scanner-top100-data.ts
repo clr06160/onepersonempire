@@ -82,7 +82,7 @@ export async function loadTop100Data(): Promise<Top100Payload> {
 
   return {
     connected: false,
-    message: 'Top 100 leaderboard not uploaded yet. Run the daily scanner refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     rows: [],
   };
 }

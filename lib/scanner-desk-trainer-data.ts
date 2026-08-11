@@ -149,6 +149,6 @@ export async function loadDeskTrainerPack(): Promise<DeskTrainerPack> {
   return {
     connected: false,
     sessions: [],
-    message: 'Desk Trainer pack not built yet. Run python scanners/build_desk_trainer_pack.py --upload.',
+    message: 'Data is refreshing. Check back shortly.',
   };
 }

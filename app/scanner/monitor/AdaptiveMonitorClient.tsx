@@ -1,8 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
+
+import FirstPullbackRegimeCard from '@/components/scanner/FirstPullbackRegimeCard';
 import type { AdaptiveMonitorPayload, MonitorInsight } from '@/lib/scanner-adaptive-monitor-data';
+import type { FirstPullbackPayload } from '@/lib/scanner-first-pullback-data';
+
+import ScannerExtrasNav from '../_extras/ScannerExtrasNav';
 
 type ScannerUser = { email: string; role: string };
 
@@ -63,21 +67,29 @@ function InsightCard({ insight }: { insight: MonitorInsight }) {
 export default function AdaptiveMonitorClient() {
   const [user, setUser] = useState<ScannerUser | null>(null);
   const [data, setData] = useState<AdaptiveMonitorPayload | null>(null);
+  const [fpData, setFpData] = useState<FirstPullbackPayload | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>('all');
 
   const load = useCallback(async () => {
-    const response = await fetch('/api/scanner/monitor', fetchInit);
-    const payload = await response.json();
+    const [monitorRes, fpRes] = await Promise.all([
+      fetch('/api/scanner/monitor', fetchInit),
+      fetch('/api/scanner/first-pullback', fetchInit),
+    ]);
+    const payload = await monitorRes.json();
+    const fpPayload = await fpRes.json().catch(() => null);
     setLoading(false);
-    if (!response.ok) {
+    if (!monitorRes.ok) {
       setError(payload.error || 'Could not load adaptive monitor.');
       return;
     }
     setError('');
     setUser(payload.user || null);
     setData(payload.data || null);
+    if (fpRes.ok && fpPayload?.data) {
+      setFpData(fpPayload.data as FirstPullbackPayload);
+    }
   }, []);
 
   useEffect(() => {
@@ -132,6 +144,13 @@ export default function AdaptiveMonitorClient() {
               {data?.lastCycleAt || data?.generatedAt || 'n/a'}
             </p>
           </section>
+
+          <FirstPullbackRegimeCard
+            regime={fpData?.regime}
+            track={fpData?.regimeTrack}
+            showPageLink
+            compact
+          />
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {(

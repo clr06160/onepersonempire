@@ -87,8 +87,7 @@ export async function loadAdaptiveMonitorData(): Promise<AdaptiveMonitorPayload>
 
   return {
     connected: false,
-    message:
-      'Adaptive monitor not uploaded yet. It runs automatically during the daily 7:35 AM scanner refresh on your PC.',
+    message: 'Data is refreshing. Check back shortly.',
     insights: { active: [], byCategory: {} },
     learningLog: [],
   };

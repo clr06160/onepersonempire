@@ -238,7 +238,6 @@ export async function loadChessSelectionDashboard(): Promise<ChessSelectionPaylo
   return {
     connected: false,
     variants: [],
-    message:
-      'Chess Selection has not been built yet. Run python scanners/build_chess_selection_scanner.py --upload.',
+    message: 'Data is refreshing. Check back shortly.',
   };
 }

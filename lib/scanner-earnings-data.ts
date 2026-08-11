@@ -142,7 +142,7 @@ export async function loadEarningsCalendarData(): Promise<EarningsCalendarPayloa
 
   return {
     connected: false,
-    message: 'Earnings calendar not uploaded yet. Run the daily fundamentals refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     days: [],
   };
 }

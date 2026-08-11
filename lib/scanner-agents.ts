@@ -2,7 +2,10 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import { normalizeAgentLeaderboard } from '@/lib/scanner-agent-leaderboard';
 import { toScannerUserMessage } from '@/lib/scanner-user-error';
+
+export { normalizeAgentLeaderboard } from '@/lib/scanner-agent-leaderboard';
 
 export type AgentTrade = {
   date?: string;
@@ -84,6 +87,13 @@ export type ScannerAgentsPayload = {
   source?: string;
 };
 
+function withNormalizedLeaderboard(payload: ScannerAgentsPayload): ScannerAgentsPayload {
+  return {
+    ...payload,
+    leaderboard: normalizeAgentLeaderboard(payload.leaderboard),
+  };
+}
+
 function scannerBucketName() {
   return process.env.SCANNER_RESULTS_GCS_BUCKET || process.env.PUBLISHED_ASSETS_BUCKET || '';
 }
@@ -102,7 +112,7 @@ async function loadAgentsFromGcs(): Promise<ScannerAgentsPayload | null> {
   if (!parsed || typeof parsed !== 'object') {
     return { connected: false, message: 'Agents payload was empty.', leaderboard: [] };
   }
-  return { ...(parsed as ScannerAgentsPayload), source: 'gcs' };
+  return withNormalizedLeaderboard({ ...(parsed as ScannerAgentsPayload), source: 'gcs' });
 }
 
 async function loadAgentsFromFile(): Promise<ScannerAgentsPayload | null> {
@@ -116,7 +126,7 @@ async function loadAgentsFromFile(): Promise<ScannerAgentsPayload | null> {
   for (const jsonPath of candidates) {
     try {
       const raw = await readFile(jsonPath, 'utf8');
-      return { ...(JSON.parse(raw) as ScannerAgentsPayload), source: 'file' };
+      return withNormalizedLeaderboard({ ...(JSON.parse(raw) as ScannerAgentsPayload), source: 'file' });
     } catch {
       continue;
     }
@@ -127,20 +137,20 @@ async function loadAgentsFromFile(): Promise<ScannerAgentsPayload | null> {
 export async function loadScannerAgents(): Promise<ScannerAgentsPayload> {
   try {
     const cloudData = await loadAgentsFromGcs();
-    if (cloudData) return cloudData;
+    if (cloudData) return withNormalizedLeaderboard(cloudData);
   } catch (error) {
     const message = toScannerUserMessage(error, 'Could not load agents from cloud storage.');
     const fileData = await loadAgentsFromFile().catch(() => null);
-    if (fileData) return fileData;
+    if (fileData) return withNormalizedLeaderboard(fileData);
     return { connected: false, message, leaderboard: [], agents: {} };
   }
 
   const fileData = await loadAgentsFromFile();
-  if (fileData) return fileData;
+  if (fileData) return withNormalizedLeaderboard(fileData);
 
   return {
     connected: false,
-    message: 'Agent tournament not uploaded yet. Run scanner_agent_crew.py on your PC.',
+    message: 'Data is refreshing. Check back shortly.',
     leaderboard: [],
     agents: {},
   };

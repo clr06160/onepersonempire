@@ -40,7 +40,7 @@ export async function loadFedWatchData(): Promise<FedWatchPayload> {
 
   return {
     connected: false,
-    message: 'Fed rate odds not uploaded yet. Run the daily refresh on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     meetings: [],
   };
 }

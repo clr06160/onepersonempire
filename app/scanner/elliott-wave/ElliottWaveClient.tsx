@@ -532,8 +532,7 @@ export default function ElliottWaveClient() {
             </div>
           ) : (
             <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-              No market data yet — rebuild with{' '}
-              <code className="text-zinc-300">python scanners/elliott_wave_dashboard.py --upload</code>.
+              Data is refreshing. Check back shortly.
             </section>
           )}
 

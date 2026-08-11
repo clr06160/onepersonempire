@@ -310,7 +310,7 @@ export async function loadScannerDayTradeData(): Promise<DayTradePayload> {
 
   return {
     connected: false,
-    message: 'Day-trade data not uploaded yet. Run scanners/build_scanner_daytrade.py on your PC, then upload.',
+    message: 'Data is refreshing. Check back shortly.',
     tickers: {},
     pairs: [],
     topBounce: [],
