@@ -68,6 +68,22 @@ Daily chart JSON is built on your PC and uploaded separately from the main scann
 
 **Isolation:** Charts live under `app/scanner/charts/` only — lazy-loaded client bundle, route `error.tsx`, and panel error boundary. A chart failure does not affect `/scanner` or other tools. Deploy chart routes separately if you want zero build risk to the main scanner page.
 
+## Cursor Cloud deploy (no browser Google login)
+
+Cloud agents cannot use your PC’s gcloud session. One-time:
+
+1. On the Windows PC (gcloud already working): run `scripts\setup-cursor-deploy-sa.bat`
+2. In [Cursor Cloud Agents secrets](https://cursor.com/dashboard/cloud-agents): add Runtime Secret `GCP_SA_KEY` (paste the JSON key) and `GCP_PROJECT_ID`=`onepersonempire`
+3. Start a **new** cloud agent so secrets load
+
+Then any cloud agent can deploy with:
+
+```bash
+bash scripts/deploy-cloud-run.sh
+```
+
+Prefer desktop Cursor on the PC when secrets are not set yet.
+
 ## Quick Path
 
 1. Check only scanner files changed:
