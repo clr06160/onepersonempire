@@ -6,6 +6,26 @@
 
 Use this doc for scanner-only updates so unrelated builder work does not get deployed by accident.
 
+## Cloud daily refresh (preferred — PC optional)
+
+The System scanner JSON used to depend on the Windows 7:35 AM bat. That breaks whenever the PC is off or reset.
+
+**Use the Cloud Run Job instead:** see `jobs/scanner-refresh/README.md`.
+
+```bash
+export PUBLISHED_ASSETS_BUCKET=YOUR_BUCKET
+./jobs/scanner-refresh/deploy.sh
+gcloud run jobs execute scanner-daily-refresh --region us-central1
+```
+
+One-time: seed `gs://YOUR_BUCKET/scanner/cache/` from your PC FMP cache so the first cloud run is not a cold download.
+
+This uploads `scanner/stock_scanner_dashboard.json` on weekdays. Other dashboards (Leaders, charts, calendars, …) still need their PC builders until those are ported the same way.
+
+## Legacy PC refresh (fallback)
+
+`REFRESH_STOCK_SCANNER_SILENT.bat` on your PC (~7:35 AM local) still works if the cloud job is not deployed yet. Prefer cloud so the site does not depend on the PC being awake.
+
 ## EW overlay (separate from scans)
 
 After the normal scanner refresh on your PC:
