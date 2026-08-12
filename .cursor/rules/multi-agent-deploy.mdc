@@ -9,9 +9,10 @@ More than one Cursor agent may work on this repo at once. **Do not wipe each oth
 
 ## Before `gcloud run deploy`
 
-1. **Pull / read the working tree** — deploy from `C:\Users\CoryRoberts\onepersonempire` with **all current uncommitted scanner fixes included**. Do not deploy from a stale worktree, a clean checkout that lacks local changes, or an older branch that predates today's fixes.
+1. **Pull / read the working tree** — deploy from the branch that has the intended scanner fixes (often `cursor/cloud-scanner-refresh-6016` tip). On Cory’s Windows PC that is usually `C:\Users\CoryRoberts\onepersonempire`. Do not deploy from a stale worktree or stripped `main` if scanner pages are missing.
 2. **Do not revert or overwrite** uncommitted changes you did not make unless the user explicitly asks.
 3. If another agent is mid-deploy, **wait** or tell the user — racing Cloud Run revisions causes flip-flops (good build → overwritten by old build).
+4. **Cloud agents:** never `gcloud auth login`. Use `bash scripts/deploy-cloud-run.sh` after Cursor Secrets `GCP_SA_KEY` + `GCP_PROJECT_ID` exist (one-time: `scripts/setup-cursor-deploy-sa.bat` on the PC).
 
 ## Agent tournament leaderboard sort (do not regress)
 

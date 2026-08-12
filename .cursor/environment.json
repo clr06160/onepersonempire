@@ -1,0 +1,3 @@
+{
+  "install": "npm ci || npm install\nif ! command -v gcloud >/dev/null 2>&1; then\n  curl -fsSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz -o /tmp/google-cloud-cli.tar.gz\n  mkdir -p \"$HOME/google-cloud-sdk-root\"\n  tar -xzf /tmp/google-cloud-cli.tar.gz -C \"$HOME/google-cloud-sdk-root\"\n  \"$HOME/google-cloud-sdk-root/google-cloud-sdk/install.sh\" --quiet --path-update true --usage-reporting false --command-completion false\n  echo 'export PATH=\"$HOME/google-cloud-sdk-root/google-cloud-sdk/bin:$PATH\"' >> \"$HOME/.bashrc\"\n  export PATH=\"$HOME/google-cloud-sdk-root/google-cloud-sdk/bin:$PATH\"\nfi\ngcloud version"
+}
