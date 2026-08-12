@@ -298,6 +298,54 @@ export default function MonthlyReportsClient() {
                 ) : null}
               </section>
 
+              {data?.ledgerByMonth?.[month.month] ? (
+                <section className="rounded-2xl border border-emerald-800/40 bg-emerald-950/20 p-5 sm:p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-400">
+                        Forward-test ledger · how to improve · {month.label}
+                      </p>
+                      <p className="mt-2 text-sm text-zinc-400">
+                        Proprietary paper-trade DB across scanner forward tests.
+                        {data.ledgerByMonth[month.month].closedCount
+                          ? ` ${data.ledgerByMonth[month.month].closedCount} closed this month · avg ${
+                              data.ledgerByMonth[month.month].avgReturnPct != null
+                                ? `${data.ledgerByMonth[month.month].avgReturnPct! >= 0 ? '+' : ''}${data.ledgerByMonth[month.month].avgReturnPct!.toFixed(1)}%`
+                                : '—'
+                            } · hit ${data.ledgerByMonth[month.month].hitRatePct ?? '—'}%.`
+                          : ' No closed ledger trades tagged to this month yet — sync on the Ledger page.'}
+                      </p>
+                    </div>
+                    <a
+                      href="/scanner/ledger"
+                      className="rounded-lg border border-emerald-700/60 bg-emerald-950/40 px-3 py-1.5 text-sm text-emerald-200 hover:border-emerald-500"
+                    >
+                      Open ledger
+                    </a>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {data.ledgerByMonth[month.month].recommendations.map((rec) => (
+                      <article
+                        key={rec.id}
+                        className={`rounded-xl border p-4 ${
+                          rec.severity === 'high'
+                            ? 'border-red-700/60 bg-red-950/30'
+                            : rec.severity === 'medium'
+                              ? 'border-amber-700/50 bg-amber-950/25'
+                              : rec.severity === 'low'
+                                ? 'border-emerald-700/50 bg-emerald-950/25'
+                                : 'border-zinc-700 bg-zinc-950/40'
+                        }`}
+                      >
+                        <h3 className="text-base font-semibold text-zinc-50">{rec.title}</h3>
+                        <p className="mt-1 text-sm leading-6 text-zinc-300">{rec.detail}</p>
+                        <p className="mt-2 text-sm font-medium text-emerald-200">→ {rec.action}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
               <div className="grid gap-6 lg:grid-cols-2">
                 <section className="rounded-2xl border border-sky-900/40 bg-zinc-900/80 p-5">
                   <h2 className="text-lg font-semibold text-sky-200">PASS+ (day+3 ≥ +{threshold}%)</h2>
