@@ -10,6 +10,9 @@ import {
   deriveEarningsPlainFacts,
   type EarningsCauseTag,
 } from '@/lib/scanner-earnings-plain-facts';
+import { analyzeForwardLedger } from '@/lib/scanner-forward-ledger-analysis';
+import { loadForwardLedgerTrades } from '@/lib/scanner-forward-ledger-ingest';
+import type { ForwardLedgerAnalysis } from '@/lib/scanner-forward-ledger-types';
 
 export type MonthlyReportPrint = {
   ticker: string;
@@ -67,6 +70,9 @@ export type MonthlyReportsPayload = {
   studyBlurb?: string;
   method?: string[];
   message?: string;
+  /** Proprietary forward-test ledger analysis for the selected / default month (and all-time). */
+  ledgerByMonth?: Record<string, ForwardLedgerAnalysis>;
+  ledgerAllTime?: ForwardLedgerAnalysis | null;
 };
 
 const MONTH_NAMES = [
@@ -359,7 +365,14 @@ function buildMonth(month: string, prints: MonthlyReportPrint[], threshold: numb
 }
 
 export async function loadMonthlyReports(): Promise<MonthlyReportsPayload> {
-  const [leaders, badges] = await Promise.all([loadLeadersDashboard(), loadEarningsReactionBadges()]);
+  const [leaders, badges, ledgerPack] = await Promise.all([
+    loadLeadersDashboard(),
+    loadEarningsReactionBadges(),
+    loadForwardLedgerTrades({ forceSync: false }).catch(() => ({
+      trades: [],
+      sync: null,
+    })),
+  ]);
   const threshold = badges.thresholdPct ?? 10;
   const { tickers, meta } = leadersTickerMeta(leaders);
   const prints = collectPrints(badges, tickers, meta, threshold);
@@ -378,6 +391,17 @@ export async function loadMonthlyReports(): Promise<MonthlyReportsPayload> {
 
   const defaultMonth = months[0]?.month ?? null;
 
+  const ledgerTrades = ledgerPack.trades || [];
+  const ledgerMonthKeys = new Set<string>([
+    ...months.map((m) => m.month),
+    ...ledgerTrades.map((t) => t.monthKey).filter(Boolean),
+  ]);
+  const ledgerByMonth: Record<string, ForwardLedgerAnalysis> = {};
+  for (const month of ledgerMonthKeys) {
+    ledgerByMonth[month] = analyzeForwardLedger(ledgerTrades, { monthKey: month });
+  }
+  const ledgerAllTime = ledgerTrades.length ? analyzeForwardLedger(ledgerTrades) : null;
+
   return {
     connected: Boolean(leaders.connected !== false || badges.connected !== false) && months.length > 0,
     generatedAt: badges.generatedAt || leaders.generatedAt,
@@ -388,12 +412,15 @@ export async function loadMonthlyReports(): Promise<MonthlyReportsPayload> {
     months,
     defaultMonth,
     studyBlurb: badges.studyNote?.blurb,
+    ledgerByMonth,
+    ledgerAllTime,
     method: [
       'Universe: current Leaders roster (+ Trend Scout orphans).',
       'Metric: day+3 reaction vs prior close (settled print), not the gap alone.',
       `PASS+ = day+3 ≥ +${threshold}%; FAIL− = day+3 ≤ −${threshold}%.`,
       'Plain facts: sales/earnings vs prior print and vs Street guidance (consensus estimate). Tags + one-line cause. No adjectives. Not company-issued outlook.',
       'Grouped by report-date month. Conclusions are counts and medians only.',
+      'Forward-test ledger: proprietary DB of paper trades across systems — monthly section recommends how to improve filters/sizing.',
       'Auto-refreshes with the weekday/charts scanner pipeline (and Leaders upload) — new months fill as prints settle day+3, not only on month-end.',
       ...(badges.method || []).slice(0, 2),
     ],

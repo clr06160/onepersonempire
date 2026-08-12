@@ -22,6 +22,7 @@ type NavLink = {
 const links: NavLink[] = [
   { href: '/scanner/leaders', label: 'Leaders', accent: 'leaders' },
   { href: '/scanner/monthly-reports', label: 'Monthly reports', accent: 'leaders' },
+  { href: '/scanner/ledger', label: 'Ledger', accent: 'leaders' },
   { href: '/scanner/cockpit', label: 'Flight Deck', accent: 'flight' },
   { href: '/scanner/desk-brief', label: 'Morning note', accent: 'flight' },
   { href: '/scanner?systems=1', label: 'System scanner', accent: 'systems' },

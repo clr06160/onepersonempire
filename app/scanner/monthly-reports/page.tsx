@@ -26,8 +26,8 @@ export default function MonthlyReportsPage() {
           <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Monthly reports</h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-300">
             How Leaders names settled after earnings each month — who cleared +10% day+3, who failed
-            −10%, and which parents are trending. Forward calendar stays on Earnings calendar; this
-            is the after-action report.
+            −10%, which parents are trending, and how the proprietary forward-test ledger says to
+            improve. Forward calendar stays on Earnings calendar; this is the after-action report.
           </p>
         </header>
         <MonthlyReportsClient />
