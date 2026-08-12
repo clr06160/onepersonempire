@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireScannerSession } from '@/lib/scanner-auth';
 import { listScannerDownloadSummary } from '@/lib/scanner-download';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +20,7 @@ export async function GET() {
       downloadUrl: '/api/scanner/developer/download',
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Developer tools unavailable.';
+    const message = toScannerUserMessage(error, 'Developer tools unavailable.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,6 +1,10 @@
 # Scanner Deploy Pipeline
 
-Use this for scanner-only site updates so unrelated builder work does not get deployed by accident.
+**Repo:** `C:\Users\CoryRoberts\onepersonempire` (archived duplicate moved to `C:\Users\CoryRoberts\ARCHIVED\`).
+
+**Same domain, two products:** `onepersonempire.web.app/` is the builder/landing app; `onepersonempire.web.app/scanner` is the private scanner shell. They share one Cloud Run deploy but **different code trees** — scanner work should stay under `app/scanner/`, `app/api/scanner/`, and `lib/scanner-*` (not `app/page.tsx` / builder).
+
+Use this doc for scanner-only updates so unrelated builder work does not get deployed by accident.
 
 ## EW overlay (separate from scans)
 
@@ -11,6 +15,38 @@ After the normal scanner refresh on your PC:
 3. Site reads it via `/api/scanner/ew` and shows small badges (`ew1`, `ew4`, `ewA`, etc.) next to picks.
 
 Optional env override: `SCANNER_RESULTS_GCS_EW_OBJECT` (default `scanner/stock_scanner_ew_overlay.json`).
+
+## FMP fundamentals screener (daily with scanner refresh)
+
+During the 7:35 AM scanner refresh on your PC:
+
+1. `open_stock_scanner.py` builds `fmp_growth_screener.json`.
+2. `upload_scanner_assets.py --only daily` uploads it to `scanner/fmp_growth_screener.json`.
+3. Site reads it via `/api/scanner/fundamentals` at **`/scanner/fundamentals`**.
+
+Optional env override: `SCANNER_RESULTS_GCS_FMP_OBJECT` (default `scanner/fmp_growth_screener.json`).
+
+**Deploy note:** The fundamentals page (`app/scanner/fundamentals/`, `app/api/scanner/fundamentals/`, `lib/scanner-fmp-data.ts`) must be committed and deployed — data upload alone does not create the route.
+
+## Adaptive monitor (daily with scanner refresh)
+
+During the 7:35 AM `REFRESH_STOCK_SCANNER_SILENT.bat` run on your PC:
+
+1. `open_stock_scanner.py` runs one adaptive monitor cycle and writes `adaptive_monitor_dashboard.json`.
+2. `upload_scanner_assets.py --only daily` uploads it to `scanner/adaptive_monitor_dashboard.json`.
+3. Site reads it via `/api/scanner/monitor` at `/scanner/monitor`.
+
+Optional env override: `SCANNER_RESULTS_GCS_MONITOR_OBJECT` (default `scanner/adaptive_monitor_dashboard.json`).
+
+## Charts preview (beta, isolated route)
+
+Daily chart JSON is built on your PC and uploaded separately from the main scanner bundle:
+
+1. `python scanners/build_scanner_charts.py --upload` (or `morning_charts_refresh.py`)
+2. Uploads `scanners/charts/*.json` to `scanner/charts/` on GCS (~700 tickers + manifest).
+3. Site serves them at **`/scanner/charts`** via `/api/scanner/charts/*`.
+
+**Isolation:** Charts live under `app/scanner/charts/` only — lazy-loaded client bundle, route `error.tsx`, and panel error boundary. A chart failure does not affect `/scanner` or other tools. Deploy chart routes separately if you want zero build risk to the main scanner page.
 
 ## Quick Path
 

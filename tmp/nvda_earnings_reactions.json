@@ -1,0 +1,398 @@
+{
+  "ticker": "NVDA",
+  "generatedAt": "2026-08-06T21:44:39.639651Z",
+  "window": "last ~3 years",
+  "method": "Reaction day0 = first trading session after report (AMC => next day). Return vs prior close. day3 = close 3 trading days after day0 vs same prior close.",
+  "events": [
+    {
+      "reportDate": "2023-08-23",
+      "time": "assumed_amc",
+      "priorCloseDate": "2023-08-23",
+      "day0Date": "2023-08-24",
+      "day3Date": "2023-08-29",
+      "day0Pct": 0.09,
+      "day3Pct": 3.53,
+      "eps": 0.27,
+      "epsEstimated": 0.21,
+      "revenue": 13507000000,
+      "revenueEstimated": 11224000000
+    },
+    {
+      "reportDate": "2023-11-21",
+      "time": "assumed_amc",
+      "priorCloseDate": "2023-11-21",
+      "day0Date": "2023-11-22",
+      "day3Date": "2023-11-28",
+      "day0Pct": -2.45,
+      "day3Pct": -4.23,
+      "eps": 0.4,
+      "epsEstimated": 0.34,
+      "revenue": 18120000000,
+      "revenueEstimated": 16294147339
+    },
+    {
+      "reportDate": "2024-02-21",
+      "time": "assumed_amc",
+      "priorCloseDate": "2024-02-21",
+      "day0Date": "2024-02-22",
+      "day3Date": "2024-02-27",
+      "day0Pct": 16.41,
+      "day3Pct": 16.64,
+      "eps": 0.52,
+      "epsEstimated": 0.46,
+      "revenue": 22103000000,
+      "revenueEstimated": 20238800000
+    },
+    {
+      "reportDate": "2024-05-22",
+      "time": "assumed_amc",
+      "priorCloseDate": "2024-05-22",
+      "day0Date": "2024-05-23",
+      "day3Date": "2024-05-29",
+      "day0Pct": 9.32,
+      "day3Pct": 20.93,
+      "eps": 0.61,
+      "epsEstimated": 0.56,
+      "revenue": 26044000000,
+      "revenueEstimated": 24592795107
+    },
+    {
+      "reportDate": "2024-08-28",
+      "time": "assumed_amc",
+      "priorCloseDate": "2024-08-28",
+      "day0Date": "2024-08-29",
+      "day3Date": "2024-09-04",
+      "day0Pct": -6.39,
+      "day3Pct": -15.45,
+      "eps": 0.68,
+      "epsEstimated": 0.645,
+      "revenue": 30040000000,
+      "revenueEstimated": 28779505589
+    },
+    {
+      "reportDate": "2024-11-20",
+      "time": "assumed_amc",
+      "priorCloseDate": "2024-11-20",
+      "day0Date": "2024-11-21",
+      "day3Date": "2024-11-26",
+      "day0Pct": 0.54,
+      "day3Pct": -6.15,
+      "eps": 0.81,
+      "epsEstimated": 0.75,
+      "revenue": 35100000000,
+      "revenueEstimated": 33171592429
+    },
+    {
+      "reportDate": "2025-02-26",
+      "time": "assumed_amc",
+      "priorCloseDate": "2025-02-26",
+      "day0Date": "2025-02-27",
+      "day3Date": "2025-03-04",
+      "day0Pct": -8.48,
+      "day3Pct": -11.65,
+      "eps": 0.89,
+      "epsEstimated": 0.848,
+      "revenue": 39331000000,
+      "revenueEstimated": 38101348563
+    },
+    {
+      "reportDate": "2025-05-28",
+      "time": "assumed_amc",
+      "priorCloseDate": "2025-05-28",
+      "day0Date": "2025-05-29",
+      "day3Date": "2025-06-03",
+      "day0Pct": 3.25,
+      "day3Pct": 4.75,
+      "eps": 0.81,
+      "epsEstimated": 0.737,
+      "revenue": 44062000000,
+      "revenueEstimated": 43334160366
+    },
+    {
+      "reportDate": "2025-08-27",
+      "time": "assumed_amc",
+      "priorCloseDate": "2025-08-27",
+      "day0Date": "2025-08-28",
+      "day3Date": "2025-09-03",
+      "day0Pct": -0.78,
+      "day3Pct": -6.04,
+      "eps": 1.05,
+      "epsEstimated": 1.01,
+      "revenue": 46743000000,
+      "revenueEstimated": 46048920689
+    },
+    {
+      "reportDate": "2025-11-19",
+      "time": "assumed_amc",
+      "priorCloseDate": "2025-11-19",
+      "day0Date": "2025-11-20",
+      "day3Date": "2025-11-25",
+      "day0Pct": -3.15,
+      "day3Pct": -4.66,
+      "eps": 1.3,
+      "epsEstimated": 1.26,
+      "revenue": 57006000000,
+      "revenueEstimated": 54961119678
+    },
+    {
+      "reportDate": "2026-02-25",
+      "time": "assumed_amc",
+      "priorCloseDate": "2026-02-25",
+      "day0Date": "2026-02-26",
+      "day3Date": "2026-03-03",
+      "day0Pct": -5.46,
+      "day3Pct": -7.93,
+      "eps": 1.62,
+      "epsEstimated": 1.54,
+      "revenue": 68127000000,
+      "revenueEstimated": 66126470000
+    },
+    {
+      "reportDate": "2026-05-20",
+      "time": "assumed_amc",
+      "priorCloseDate": "2026-05-20",
+      "day0Date": "2026-05-21",
+      "day3Date": "2026-05-27",
+      "day0Pct": -1.77,
+      "day3Pct": -4.87,
+      "eps": 1.87,
+      "epsEstimated": 1.76,
+      "revenue": 81615000000,
+      "revenueEstimated": 78423370000
+    }
+  ],
+  "stats": {
+    "day0": {
+      "n": 12,
+      "mean": 0.09,
+      "median": -1.27,
+      "min": -8.48,
+      "max": 16.41,
+      "pctPositive": 41.7
+    },
+    "day3": {
+      "n": 12,
+      "mean": -1.26,
+      "median": -4.77,
+      "min": -15.45,
+      "max": 20.93,
+      "pctPositive": 33.3
+    }
+  },
+  "histograms": {
+    "day0": [
+      {
+        "from": -12.0,
+        "to": -10.0,
+        "label": "-12 to -10",
+        "count": 0
+      },
+      {
+        "from": -10.0,
+        "to": -8.0,
+        "label": "-10 to -8",
+        "count": 1
+      },
+      {
+        "from": -8.0,
+        "to": -6.0,
+        "label": "-8 to -6",
+        "count": 1
+      },
+      {
+        "from": -6.0,
+        "to": -4.0,
+        "label": "-6 to -4",
+        "count": 1
+      },
+      {
+        "from": -4.0,
+        "to": -2.0,
+        "label": "-4 to -2",
+        "count": 2
+      },
+      {
+        "from": -2.0,
+        "to": 0.0,
+        "label": "-2 to 0",
+        "count": 2
+      },
+      {
+        "from": 0.0,
+        "to": 2.0,
+        "label": "0 to 2",
+        "count": 2
+      },
+      {
+        "from": 2.0,
+        "to": 4.0,
+        "label": "2 to 4",
+        "count": 1
+      },
+      {
+        "from": 4.0,
+        "to": 6.0,
+        "label": "4 to 6",
+        "count": 0
+      },
+      {
+        "from": 6.0,
+        "to": 8.0,
+        "label": "6 to 8",
+        "count": 0
+      },
+      {
+        "from": 8.0,
+        "to": 10.0,
+        "label": "8 to 10",
+        "count": 1
+      },
+      {
+        "from": 10.0,
+        "to": 12.0,
+        "label": "10 to 12",
+        "count": 0
+      },
+      {
+        "from": 12.0,
+        "to": 14.0,
+        "label": "12 to 14",
+        "count": 0
+      },
+      {
+        "from": 14.0,
+        "to": 16.0,
+        "label": "14 to 16",
+        "count": 0
+      },
+      {
+        "from": 16.0,
+        "to": 18.0,
+        "label": "16 to 18",
+        "count": 1
+      }
+    ],
+    "day3": [
+      {
+        "from": -18.0,
+        "to": -16.0,
+        "label": "-18 to -16",
+        "count": 0
+      },
+      {
+        "from": -16.0,
+        "to": -14.0,
+        "label": "-16 to -14",
+        "count": 1
+      },
+      {
+        "from": -14.0,
+        "to": -12.0,
+        "label": "-14 to -12",
+        "count": 0
+      },
+      {
+        "from": -12.0,
+        "to": -10.0,
+        "label": "-12 to -10",
+        "count": 1
+      },
+      {
+        "from": -10.0,
+        "to": -8.0,
+        "label": "-10 to -8",
+        "count": 0
+      },
+      {
+        "from": -8.0,
+        "to": -6.0,
+        "label": "-8 to -6",
+        "count": 3
+      },
+      {
+        "from": -6.0,
+        "to": -4.0,
+        "label": "-6 to -4",
+        "count": 3
+      },
+      {
+        "from": -4.0,
+        "to": -2.0,
+        "label": "-4 to -2",
+        "count": 0
+      },
+      {
+        "from": -2.0,
+        "to": 0.0,
+        "label": "-2 to 0",
+        "count": 0
+      },
+      {
+        "from": 0.0,
+        "to": 2.0,
+        "label": "0 to 2",
+        "count": 0
+      },
+      {
+        "from": 2.0,
+        "to": 4.0,
+        "label": "2 to 4",
+        "count": 1
+      },
+      {
+        "from": 4.0,
+        "to": 6.0,
+        "label": "4 to 6",
+        "count": 1
+      },
+      {
+        "from": 6.0,
+        "to": 8.0,
+        "label": "6 to 8",
+        "count": 0
+      },
+      {
+        "from": 8.0,
+        "to": 10.0,
+        "label": "8 to 10",
+        "count": 0
+      },
+      {
+        "from": 10.0,
+        "to": 12.0,
+        "label": "10 to 12",
+        "count": 0
+      },
+      {
+        "from": 12.0,
+        "to": 14.0,
+        "label": "12 to 14",
+        "count": 0
+      },
+      {
+        "from": 14.0,
+        "to": 16.0,
+        "label": "14 to 16",
+        "count": 0
+      },
+      {
+        "from": 16.0,
+        "to": 18.0,
+        "label": "16 to 18",
+        "count": 1
+      },
+      {
+        "from": 18.0,
+        "to": 20.0,
+        "label": "18 to 20",
+        "count": 0
+      },
+      {
+        "from": 20.0,
+        "to": 22.0,
+        "label": "20 to 22",
+        "count": 1
+      }
+    ]
+  }
+}

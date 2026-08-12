@@ -1,0 +1,540 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>The Tree — S&P MidCap 100</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; color:#e7efe6; font-family:'Segoe UI',Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 72% 2%, #14241b 0%, rgba(20,36,27,0) 60%), #04060a; }
+  .wrap { max-width:1180px; margin:0 auto; padding:34px 22px 64px; text-align:center; }
+  h1 { font-family:Georgia,serif; font-weight:600; font-size:48px; letter-spacing:1.6px; margin:0;
+    background:linear-gradient(180deg,#eafff0,#9fd8b0); -webkit-background-clip:text;
+    background-clip:text; color:transparent; text-shadow:0 2px 30px rgba(110,200,140,.18); }
+  .tag { color:#7fd6a0; font-size:13px; letter-spacing:3px; text-transform:uppercase; margin:10px 0 0; }
+  .sub { color:#9fb6a6; max-width:720px; margin:12px auto 0; line-height:1.6; font-size:14px; }
+  .nav { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:20px auto 4px; }
+  .nav a { color:#bcd6c4; text-decoration:none; border:1px solid #2c4636; background:rgba(20,36,27,.6);
+    padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:600; letter-spacing:.5px; transition:all .15s ease; }
+  .nav a:hover { border-color:#5aa86e; color:#eafff0; }
+  .nav a.cur { background:linear-gradient(180deg,#2f7d36,#1b5524); border-color:#7fd6a0; color:#fff; }
+  .legend { display:flex; align-items:center; gap:12px; justify-content:center; margin:18px auto 14px; color:#9fb6a6; font-size:12px; letter-spacing:.5px; }
+  .legend .bar { width:260px; height:9px; border-radius:6px; background:linear-gradient(90deg, #240305 0%, #670c0a 12%, #a12514 25%, #bd621e 38%, #bea030 50%, #8daa2b 62%, #468b1d 75%, #185a12 88%, #073005 100%); box-shadow:0 0 18px rgba(120,200,150,.25); }
+  .tfbar { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:6px auto 22px; }
+  .tfbar button { background:rgba(20,36,27,.8); color:#cfe6d4; border:1px solid #2c4636;
+    padding:7px 14px; border-radius:999px; font-size:13px; font-weight:600; letter-spacing:.5px;
+    cursor:pointer; transition:all .15s ease; }
+  .tfbar button:hover { border-color:#5aa86e; color:#eafff0; }
+  .tfbar button.active { background:linear-gradient(180deg,#2f7d36,#1b5524); border-color:#7fd6a0; color:#fff; }
+  .tfbar button.play { background:rgba(40,28,16,.8); border-color:#6a5326; color:#f0d9a8; }
+  .tfbar button.play.on { background:linear-gradient(180deg,#b5872a,#7d5a16); color:#fff; border-color:#e7c46a; }
+  .tfbar button.stop { background:rgba(40,16,16,.8); border-color:#6a2c2c; color:#f0b8b8; }
+  .tfbar button.stop:hover { border-color:#d06a6a; color:#ffecec; }
+  .tfbar button.stop:disabled { opacity:.4; cursor:default; border-color:#3a2222; }
+  .tfbar button.view { background:rgba(18,28,40,.85); border-color:#2c4660; color:#bcd0e6; }
+  .tfbar button.view:hover { border-color:#5a86c0; color:#eaf2ff; }
+  .tfbar button.view.on { background:linear-gradient(180deg,#2f5a7d,#1b3855); border-color:#7fb0d6; color:#fff; }
+  .ranks { display:none; text-align:left; background:rgba(6,12,9,.55); border-radius:16px;
+    padding:20px 22px; box-shadow:0 24px 80px rgba(0,0,0,.7); }
+  .rankhead { color:#cfe6d4; font-size:15px; letter-spacing:.5px; margin:0 0 16px; text-align:center; }
+  .rankhead b { color:#fff; }
+  .rankgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:6px; }
+  .rankrow { display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:8px;
+    background:rgba(255,255,255,.035); border-left:3px solid var(--c); }
+  .rankrow .rk { color:#7e948a; font-size:12px; width:34px; font-variant-numeric:tabular-nums; }
+  .rankrow .tk { color:#eef6ee; font-weight:700; font-size:13.5px; letter-spacing:.5px; flex:1; }
+  .rankrow .rt { font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; }
+  .stage { position:relative; line-height:0; border-radius:16px; overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,.7); }
+  .stage > img { width:100%; display:block; }
+  .hotlayer { position:absolute; inset:0; }
+  .leaf { position:absolute; aspect-ratio:1; transform:translate(-50%,-50%); cursor:pointer; z-index:2;
+    border-radius:50%; transition:box-shadow .15s ease, background .15s ease; }
+  .leaf:hover { z-index:9; background:rgba(255,255,255,.05);
+    box-shadow:0 0 0 2px rgba(255,255,255,.6), 0 0 22px 4px color-mix(in srgb, var(--c) 65%, transparent); }
+  .lbl { position:absolute; left:50%; bottom:118%; transform:translateX(-50%); white-space:nowrap;
+    background:rgba(6,12,9,.95); border:1px solid var(--c); color:#fff; padding:3px 9px;
+    border-radius:7px; font-size:13px; letter-spacing:.6px; font-weight:600;
+    opacity:0; pointer-events:none; transition:opacity .12s; z-index:10; }
+  .lbl em { font-style:normal; color:#fff; font-weight:700; margin-left:6px; }
+  .leaf:hover .lbl { opacity:1; }
+</style></head>
+<body><div class="wrap">
+  <h1>The Tree</h1>
+  <div class="tag">S&P MidCap 100</div>
+  <nav class="nav">
+      <a href="tree.html">NASDAQ-100</a>
+      <a href="tree_sp500.html">S&P 500</a>
+      <a href="tree_midcap.html" class=cur>S&P MidCap 100</a>
+      <a href="tree_iwm200.html">Russell 2000 · Top 200</a>
+  </nav>
+  <div class="sub">The S&P MidCap 100 through history — each frame is how its members did in that calendar year alone (no compounding). The share of the tree that's red equals the share of names that finished the year down. Pick a year or hit Play to scrub through market history and see when the canopy truly withered.</div>
+  <div class="legend"><span>down</span><span class="bar"></span><span>leaders</span></div>
+  <div class="tfbar">
+      <button class="tf active" data-i="0">2022</button>
+      <button class="tf" data-i="1">2023</button>
+      <button class="tf" data-i="2">2024</button>
+      <button class="tf" data-i="3">2025</button>
+      <button class="tf" data-i="4">2026 YTD</button>
+      <button class="play">&#9654; Play</button>
+      <button class="stop" disabled>&#9632; Stop</button>
+      <button class="view">&#9776; Rankings</button>
+  </div>
+  <div class="stage">
+    <img id="treeimg" src="tree_midcap_2022.webp" alt="The Tree"/>
+      <div class="hotlayer" data-i="0" style="display:block">
+        <div class="leaf" style="left:12.617%;top:55.721%;width:6.927%;--c:#390607"><span class="lbl">BURL<em>-30%</em></span></div>
+        <div class="leaf" style="left:10.353%;top:46.237%;width:6.927%;--c:#390607"><span class="lbl">CDE<em>-33%</em></span></div>
+        <div class="leaf" style="left:10.069%;top:41.027%;width:6.927%;--c:#390607"><span class="lbl">CHWY<em>-37%</em></span></div>
+        <div class="leaf" style="left:18.106%;top:58.413%;width:6.927%;--c:#390607"><span class="lbl">DT<em>-37%</em></span></div>
+        <div class="leaf" style="left:16.694%;top:48.736%;width:6.927%;--c:#390607"><span class="lbl">ENTG<em>-53%</em></span></div>
+        <div class="leaf" style="left:23.817%;top:66.130%;width:6.927%;--c:#390607"><span class="lbl">GME<em>-50%</em></span></div>
+        <div class="leaf" style="left:21.277%;top:52.273%;width:6.927%;--c:#390607"><span class="lbl">GWRE<em>-45%</em></span></div>
+        <div class="leaf" style="left:23.125%;top:44.627%;width:6.927%;--c:#390607"><span class="lbl">ILMN<em>-47%</em></span></div>
+        <div class="leaf" style="left:18.776%;top:27.679%;width:6.927%;--c:#390607"><span class="lbl">KTOS<em>-47%</em></span></div>
+        <div class="leaf" style="left:28.586%;top:61.117%;width:6.927%;--c:#390607"><span class="lbl">MKSI<em>-51%</em></span></div>
+        <div class="leaf" style="left:28.170%;top:49.892%;width:6.927%;--c:#390607"><span class="lbl">NLY<em>-33%</em></span></div>
+        <div class="leaf" style="left:32.814%;top:65.775%;width:6.927%;--c:#390607"><span class="lbl">OKTA<em>-70%</em></span></div>
+        <div class="leaf" style="left:24.073%;top:30.556%;width:6.927%;--c:#390607"><span class="lbl">ONTO<em>-33%</em></span></div>
+        <div class="leaf" style="left:35.331%;top:70.128%;width:6.927%;--c:#390607"><span class="lbl">PINS<em>-33%</em></span></div>
+        <div class="leaf" style="left:29.896%;top:42.492%;width:6.927%;--c:#390607"><span class="lbl">RBLX<em>-72%</em></span></div>
+        <div class="leaf" style="left:28.919%;top:36.210%;width:6.927%;--c:#390607"><span class="lbl">RH<em>-50%</em></span></div>
+        <div class="leaf" style="left:34.706%;top:57.341%;width:6.927%;--c:#390607"><span class="lbl">ROKU<em>-82%</em></span></div>
+        <div class="leaf" style="left:42.402%;top:69.170%;width:6.927%;--c:#390607"><span class="lbl">THC<em>-40%</em></span></div>
+        <div class="leaf" style="left:39.282%;top:54.551%;width:6.927%;--c:#390607"><span class="lbl">TOL<em>-31%</em></span></div>
+        <div class="leaf" style="left:38.069%;top:46.775%;width:6.927%;--c:#390607"><span class="lbl">TWLO<em>-81%</em></span></div>
+        <div class="leaf" style="left:33.061%;top:24.711%;width:6.927%;--c:#3b0607"><span class="lbl">RRX<em>-29%</em></span></div>
+        <div class="leaf" style="left:43.026%;top:61.753%;width:6.927%;--c:#440707"><span class="lbl">XPO<em>-28%</em></span></div>
+        <div class="leaf" style="left:37.566%;top:41.318%;width:6.927%;--c:#480808"><span class="lbl">SGI<em>-27%</em></span></div>
+        <div class="leaf" style="left:47.094%;top:68.785%;width:6.927%;--c:#590a09"><span class="lbl">AA<em>-24%</em></span></div>
+        <div class="leaf" style="left:34.781%;top:15.864%;width:6.927%;--c:#5d0b09"><span class="lbl">PEN<em>-23%</em></span></div>
+        <div class="leaf" style="left:47.129%;top:57.627%;width:6.927%;--c:#670c0a"><span class="lbl">ROIV<em>-21%</em></span></div>
+        <div class="leaf" style="left:51.678%;top:71.115%;width:6.927%;--c:#670c0a"><span class="lbl">ITT<em>-21%</em></span></div>
+        <div class="leaf" style="left:43.827%;top:41.638%;width:6.927%;--c:#690d0a"><span class="lbl">WSO<em>-20%</em></span></div>
+        <div class="leaf" style="left:41.943%;top:34.314%;width:6.927%;--c:#6b0d0b"><span class="lbl">EVR<em>-20%</em></span></div>
+        <div class="leaf" style="left:35.955%;top:10.847%;width:6.927%;--c:#6d0d0b"><span class="lbl">MTSI<em>-20%</em></span></div>
+        <div class="leaf" style="left:50.842%;top:63.953%;width:6.927%;--c:#730e0b"><span class="lbl">NTNX<em>-18%</em></span></div>
+        <div class="leaf" style="left:47.062%;top:48.839%;width:6.927%;--c:#740f0c"><span class="lbl">P<em>-18%</em></span></div>
+        <div class="leaf" style="left:47.306%;top:33.726%;width:6.927%;--c:#760f0c"><span class="lbl">CNH<em>-17%</em></span></div>
+        <div class="leaf" style="left:41.615%;top:12.173%;width:6.927%;--c:#760f0c"><span class="lbl">SNX<em>-17%</em></span></div>
+        <div class="leaf" style="left:50.391%;top:43.691%;width:6.927%;--c:#7e110d"><span class="lbl">LSCC<em>-16%</em></span></div>
+        <div class="leaf" style="left:44.867%;top:22.030%;width:6.927%;--c:#80110d"><span class="lbl">WBS<em>-15%</em></span></div>
+        <div class="leaf" style="left:54.130%;top:55.293%;width:6.927%;--c:#84120d"><span class="lbl">FIVE<em>-15%</em></span></div>
+        <div class="leaf" style="left:56.482%;top:60.953%;width:6.927%;--c:#921810"><span class="lbl">EQH<em>-12%</em></span></div>
+        <div class="leaf" style="left:50.314%;top:28.824%;width:6.927%;--c:#961b11"><span class="lbl">WWD<em>-12%</em></span></div>
+        <div class="leaf" style="left:60.758%;top:67.408%;width:6.927%;--c:#9c2113"><span class="lbl">BWA<em>-11%</em></span></div>
+        <div class="leaf" style="left:55.400%;top:44.009%;width:6.927%;--c:#a32615"><span class="lbl">DAR<em>-10%</em></span></div>
+        <div class="leaf" style="left:49.731%;top:22.579%;width:6.927%;--c:#ae3018"><span class="lbl">MTZ<em>-8%</em></span></div>
+        <div class="leaf" style="left:49.075%;top:15.279%;width:6.927%;--c:#b63c1a"><span class="lbl">AEIS<em>-6%</em></span></div>
+        <div class="leaf" style="left:59.035%;top:49.522%;width:6.927%;--c:#b7431b"><span class="lbl">WCC<em>-5%</em></span></div>
+        <div class="leaf" style="left:56.446%;top:36.293%;width:6.927%;--c:#ba521c"><span class="lbl">AMKR<em>-3%</em></span></div>
+        <div class="leaf" style="left:62.016%;top:56.682%;width:6.927%;--c:#bc591d"><span class="lbl">MEDP<em>-2%</em></span></div>
+        <div class="leaf" style="left:55.994%;top:31.464%;width:6.927%;--c:#bc591d"><span class="lbl">USFD<em>-2%</em></span></div>
+        <div class="leaf" style="left:56.799%;top:26.179%;width:6.927%;--c:#be651e"><span class="lbl">BJ<em>-1%</em></span></div>
+        <div class="leaf" style="left:61.113%;top:40.974%;width:6.927%;--c:#c06e1f"><span class="lbl">DY<em>-0%</em></span></div>
+        <div class="leaf" style="left:67.864%;top:64.129%;width:6.927%;--c:#c07822"><span class="lbl">TTMI<em>+1%</em></span></div>
+        <div class="leaf" style="left:54.364%;top:10.617%;width:6.927%;--c:#c07822"><span class="lbl">NVT<em>+1%</em></span></div>
+        <div class="leaf" style="left:55.996%;top:15.537%;width:6.927%;--c:#c07d24"><span class="lbl">TXRH<em>+2%</em></span></div>
+        <div class="leaf" style="left:67.761%;top:58.665%;width:6.927%;--c:#bf8e2a"><span class="lbl">DKS<em>+5%</em></span></div>
+        <div class="leaf" style="left:72.811%;top:68.233%;width:6.927%;--c:#bf992e"><span class="lbl">HL<em>+7%</em></span></div>
+        <div class="leaf" style="left:72.707%;top:61.750%;width:6.927%;--c:#bf9d2f"><span class="lbl">RGLD<em>+7%</em></span></div>
+        <div class="leaf" style="left:64.981%;top:31.081%;width:6.927%;--c:#bca230"><span class="lbl">FN<em>+8%</em></span></div>
+        <div class="leaf" style="left:71.525%;top:54.305%;width:6.927%;--c:#b1a730"><span class="lbl">ARMK<em>+12%</em></span></div>
+        <div class="leaf" style="left:59.678%;top:8.532%;width:6.927%;--c:#ada92f"><span class="lbl">CLH<em>+14%</em></span></div>
+        <div class="leaf" style="left:64.772%;top:26.229%;width:6.927%;--c:#a2af2f"><span class="lbl">CW<em>+20%</em></span></div>
+        <div class="leaf" style="left:70.878%;top:45.565%;width:6.927%;--c:#9fb02f"><span class="lbl">BWXT<em>+21%</em></span></div>
+        <div class="leaf" style="left:69.031%;top:36.191%;width:6.927%;--c:#9fb02f"><span class="lbl">RMBS<em>+22%</em></span></div>
+        <div class="leaf" style="left:66.515%;top:19.342%;width:6.927%;--c:#92ac2c"><span class="lbl">STRL<em>+25%</em></span></div>
+        <div class="leaf" style="left:71.009%;top:31.750%;width:6.927%;--c:#92ac2c"><span class="lbl">JAZZ<em>+25%</em></span></div>
+        <div class="leaf" style="left:67.407%;top:14.439%;width:6.927%;--c:#8daa2b"><span class="lbl">CRS<em>+27%</em></span></div>
+        <div class="leaf" style="left:81.202%;top:60.502%;width:6.927%;--c:#8ba92b"><span class="lbl">PFGC<em>+27%</em></span></div>
+        <div class="leaf" style="left:75.548%;top:37.788%;width:6.927%;--c:#0a3908"><span class="lbl">AR<em>+77%</em></span></div>
+        <div class="leaf" style="left:73.709%;top:21.039%;width:6.927%;--c:#0a3908"><span class="lbl">ATI<em>+87%</em></span></div>
+        <div class="leaf" style="left:75.581%;top:27.147%;width:6.927%;--c:#0a3908"><span class="lbl">DINO<em>+58%</em></span></div>
+        <div class="leaf" style="left:82.171%;top:51.193%;width:6.927%;--c:#0a3908"><span class="lbl">FTI<em>+106%</em></span></div>
+        <div class="leaf" style="left:82.481%;top:41.608%;width:6.927%;--c:#0a3908"><span class="lbl">NBIX<em>+40%</em></span></div>
+        <div class="leaf" style="left:82.062%;top:29.251%;width:6.927%;--c:#0a3908"><span class="lbl">OVV<em>+50%</em></span></div>
+        <div class="leaf" style="left:88.539%;top:45.060%;width:6.927%;--c:#0a3908"><span class="lbl">PR<em>+57%</em></span></div>
+        <div class="leaf" style="left:90.175%;top:50.885%;width:6.927%;--c:#0a3908"><span class="lbl">UTHR<em>+29%</em></span></div>
+      </div>
+      <div class="hotlayer" data-i="1" style="display:none">
+        <div class="leaf" style="left:12.617%;top:55.721%;width:6.927%;--c:#390607"><span class="lbl">CHWY<em>-36%</em></span></div>
+        <div class="leaf" style="left:10.353%;top:46.237%;width:6.927%;--c:#390607"><span class="lbl">ILMN<em>-31%</em></span></div>
+        <div class="leaf" style="left:10.069%;top:41.027%;width:6.927%;--c:#480808"><span class="lbl">AR<em>-27%</em></span></div>
+        <div class="leaf" style="left:18.106%;top:58.413%;width:6.927%;--c:#500908"><span class="lbl">AA<em>-25%</em></span></div>
+        <div class="leaf" style="left:16.694%;top:48.736%;width:6.927%;--c:#570a09"><span class="lbl">CNH<em>-24%</em></span></div>
+        <div class="leaf" style="left:23.817%;top:66.130%;width:6.927%;--c:#5d0b09"><span class="lbl">JAZZ<em>-23%</em></span></div>
+        <div class="leaf" style="left:21.277%;top:52.273%;width:6.927%;--c:#650c0a"><span class="lbl">UTHR<em>-21%</em></span></div>
+        <div class="leaf" style="left:23.125%;top:44.627%;width:6.927%;--c:#690d0a"><span class="lbl">DAR<em>-20%</em></span></div>
+        <div class="leaf" style="left:18.776%;top:27.679%;width:6.927%;--c:#8c130e"><span class="lbl">HL<em>-13%</em></span></div>
+        <div class="leaf" style="left:28.586%;top:61.117%;width:6.927%;--c:#8c130e"><span class="lbl">OVV<em>-13%</em></span></div>
+        <div class="leaf" style="left:24.014%;top:36.846%;width:6.927%;--c:#991e12"><span class="lbl">MTZ<em>-11%</em></span></div>
+        <div class="leaf" style="left:32.814%;top:65.775%;width:6.927%;--c:#ab2d17"><span class="lbl">NLY<em>-8%</em></span></div>
+        <div class="leaf" style="left:24.073%;top:30.556%;width:6.927%;--c:#b6391a"><span class="lbl">ARMK<em>-6%</em></span></div>
+        <div class="leaf" style="left:35.331%;top:70.128%;width:6.927%;--c:#b7401b"><span class="lbl">GME<em>-5%</em></span></div>
+        <div class="leaf" style="left:29.896%;top:42.492%;width:6.927%;--c:#b9491c"><span class="lbl">BURL<em>-4%</em></span></div>
+        <div class="leaf" style="left:28.919%;top:36.210%;width:6.927%;--c:#bb551d"><span class="lbl">CDE<em>-3%</em></span></div>
+        <div class="leaf" style="left:34.706%;top:57.341%;width:6.927%;--c:#c07621"><span class="lbl">BJ<em>+1%</em></span></div>
+        <div class="leaf" style="left:28.738%;top:22.651%;width:6.927%;--c:#c07822"><span class="lbl">BWA<em>+1%</em></span></div>
+        <div class="leaf" style="left:42.402%;top:69.170%;width:6.927%;--c:#bf902a"><span class="lbl">TTMI<em>+5%</em></span></div>
+        <div class="leaf" style="left:38.069%;top:46.775%;width:6.927%;--c:#bf992e"><span class="lbl">LSCC<em>+6%</em></span></div>
+        <div class="leaf" style="left:33.061%;top:24.711%;width:6.927%;--c:#bf9d2f"><span class="lbl">DINO<em>+7%</em></span></div>
+        <div class="leaf" style="left:43.026%;top:61.753%;width:6.927%;--c:#bf9f30"><span class="lbl">WBS<em>+7%</em></span></div>
+        <div class="leaf" style="left:37.566%;top:41.318%;width:6.927%;--c:#bf9f30"><span class="lbl">RGLD<em>+7%</em></span></div>
+        <div class="leaf" style="left:35.611%;top:32.981%;width:6.927%;--c:#bda130"><span class="lbl">CRBG<em>+8%</em></span></div>
+        <div class="leaf" style="left:47.094%;top:68.785%;width:6.927%;--c:#b9a330"><span class="lbl">RH<em>+9%</em></span></div>
+        <div class="leaf" style="left:34.781%;top:15.864%;width:6.927%;--c:#b4a530"><span class="lbl">NBIX<em>+10%</em></span></div>
+        <div class="leaf" style="left:51.678%;top:71.115%;width:6.927%;--c:#afa830"><span class="lbl">PEN<em>+13%</em></span></div>
+        <div class="leaf" style="left:43.827%;top:41.638%;width:6.927%;--c:#aea82f"><span class="lbl">SNX<em>+14%</em></span></div>
+        <div class="leaf" style="left:41.943%;top:34.314%;width:6.927%;--c:#aaaa2f"><span class="lbl">EQH<em>+16%</em></span></div>
+        <div class="leaf" style="left:35.955%;top:10.847%;width:6.927%;--c:#a5ad2f"><span class="lbl">PFGC<em>+18%</em></span></div>
+        <div class="leaf" style="left:39.621%;top:22.941%;width:6.927%;--c:#a2af2f"><span class="lbl">FIVE<em>+21%</em></span></div>
+        <div class="leaf" style="left:50.842%;top:63.953%;width:6.927%;--c:#9fb02f"><span class="lbl">MKSI<em>+21%</em></span></div>
+        <div class="leaf" style="left:47.062%;top:48.839%;width:6.927%;--c:#9caf2e"><span class="lbl">DKS<em>+22%</em></span></div>
+        <div class="leaf" style="left:41.615%;top:12.173%;width:6.927%;--c:#9aae2e"><span class="lbl">DY<em>+23%</em></span></div>
+        <div class="leaf" style="left:50.391%;top:43.691%;width:6.927%;--c:#97ad2d"><span class="lbl">RRX<em>+23%</em></span></div>
+        <div class="leaf" style="left:44.867%;top:22.030%;width:6.927%;--c:#8ba92b"><span class="lbl">AEIS<em>+27%</em></span></div>
+        <div class="leaf" style="left:52.122%;top:49.040%;width:6.927%;--c:#79a327"><span class="lbl">BWXT<em>+32%</em></span></div>
+        <div class="leaf" style="left:54.130%;top:55.293%;width:6.927%;--c:#77a227"><span class="lbl">OKTA<em>+32%</em></span></div>
+        <div class="leaf" style="left:56.482%;top:60.953%;width:6.927%;--c:#74a126"><span class="lbl">P<em>+33%</em></span></div>
+        <div class="leaf" style="left:50.314%;top:28.824%;width:6.927%;--c:#74a126"><span class="lbl">CW<em>+33%</em></span></div>
+        <div class="leaf" style="left:60.758%;top:67.408%;width:6.927%;--c:#74a126"><span class="lbl">USFD<em>+33%</em></span></div>
+        <div class="leaf" style="left:49.731%;top:22.579%;width:6.927%;--c:#6fa025"><span class="lbl">TXRH<em>+34%</em></span></div>
+        <div class="leaf" style="left:49.075%;top:15.279%;width:6.927%;--c:#609a22"><span class="lbl">AMKR<em>+39%</em></span></div>
+        <div class="leaf" style="left:47.713%;top:7.747%;width:6.927%;--c:#609a22"><span class="lbl">WCC<em>+39%</em></span></div>
+        <div class="leaf" style="left:59.035%;top:49.522%;width:6.927%;--c:#5a9721"><span class="lbl">ROIV<em>+41%</em></span></div>
+        <div class="leaf" style="left:56.446%;top:36.293%;width:6.927%;--c:#5a9721"><span class="lbl">WWD<em>+41%</em></span></div>
+        <div class="leaf" style="left:62.016%;top:56.682%;width:6.927%;--c:#559420"><span class="lbl">DT<em>+43%</em></span></div>
+        <div class="leaf" style="left:55.994%;top:31.464%;width:6.927%;--c:#51911f"><span class="lbl">MEDP<em>+44%</em></span></div>
+        <div class="leaf" style="left:61.113%;top:40.974%;width:6.927%;--c:#51911f"><span class="lbl">PR<em>+45%</em></span></div>
+        <div class="leaf" style="left:67.864%;top:64.129%;width:6.927%;--c:#498d1d"><span class="lbl">ITT<em>+47%</em></span></div>
+        <div class="leaf" style="left:63.862%;top:49.105%;width:6.927%;--c:#478c1d"><span class="lbl">MTSI<em>+48%</em></span></div>
+        <div class="leaf" style="left:54.364%;top:10.617%;width:6.927%;--c:#468b1d"><span class="lbl">FN<em>+48%</em></span></div>
+        <div class="leaf" style="left:55.996%;top:15.537%;width:6.927%;--c:#468b1d"><span class="lbl">SGI<em>+48%</em></span></div>
+        <div class="leaf" style="left:67.761%;top:58.665%;width:6.927%;--c:#3e861b"><span class="lbl">ATI<em>+52%</em></span></div>
+        <div class="leaf" style="left:72.811%;top:68.233%;width:6.927%;--c:#3e861b"><span class="lbl">PINS<em>+53%</em></span></div>
+        <div class="leaf" style="left:64.981%;top:31.081%;width:6.927%;--c:#3e861b"><span class="lbl">CLH<em>+53%</em></span></div>
+        <div class="leaf" style="left:61.629%;top:18.188%;width:6.927%;--c:#3c851b"><span class="lbl">NVT<em>+54%</em></span></div>
+        <div class="leaf" style="left:71.525%;top:54.305%;width:6.927%;--c:#3a841a"><span class="lbl">THC<em>+55%</em></span></div>
+        <div class="leaf" style="left:59.678%;top:8.532%;width:6.927%;--c:#3a841a"><span class="lbl">TWLO<em>+55%</em></span></div>
+        <div class="leaf" style="left:64.772%;top:26.229%;width:6.927%;--c:#38831a"><span class="lbl">EVR<em>+57%</em></span></div>
+        <div class="leaf" style="left:70.878%;top:45.565%;width:6.927%;--c:#337f19"><span class="lbl">RBLX<em>+61%</em></span></div>
+        <div class="leaf" style="left:69.031%;top:36.191%;width:6.927%;--c:#2e7b18"><span class="lbl">FTI<em>+65%</em></span></div>
+        <div class="leaf" style="left:66.515%;top:19.342%;width:6.927%;--c:#287216"><span class="lbl">WSO<em>+72%</em></span></div>
+        <div class="leaf" style="left:76.797%;top:50.904%;width:6.927%;--c:#277116"><span class="lbl">GWRE<em>+74%</em></span></div>
+        <div class="leaf" style="left:67.407%;top:14.439%;width:6.927%;--c:#206614"><span class="lbl">ENTG<em>+83%</em></span></div>
+        <div class="leaf" style="left:81.202%;top:60.502%;width:6.927%;--c:#1f6414"><span class="lbl">NTNX<em>+83%</em></span></div>
+        <div class="leaf" style="left:75.548%;top:37.788%;width:6.927%;--c:#0a3908"><span class="lbl">CRS<em>+92%</em></span></div>
+        <div class="leaf" style="left:73.709%;top:21.039%;width:6.927%;--c:#0a3908"><span class="lbl">KTOS<em>+97%</em></span></div>
+        <div class="leaf" style="left:75.581%;top:27.147%;width:6.927%;--c:#0a3908"><span class="lbl">ONTO<em>+125%</em></span></div>
+        <div class="leaf" style="left:82.171%;top:51.193%;width:6.927%;--c:#0a3908"><span class="lbl">RMBS<em>+91%</em></span></div>
+        <div class="leaf" style="left:82.481%;top:41.608%;width:6.927%;--c:#0a3908"><span class="lbl">ROKU<em>+125%</em></span></div>
+        <div class="leaf" style="left:82.062%;top:29.251%;width:6.927%;--c:#0a3908"><span class="lbl">STRL<em>+168%</em></span></div>
+        <div class="leaf" style="left:88.539%;top:45.060%;width:6.927%;--c:#0a3908"><span class="lbl">TOL<em>+106%</em></span></div>
+        <div class="leaf" style="left:90.175%;top:50.885%;width:6.927%;--c:#0a3908"><span class="lbl">XPO<em>+163%</em></span></div>
+      </div>
+      <div class="hotlayer" data-i="2" style="display:none">
+        <div class="leaf" style="left:12.617%;top:55.721%;width:6.927%;--c:#390607"><span class="lbl">DAR<em>-32%</em></span></div>
+        <div class="leaf" style="left:10.353%;top:46.237%;width:6.927%;--c:#390607"><span class="lbl">DINO<em>-37%</em></span></div>
+        <div class="leaf" style="left:10.069%;top:41.027%;width:6.927%;--c:#390607"><span class="lbl">FIVE<em>-51%</em></span></div>
+        <div class="leaf" style="left:18.106%;top:58.413%;width:6.927%;--c:#5d0b09"><span class="lbl">AMKR<em>-23%</em></span></div>
+        <div class="leaf" style="left:14.869%;top:42.839%;width:6.927%;--c:#5f0b09"><span class="lbl">RMBS<em>-23%</em></span></div>
+        <div class="leaf" style="left:16.694%;top:48.736%;width:6.927%;--c:#610b0a"><span class="lbl">NXT<em>-22%</em></span></div>
+        <div class="leaf" style="left:23.817%;top:66.130%;width:6.927%;--c:#630c0a"><span class="lbl">PINS<em>-22%</em></span></div>
+        <div class="leaf" style="left:23.125%;top:44.627%;width:6.927%;--c:#6f0e0b"><span class="lbl">ROKU<em>-19%</em></span></div>
+        <div class="leaf" style="left:18.776%;top:27.679%;width:6.927%;--c:#740f0c"><span class="lbl">LSCC<em>-18%</em></span></div>
+        <div class="leaf" style="left:28.586%;top:61.117%;width:6.927%;--c:#760f0c"><span class="lbl">ENTG<em>-17%</em></span></div>
+        <div class="leaf" style="left:24.014%;top:36.846%;width:6.927%;--c:#8f160f"><span class="lbl">OKTA<em>-13%</em></span></div>
+        <div class="leaf" style="left:28.170%;top:49.892%;width:6.927%;--c:#991e12"><span class="lbl">BWA<em>-11%</em></span></div>
+        <div class="leaf" style="left:32.814%;top:65.775%;width:6.927%;--c:#ac2e17"><span class="lbl">OVV<em>-8%</em></span></div>
+        <div class="leaf" style="left:24.073%;top:30.556%;width:6.927%;--c:#b13319"><span class="lbl">CNH<em>-7%</em></span></div>
+        <div class="leaf" style="left:35.331%;top:70.128%;width:6.927%;--c:#b63c1a"><span class="lbl">PEN<em>-6%</em></span></div>
+        <div class="leaf" style="left:29.896%;top:42.492%;width:6.927%;--c:#b73e1b"><span class="lbl">NLY<em>-6%</em></span></div>
+        <div class="leaf" style="left:28.919%;top:36.210%;width:6.927%;--c:#be651e"><span class="lbl">ILMN<em>-1%</em></span></div>
+        <div class="leaf" style="left:34.706%;top:57.341%;width:6.927%;--c:#bf691e"><span class="lbl">DT<em>-1%</em></span></div>
+        <div class="leaf" style="left:28.738%;top:22.651%;width:6.927%;--c:#c0701f"><span class="lbl">JAZZ<em>+0%</em></span></div>
+        <div class="leaf" style="left:42.402%;top:69.170%;width:6.927%;--c:#c07922"><span class="lbl">MKSI<em>+1%</em></span></div>
+        <div class="leaf" style="left:38.069%;top:46.775%;width:6.927%;--c:#c07d24"><span class="lbl">HL<em>+2%</em></span></div>
+        <div class="leaf" style="left:33.061%;top:24.711%;width:6.927%;--c:#bf8828"><span class="lbl">NBIX<em>+4%</em></span></div>
+        <div class="leaf" style="left:43.026%;top:61.753%;width:6.927%;--c:#bf8a28"><span class="lbl">WCC<em>+4%</em></span></div>
+        <div class="leaf" style="left:37.566%;top:41.318%;width:6.927%;--c:#bf902a"><span class="lbl">RRX<em>+5%</em></span></div>
+        <div class="leaf" style="left:35.611%;top:32.981%;width:6.927%;--c:#bf942c"><span class="lbl">ROIV<em>+5%</em></span></div>
+        <div class="leaf" style="left:47.094%;top:68.785%;width:6.927%;--c:#bf962c"><span class="lbl">PR<em>+6%</em></span></div>
+        <div class="leaf" style="left:34.781%;top:15.864%;width:6.927%;--c:#bf982d"><span class="lbl">AEIS<em>+6%</em></span></div>
+        <div class="leaf" style="left:47.129%;top:57.627%;width:6.927%;--c:#bca230"><span class="lbl">MEDP<em>+8%</em></span></div>
+        <div class="leaf" style="left:51.678%;top:71.115%;width:6.927%;--c:#bba230"><span class="lbl">WBS<em>+9%</em></span></div>
+        <div class="leaf" style="left:43.827%;top:41.638%;width:6.927%;--c:#b9a330"><span class="lbl">SNX<em>+9%</em></span></div>
+        <div class="leaf" style="left:41.943%;top:34.314%;width:6.927%;--c:#b9a330"><span class="lbl">RGLD<em>+9%</em></span></div>
+        <div class="leaf" style="left:35.955%;top:10.847%;width:6.927%;--c:#b9a330"><span class="lbl">ONTO<em>+9%</em></span></div>
+        <div class="leaf" style="left:39.621%;top:22.941%;width:6.927%;--c:#b4a530"><span class="lbl">WSO<em>+11%</em></span></div>
+        <div class="leaf" style="left:47.062%;top:48.839%;width:6.927%;--c:#b3a630"><span class="lbl">AA<em>+11%</em></span></div>
+        <div class="leaf" style="left:47.306%;top:33.726%;width:6.927%;--c:#b3a630"><span class="lbl">SGI<em>+11%</em></span></div>
+        <div class="leaf" style="left:41.615%;top:12.173%;width:6.927%;--c:#acaa2f"><span class="lbl">NVT<em>+15%</em></span></div>
+        <div class="leaf" style="left:50.391%;top:43.691%;width:6.927%;--c:#aaaa2f"><span class="lbl">FN<em>+16%</em></span></div>
+        <div class="leaf" style="left:44.867%;top:22.030%;width:6.927%;--c:#a3ae2f"><span class="lbl">ITT<em>+20%</em></span></div>
+        <div class="leaf" style="left:52.122%;top:49.040%;width:6.927%;--c:#a0af2f"><span class="lbl">ATI<em>+21%</em></span></div>
+        <div class="leaf" style="left:54.130%;top:55.293%;width:6.927%;--c:#9caf2e"><span class="lbl">WWD<em>+22%</em></span></div>
+        <div class="leaf" style="left:56.482%;top:60.953%;width:6.927%;--c:#9caf2e"><span class="lbl">PFGC<em>+22%</em></span></div>
+        <div class="leaf" style="left:50.314%;top:28.824%;width:6.927%;--c:#9caf2e"><span class="lbl">TOL<em>+23%</em></span></div>
+        <div class="leaf" style="left:60.758%;top:67.408%;width:6.927%;--c:#8daa2b"><span class="lbl">RBLX<em>+27%</em></span></div>
+        <div class="leaf" style="left:55.400%;top:44.009%;width:6.927%;--c:#86a72a"><span class="lbl">NTNX<em>+28%</em></span></div>
+        <div class="leaf" style="left:49.731%;top:22.579%;width:6.927%;--c:#81a629"><span class="lbl">KTOS<em>+30%</em></span></div>
+        <div class="leaf" style="left:47.713%;top:7.747%;width:6.927%;--c:#79a327"><span class="lbl">CLH<em>+32%</em></span></div>
+        <div class="leaf" style="left:59.035%;top:49.522%;width:6.927%;--c:#77a227"><span class="lbl">ARMK<em>+33%</em></span></div>
+        <div class="leaf" style="left:56.446%;top:36.293%;width:6.927%;--c:#72a026"><span class="lbl">BJ<em>+34%</em></span></div>
+        <div class="leaf" style="left:62.016%;top:56.682%;width:6.927%;--c:#6d9f25"><span class="lbl">RH<em>+35%</em></span></div>
+        <div class="leaf" style="left:55.994%;top:31.464%;width:6.927%;--c:#639b23"><span class="lbl">CRBG<em>+38%</em></span></div>
+        <div class="leaf" style="left:56.799%;top:26.179%;width:6.927%;--c:#5e9922"><span class="lbl">MTSI<em>+40%</em></span></div>
+        <div class="leaf" style="left:61.113%;top:40.974%;width:6.927%;--c:#589621"><span class="lbl">EQH<em>+42%</em></span></div>
+        <div class="leaf" style="left:67.864%;top:64.129%;width:6.927%;--c:#589621"><span class="lbl">CHWY<em>+42%</em></span></div>
+        <div class="leaf" style="left:63.862%;top:49.105%;width:6.927%;--c:#579520"><span class="lbl">TWLO<em>+42%</em></span></div>
+        <div class="leaf" style="left:54.364%;top:10.617%;width:6.927%;--c:#53931f"><span class="lbl">FTI<em>+44%</em></span></div>
+        <div class="leaf" style="left:55.996%;top:15.537%;width:6.927%;--c:#4f901f"><span class="lbl">BWXT<em>+45%</em></span></div>
+        <div class="leaf" style="left:67.761%;top:58.665%;width:6.927%;--c:#4b8e1e"><span class="lbl">BURL<em>+47%</em></span></div>
+        <div class="leaf" style="left:72.811%;top:68.233%;width:6.927%;--c:#478c1d"><span class="lbl">TXRH<em>+48%</em></span></div>
+        <div class="leaf" style="left:64.981%;top:31.081%;width:6.927%;--c:#468b1d"><span class="lbl">USFD<em>+49%</em></span></div>
+        <div class="leaf" style="left:61.629%;top:18.188%;width:6.927%;--c:#42881c"><span class="lbl">XPO<em>+50%</em></span></div>
+        <div class="leaf" style="left:71.525%;top:54.305%;width:6.927%;--c:#40871c"><span class="lbl">DY<em>+51%</em></span></div>
+        <div class="leaf" style="left:59.678%;top:8.532%;width:6.927%;--c:#3c851b"><span class="lbl">AR<em>+55%</em></span></div>
+        <div class="leaf" style="left:64.772%;top:26.229%;width:6.927%;--c:#3c851b"><span class="lbl">GWRE<em>+55%</em></span></div>
+        <div class="leaf" style="left:70.878%;top:45.565%;width:6.927%;--c:#3a841a"><span class="lbl">DKS<em>+56%</em></span></div>
+        <div class="leaf" style="left:69.031%;top:36.191%;width:6.927%;--c:#38831a"><span class="lbl">TTMI<em>+57%</em></span></div>
+        <div class="leaf" style="left:66.515%;top:19.342%;width:6.927%;--c:#358019"><span class="lbl">CW<em>+59%</em></span></div>
+        <div class="leaf" style="left:71.009%;top:31.750%;width:6.927%;--c:#337f19"><span class="lbl">UTHR<em>+60%</em></span></div>
+        <div class="leaf" style="left:76.797%;top:50.904%;width:6.927%;--c:#317e18"><span class="lbl">EVR<em>+62%</em></span></div>
+        <div class="leaf" style="left:67.407%;top:14.439%;width:6.927%;--c:#2d7917"><span class="lbl">THC<em>+67%</em></span></div>
+        <div class="leaf" style="left:81.202%;top:60.502%;width:6.927%;--c:#287216"><span class="lbl">P<em>+72%</em></span></div>
+        <div class="leaf" style="left:75.548%;top:37.788%;width:6.927%;--c:#0a3908"><span class="lbl">CART<em>+76%</em></span></div>
+        <div class="leaf" style="left:75.581%;top:27.147%;width:6.927%;--c:#0a3908"><span class="lbl">CDE<em>+75%</em></span></div>
+        <div class="leaf" style="left:82.171%;top:51.193%;width:6.927%;--c:#0a3908"><span class="lbl">CRS<em>+140%</em></span></div>
+        <div class="leaf" style="left:77.205%;top:31.682%;width:6.927%;--c:#0a3908"><span class="lbl">GME<em>+79%</em></span></div>
+        <div class="leaf" style="left:82.481%;top:41.608%;width:6.927%;--c:#0a3908"><span class="lbl">MTZ<em>+80%</em></span></div>
+        <div class="leaf" style="left:82.062%;top:29.251%;width:6.927%;--c:#0a3908"><span class="lbl">SN<em>+90%</em></span></div>
+        <div class="leaf" style="left:88.539%;top:45.060%;width:6.927%;--c:#0a3908"><span class="lbl">STRL<em>+92%</em></span></div>
+        <div class="leaf" style="left:90.175%;top:50.885%;width:6.927%;--c:#0a3908"><span class="lbl">TLN<em>+215%</em></span></div>
+      </div>
+      <div class="hotlayer" data-i="3" style="display:none">
+        <div class="leaf" style="left:12.617%;top:55.721%;width:6.927%;--c:#390607"><span class="lbl">GME<em>-36%</em></span></div>
+        <div class="leaf" style="left:10.353%;top:46.237%;width:6.927%;--c:#390607"><span class="lbl">RH<em>-54%</em></span></div>
+        <div class="leaf" style="left:10.069%;top:41.027%;width:6.927%;--c:#3d0607"><span class="lbl">WSO<em>-29%</em></span></div>
+        <div class="leaf" style="left:18.106%;top:58.413%;width:6.927%;--c:#690d0a"><span class="lbl">DT<em>-20%</em></span></div>
+        <div class="leaf" style="left:14.869%;top:42.839%;width:6.927%;--c:#710e0b"><span class="lbl">CNH<em>-19%</em></span></div>
+        <div class="leaf" style="left:16.694%;top:48.736%;width:6.927%;--c:#7e110d"><span class="lbl">NTNX<em>-16%</em></span></div>
+        <div class="leaf" style="left:23.817%;top:66.130%;width:6.927%;--c:#82110d"><span class="lbl">ENTG<em>-15%</em></span></div>
+        <div class="leaf" style="left:23.125%;top:44.627%;width:6.927%;--c:#8c130e"><span class="lbl">DKS<em>-13%</em></span></div>
+        <div class="leaf" style="left:18.776%;top:27.679%;width:6.927%;--c:#9c2113"><span class="lbl">PINS<em>-11%</em></span></div>
+        <div class="leaf" style="left:28.586%;top:61.117%;width:6.927%;--c:#a32615"><span class="lbl">RRX<em>-10%</em></span></div>
+        <div class="leaf" style="left:24.014%;top:36.846%;width:6.927%;--c:#ac2e17"><span class="lbl">TXRH<em>-8%</em></span></div>
+        <div class="leaf" style="left:28.170%;top:49.892%;width:6.927%;--c:#b73e1b"><span class="lbl">ONTO<em>-5%</em></span></div>
+        <div class="leaf" style="left:32.814%;top:65.775%;width:6.927%;--c:#ba521c"><span class="lbl">OVV<em>-3%</em></span></div>
+        <div class="leaf" style="left:24.073%;top:30.556%;width:6.927%;--c:#bc591d"><span class="lbl">PR<em>-2%</em></span></div>
+        <div class="leaf" style="left:35.331%;top:70.128%;width:6.927%;--c:#bd5e1d"><span class="lbl">ILMN<em>-2%</em></span></div>
+        <div class="leaf" style="left:29.896%;top:42.492%;width:6.927%;--c:#bd601e"><span class="lbl">AR<em>-2%</em></span></div>
+        <div class="leaf" style="left:28.919%;top:36.210%;width:6.927%;--c:#be651e"><span class="lbl">CHWY<em>-1%</em></span></div>
+        <div class="leaf" style="left:34.706%;top:57.341%;width:6.927%;--c:#be651e"><span class="lbl">ARMK<em>-1%</em></span></div>
+        <div class="leaf" style="left:28.738%;top:22.651%;width:6.927%;--c:#c07621"><span class="lbl">BJ<em>+1%</em></span></div>
+        <div class="leaf" style="left:42.402%;top:69.170%;width:6.927%;--c:#c07621"><span class="lbl">CRBG<em>+1%</em></span></div>
+        <div class="leaf" style="left:38.069%;top:46.775%;width:6.927%;--c:#c07822"><span class="lbl">EQH<em>+1%</em></span></div>
+        <div class="leaf" style="left:33.061%;top:24.711%;width:6.927%;--c:#c07922"><span class="lbl">BURL<em>+1%</em></span></div>
+        <div class="leaf" style="left:43.026%;top:61.753%;width:6.927%;--c:#c07d24"><span class="lbl">CLH<em>+2%</em></span></div>
+        <div class="leaf" style="left:37.566%;top:41.318%;width:6.927%;--c:#bf8828"><span class="lbl">XPO<em>+4%</em></span></div>
+        <div class="leaf" style="left:35.611%;top:32.981%;width:6.927%;--c:#bf8a28"><span class="lbl">NBIX<em>+4%</em></span></div>
+        <div class="leaf" style="left:47.094%;top:68.785%;width:6.927%;--c:#bf992e"><span class="lbl">PFGC<em>+6%</em></span></div>
+        <div class="leaf" style="left:34.781%;top:15.864%;width:6.927%;--c:#bf9d2f"><span class="lbl">DAR<em>+7%</em></span></div>
+        <div class="leaf" style="left:47.129%;top:57.627%;width:6.927%;--c:#bf9f30"><span class="lbl">TOL<em>+7%</em></span></div>
+        <div class="leaf" style="left:51.678%;top:71.115%;width:6.927%;--c:#bba230"><span class="lbl">CART<em>+9%</em></span></div>
+        <div class="leaf" style="left:43.827%;top:41.638%;width:6.927%;--c:#b9a330"><span class="lbl">P<em>+9%</em></span></div>
+        <div class="leaf" style="left:41.943%;top:34.314%;width:6.927%;--c:#b7a430"><span class="lbl">OKTA<em>+10%</em></span></div>
+        <div class="leaf" style="left:35.955%;top:10.847%;width:6.927%;--c:#b2a730"><span class="lbl">USFD<em>+12%</em></span></div>
+        <div class="leaf" style="left:39.621%;top:22.941%;width:6.927%;--c:#aea82f"><span class="lbl">WBS<em>+14%</em></span></div>
+        <div class="leaf" style="left:47.062%;top:48.839%;width:6.927%;--c:#acaa2f"><span class="lbl">SN<em>+15%</em></span></div>
+        <div class="leaf" style="left:47.306%;top:33.726%;width:6.927%;--c:#a4ad2f"><span class="lbl">GWRE<em>+19%</em></span></div>
+        <div class="leaf" style="left:41.615%;top:12.173%;width:6.927%;--c:#9fb02f"><span class="lbl">ITT<em>+21%</em></span></div>
+        <div class="leaf" style="left:50.391%;top:43.691%;width:6.927%;--c:#9caf2e"><span class="lbl">NLY<em>+22%</em></span></div>
+        <div class="leaf" style="left:44.867%;top:22.030%;width:6.927%;--c:#9aae2e"><span class="lbl">EVR<em>+23%</em></span></div>
+        <div class="leaf" style="left:52.122%;top:49.040%;width:6.927%;--c:#86a72a"><span class="lbl">SNX<em>+28%</em></span></div>
+        <div class="leaf" style="left:54.130%;top:55.293%;width:6.927%;--c:#81a629"><span class="lbl">LSCC<em>+30%</em></span></div>
+        <div class="leaf" style="left:56.482%;top:60.953%;width:6.927%;--c:#7ca428"><span class="lbl">PEN<em>+31%</em></span></div>
+        <div class="leaf" style="left:50.314%;top:28.824%;width:6.927%;--c:#7ca428"><span class="lbl">DINO<em>+31%</em></span></div>
+        <div class="leaf" style="left:60.758%;top:67.408%;width:6.927%;--c:#79a327"><span class="lbl">TWLO<em>+32%</em></span></div>
+        <div class="leaf" style="left:55.400%;top:44.009%;width:6.927%;--c:#79a327"><span class="lbl">MTSI<em>+32%</em></span></div>
+        <div class="leaf" style="left:49.731%;top:22.579%;width:6.927%;--c:#6d9f25"><span class="lbl">WCC<em>+35%</em></span></div>
+        <div class="leaf" style="left:47.713%;top:7.747%;width:6.927%;--c:#639b23"><span class="lbl">JAZZ<em>+38%</em></span></div>
+        <div class="leaf" style="left:59.035%;top:49.522%;width:6.927%;--c:#639b23"><span class="lbl">UTHR<em>+38%</em></span></div>
+        <div class="leaf" style="left:56.446%;top:36.293%;width:6.927%;--c:#5c9821"><span class="lbl">RBLX<em>+40%</em></span></div>
+        <div class="leaf" style="left:62.016%;top:56.682%;width:6.927%;--c:#5a9721"><span class="lbl">AA<em>+41%</em></span></div>
+        <div class="leaf" style="left:55.994%;top:31.464%;width:6.927%;--c:#589621"><span class="lbl">BWA<em>+42%</em></span></div>
+        <div class="leaf" style="left:56.799%;top:26.179%;width:6.927%;--c:#4d8f1e"><span class="lbl">ROKU<em>+46%</em></span></div>
+        <div class="leaf" style="left:61.113%;top:40.974%;width:6.927%;--c:#448a1c"><span class="lbl">NVT<em>+50%</em></span></div>
+        <div class="leaf" style="left:67.864%;top:64.129%;width:6.927%;--c:#3e861b"><span class="lbl">MKSI<em>+53%</em></span></div>
+        <div class="leaf" style="left:63.862%;top:49.105%;width:6.927%;--c:#3c851b"><span class="lbl">AMKR<em>+54%</em></span></div>
+        <div class="leaf" style="left:54.364%;top:10.617%;width:6.927%;--c:#3c851b"><span class="lbl">FTI<em>+54%</em></span></div>
+        <div class="leaf" style="left:55.996%;top:15.537%;width:6.927%;--c:#3a841a"><span class="lbl">BWXT<em>+55%</em></span></div>
+        <div class="leaf" style="left:67.761%;top:58.665%;width:6.927%;--c:#3a841a"><span class="lbl">CW<em>+55%</em></span></div>
+        <div class="leaf" style="left:72.811%;top:68.233%;width:6.927%;--c:#38831a"><span class="lbl">THC<em>+57%</em></span></div>
+        <div class="leaf" style="left:64.981%;top:31.081%;width:6.927%;--c:#38831a"><span class="lbl">SGI<em>+57%</em></span></div>
+        <div class="leaf" style="left:61.629%;top:18.188%;width:6.927%;--c:#358019"><span class="lbl">MTZ<em>+60%</em></span></div>
+        <div class="leaf" style="left:71.525%;top:54.305%;width:6.927%;--c:#2c7817"><span class="lbl">RGLD<em>+69%</em></span></div>
+        <div class="leaf" style="left:59.678%;top:8.532%;width:6.927%;--c:#2a7617"><span class="lbl">MEDP<em>+69%</em></span></div>
+        <div class="leaf" style="left:64.772%;top:26.229%;width:6.927%;--c:#277116"><span class="lbl">RMBS<em>+74%</em></span></div>
+        <div class="leaf" style="left:70.878%;top:45.565%;width:6.927%;--c:#226a15"><span class="lbl">FIVE<em>+79%</em></span></div>
+        <div class="leaf" style="left:69.031%;top:36.191%;width:6.927%;--c:#216814"><span class="lbl">AEIS<em>+81%</em></span></div>
+        <div class="leaf" style="left:66.515%;top:19.342%;width:6.927%;--c:#206614"><span class="lbl">WWD<em>+82%</em></span></div>
+        <div class="leaf" style="left:71.009%;top:31.750%;width:6.927%;--c:#206614"><span class="lbl">STRL<em>+82%</em></span></div>
+        <div class="leaf" style="left:76.797%;top:50.904%;width:6.927%;--c:#1f6414"><span class="lbl">ROIV<em>+83%</em></span></div>
+        <div class="leaf" style="left:67.407%;top:14.439%;width:6.927%;--c:#1d6113"><span class="lbl">CRS<em>+86%</em></span></div>
+        <div class="leaf" style="left:81.202%;top:60.502%;width:6.927%;--c:#1d6113"><span class="lbl">TLN<em>+86%</em></span></div>
+        <div class="leaf" style="left:75.548%;top:37.788%;width:6.927%;--c:#0a3908"><span class="lbl">ATI<em>+109%</em></span></div>
+        <div class="leaf" style="left:75.581%;top:27.147%;width:6.927%;--c:#0a3908"><span class="lbl">CDE<em>+212%</em></span></div>
+        <div class="leaf" style="left:82.171%;top:51.193%;width:6.927%;--c:#0a3908"><span class="lbl">DY<em>+94%</em></span></div>
+        <div class="leaf" style="left:77.205%;top:31.682%;width:6.927%;--c:#0a3908"><span class="lbl">FN<em>+107%</em></span></div>
+        <div class="leaf" style="left:82.481%;top:41.608%;width:6.927%;--c:#0a3908"><span class="lbl">HL<em>+291%</em></span></div>
+        <div class="leaf" style="left:82.062%;top:29.251%;width:6.927%;--c:#0a3908"><span class="lbl">KTOS<em>+188%</em></span></div>
+        <div class="leaf" style="left:88.539%;top:45.060%;width:6.927%;--c:#0a3908"><span class="lbl">NXT<em>+138%</em></span></div>
+        <div class="leaf" style="left:90.175%;top:50.885%;width:6.927%;--c:#0a3908"><span class="lbl">TTMI<em>+179%</em></span></div>
+      </div>
+      <div class="hotlayer" data-i="4" style="display:none">
+        <div class="leaf" style="left:12.617%;top:55.721%;width:6.927%;--c:#390607"><span class="lbl">CHWY<em>-46%</em></span></div>
+        <div class="leaf" style="left:10.353%;top:46.237%;width:6.927%;--c:#390607"><span class="lbl">GWRE<em>-47%</em></span></div>
+        <div class="leaf" style="left:10.069%;top:41.027%;width:6.927%;--c:#390607"><span class="lbl">KTOS<em>-32%</em></span></div>
+        <div class="leaf" style="left:18.106%;top:58.413%;width:6.927%;--c:#390607"><span class="lbl">RBLX<em>-40%</em></span></div>
+        <div class="leaf" style="left:14.869%;top:42.839%;width:6.927%;--c:#550909"><span class="lbl">CG<em>-24%</em></span></div>
+        <div class="leaf" style="left:16.694%;top:48.736%;width:6.927%;--c:#610b0a"><span class="lbl">PINS<em>-22%</em></span></div>
+        <div class="leaf" style="left:23.817%;top:66.130%;width:6.927%;--c:#6d0d0b"><span class="lbl">MEDP<em>-19%</em></span></div>
+        <div class="leaf" style="left:21.277%;top:52.273%;width:6.927%;--c:#760f0c"><span class="lbl">HL<em>-17%</em></span></div>
+        <div class="leaf" style="left:23.125%;top:44.627%;width:6.927%;--c:#780f0c"><span class="lbl">SGI<em>-17%</em></span></div>
+        <div class="leaf" style="left:18.776%;top:27.679%;width:6.927%;--c:#7c100c"><span class="lbl">RH<em>-16%</em></span></div>
+        <div class="leaf" style="left:28.586%;top:61.117%;width:6.927%;--c:#8f160f"><span class="lbl">THC<em>-13%</em></span></div>
+        <div class="leaf" style="left:24.014%;top:36.846%;width:6.927%;--c:#a12514"><span class="lbl">NTNX<em>-10%</em></span></div>
+        <div class="leaf" style="left:28.170%;top:49.892%;width:6.927%;--c:#b73e1b"><span class="lbl">BJ<em>-5%</em></span></div>
+        <div class="leaf" style="left:32.814%;top:65.775%;width:6.927%;--c:#b8451b"><span class="lbl">DT<em>-5%</em></span></div>
+        <div class="leaf" style="left:24.073%;top:30.556%;width:6.927%;--c:#b8451b"><span class="lbl">EQH<em>-5%</em></span></div>
+        <div class="leaf" style="left:35.331%;top:70.128%;width:6.927%;--c:#b8471b"><span class="lbl">AR<em>-4%</em></span></div>
+        <div class="leaf" style="left:29.896%;top:42.492%;width:6.927%;--c:#ba4e1c"><span class="lbl">RGLD<em>-4%</em></span></div>
+        <div class="leaf" style="left:28.919%;top:36.210%;width:6.927%;--c:#bb551d"><span class="lbl">CDE<em>-3%</em></span></div>
+        <div class="leaf" style="left:34.706%;top:57.341%;width:6.927%;--c:#bc5c1d"><span class="lbl">CRBG<em>-2%</em></span></div>
+        <div class="leaf" style="left:28.738%;top:22.651%;width:6.927%;--c:#bf6b1f"><span class="lbl">CART<em>-0%</em></span></div>
+        <div class="leaf" style="left:42.402%;top:69.170%;width:6.927%;--c:#c06e1f"><span class="lbl">NLY<em>-0%</em></span></div>
+        <div class="leaf" style="left:39.282%;top:54.551%;width:6.927%;--c:#c07220"><span class="lbl">ALLY<em>+0%</em></span></div>
+        <div class="leaf" style="left:38.069%;top:46.775%;width:6.927%;--c:#c07b23"><span class="lbl">PEN<em>+2%</em></span></div>
+        <div class="leaf" style="left:33.061%;top:24.711%;width:6.927%;--c:#c08326"><span class="lbl">FIVE<em>+3%</em></span></div>
+        <div class="leaf" style="left:43.026%;top:61.753%;width:6.927%;--c:#bf9f30"><span class="lbl">GME<em>+7%</em></span></div>
+        <div class="leaf" style="left:37.566%;top:41.318%;width:6.927%;--c:#b9a330"><span class="lbl">AA<em>+9%</em></span></div>
+        <div class="leaf" style="left:35.611%;top:32.981%;width:6.927%;--c:#b7a430"><span class="lbl">M<em>+9%</em></span></div>
+        <div class="leaf" style="left:47.094%;top:68.785%;width:6.927%;--c:#b6a530"><span class="lbl">UTHR<em>+10%</em></span></div>
+        <div class="leaf" style="left:34.781%;top:15.864%;width:6.927%;--c:#b4a530"><span class="lbl">TXRH<em>+11%</em></span></div>
+        <div class="leaf" style="left:47.129%;top:57.627%;width:6.927%;--c:#b4a530"><span class="lbl">EVR<em>+11%</em></span></div>
+        <div class="leaf" style="left:51.678%;top:71.115%;width:6.927%;--c:#b1a730"><span class="lbl">NBIX<em>+13%</em></span></div>
+        <div class="leaf" style="left:43.827%;top:41.638%;width:6.927%;--c:#aea82f"><span class="lbl">ITT<em>+14%</em></span></div>
+        <div class="leaf" style="left:41.943%;top:34.314%;width:6.927%;--c:#aea82f"><span class="lbl">TOL<em>+14%</em></span></div>
+        <div class="leaf" style="left:35.955%;top:10.847%;width:6.927%;--c:#ada92f"><span class="lbl">CNH<em>+14%</em></span></div>
+        <div class="leaf" style="left:39.621%;top:22.941%;width:6.927%;--c:#aaaa2f"><span class="lbl">P<em>+16%</em></span></div>
+        <div class="leaf" style="left:50.842%;top:63.953%;width:6.927%;--c:#aaaa2f"><span class="lbl">PFGC<em>+16%</em></span></div>
+        <div class="leaf" style="left:47.062%;top:48.839%;width:6.927%;--c:#a9ab2f"><span class="lbl">TLN<em>+17%</em></span></div>
+        <div class="leaf" style="left:47.306%;top:33.726%;width:6.927%;--c:#a7ac2f"><span class="lbl">WSO<em>+18%</em></span></div>
+        <div class="leaf" style="left:41.615%;top:12.173%;width:6.927%;--c:#a0af2f"><span class="lbl">BURL<em>+21%</em></span></div>
+        <div class="leaf" style="left:50.391%;top:43.691%;width:6.927%;--c:#a0af2f"><span class="lbl">WBS<em>+21%</em></span></div>
+        <div class="leaf" style="left:44.867%;top:22.030%;width:6.927%;--c:#9fb02f"><span class="lbl">BWXT<em>+21%</em></span></div>
+        <div class="leaf" style="left:52.122%;top:49.040%;width:6.927%;--c:#9caf2e"><span class="lbl">DKS<em>+22%</em></span></div>
+        <div class="leaf" style="left:54.130%;top:55.293%;width:6.927%;--c:#9aae2e"><span class="lbl">ILMN<em>+23%</em></span></div>
+        <div class="leaf" style="left:56.482%;top:60.953%;width:6.927%;--c:#9aae2e"><span class="lbl">USFD<em>+23%</em></span></div>
+        <div class="leaf" style="left:50.314%;top:28.824%;width:6.927%;--c:#97ad2d"><span class="lbl">SN<em>+23%</em></span></div>
+        <div class="leaf" style="left:60.758%;top:67.408%;width:6.927%;--c:#97ad2d"><span class="lbl">CLH<em>+24%</em></span></div>
+        <div class="leaf" style="left:55.400%;top:44.009%;width:6.927%;--c:#95ad2d"><span class="lbl">H<em>+24%</em></span></div>
+        <div class="leaf" style="left:49.731%;top:22.579%;width:6.927%;--c:#8daa2b"><span class="lbl">ROKU<em>+27%</em></span></div>
+        <div class="leaf" style="left:49.075%;top:15.279%;width:6.927%;--c:#83a729"><span class="lbl">FN<em>+29%</em></span></div>
+        <div class="leaf" style="left:47.713%;top:7.747%;width:6.927%;--c:#7ca428"><span class="lbl">TWLO<em>+31%</em></span></div>
+        <div class="leaf" style="left:59.035%;top:49.522%;width:6.927%;--c:#74a126"><span class="lbl">PR<em>+33%</em></span></div>
+        <div class="leaf" style="left:56.446%;top:36.293%;width:6.927%;--c:#74a126"><span class="lbl">JAZZ<em>+33%</em></span></div>
+        <div class="leaf" style="left:62.016%;top:56.682%;width:6.927%;--c:#6fa025"><span class="lbl">DY<em>+35%</em></span></div>
+        <div class="leaf" style="left:55.994%;top:31.464%;width:6.927%;--c:#6a9e24"><span class="lbl">OVV<em>+36%</em></span></div>
+        <div class="leaf" style="left:56.799%;top:26.179%;width:6.927%;--c:#609a22"><span class="lbl">DINO<em>+39%</em></span></div>
+        <div class="leaf" style="left:61.113%;top:40.974%;width:6.927%;--c:#5e9922"><span class="lbl">OKTA<em>+39%</em></span></div>
+        <div class="leaf" style="left:67.864%;top:64.129%;width:6.927%;--c:#5e9922"><span class="lbl">CW<em>+40%</em></span></div>
+        <div class="leaf" style="left:63.862%;top:49.105%;width:6.927%;--c:#589621"><span class="lbl">WWD<em>+42%</em></span></div>
+        <div class="leaf" style="left:54.364%;top:10.617%;width:6.927%;--c:#579520"><span class="lbl">RBC<em>+43%</em></span></div>
+        <div class="leaf" style="left:55.996%;top:15.537%;width:6.927%;--c:#51911f"><span class="lbl">ARMK<em>+45%</em></span></div>
+        <div class="leaf" style="left:67.761%;top:58.665%;width:6.927%;--c:#51911f"><span class="lbl">DAR<em>+45%</em></span></div>
+        <div class="leaf" style="left:72.811%;top:68.233%;width:6.927%;--c:#4f901f"><span class="lbl">NXT<em>+45%</em></span></div>
+        <div class="leaf" style="left:72.707%;top:61.750%;width:6.927%;--c:#4f901f"><span class="lbl">ROIV<em>+45%</em></span></div>
+        <div class="leaf" style="left:64.981%;top:31.081%;width:6.927%;--c:#4d8f1e"><span class="lbl">XPO<em>+46%</em></span></div>
+        <div class="leaf" style="left:61.629%;top:18.188%;width:6.927%;--c:#478c1d"><span class="lbl">FTI<em>+48%</em></span></div>
+        <div class="leaf" style="left:71.525%;top:54.305%;width:6.927%;--c:#448a1c"><span class="lbl">WCC<em>+49%</em></span></div>
+        <div class="leaf" style="left:59.678%;top:8.532%;width:6.927%;--c:#3a841a"><span class="lbl">RMBS<em>+55%</em></span></div>
+        <div class="leaf" style="left:64.772%;top:26.229%;width:6.927%;--c:#317e18"><span class="lbl">RRX<em>+62%</em></span></div>
+        <div class="leaf" style="left:70.878%;top:45.565%;width:6.927%;--c:#2f7d18"><span class="lbl">BWA<em>+63%</em></span></div>
+        <div class="leaf" style="left:69.031%;top:36.191%;width:6.927%;--c:#266f15"><span class="lbl">NVT<em>+75%</em></span></div>
+        <div class="leaf" style="left:66.515%;top:19.342%;width:6.927%;--c:#256d15"><span class="lbl">ATI<em>+77%</em></span></div>
+        <div class="leaf" style="left:71.009%;top:31.750%;width:6.927%;--c:#256d15"><span class="lbl">SOLS<em>+77%</em></span></div>
+        <div class="leaf" style="left:76.797%;top:50.904%;width:6.927%;--c:#246b15"><span class="lbl">MTZ<em>+77%</em></span></div>
+        <div class="leaf" style="left:67.407%;top:14.439%;width:6.927%;--c:#226a15"><span class="lbl">AEIS<em>+79%</em></span></div>
+        <div class="leaf" style="left:81.202%;top:60.502%;width:6.927%;--c:#1d6113"><span class="lbl">CRS<em>+86%</em></span></div>
+        <div class="leaf" style="left:75.548%;top:37.788%;width:6.927%;--c:#0a3908"><span class="lbl">AMKR<em>+132%</em></span></div>
+        <div class="leaf" style="left:73.709%;top:21.039%;width:6.927%;--c:#0a3908"><span class="lbl">ENTG<em>+117%</em></span></div>
+        <div class="leaf" style="left:75.581%;top:27.147%;width:6.927%;--c:#0a3908"><span class="lbl">LSCC<em>+108%</em></span></div>
+        <div class="leaf" style="left:82.171%;top:51.193%;width:6.927%;--c:#0a3908"><span class="lbl">MKSI<em>+157%</em></span></div>
+        <div class="leaf" style="left:77.205%;top:31.682%;width:6.927%;--c:#0a3908"><span class="lbl">MTSI<em>+129%</em></span></div>
+        <div class="leaf" style="left:82.481%;top:41.608%;width:6.927%;--c:#0a3908"><span class="lbl">ONTO<em>+116%</em></span></div>
+        <div class="leaf" style="left:82.062%;top:29.251%;width:6.927%;--c:#0a3908"><span class="lbl">SNX<em>+89%</em></span></div>
+        <div class="leaf" style="left:88.539%;top:45.060%;width:6.927%;--c:#0a3908"><span class="lbl">STRL<em>+191%</em></span></div>
+        <div class="leaf" style="left:90.175%;top:50.885%;width:6.927%;--c:#0a3908"><span class="lbl">TTMI<em>+209%</em></span></div>
+      </div>
+  </div>
+  <div class="ranks" id="ranks"></div>
+</div>
+<script>
+  const FRAMES = ["tree_midcap_2022.webp","tree_midcap_2023.webp","tree_midcap_2024.webp","tree_midcap_2025.webp","tree_midcap_2026_ytd.webp"];
+  const RANKS = [[["FTI",105.9,"#0a3908"],["ATI",87.4,"#0a3908"],["AR",77.1,"#0a3908"],["DINO",58.3,"#0a3908"],["PR",57.2,"#0a3908"],["OVV",50.5,"#0a3908"],["NBIX",40.2,"#0a3908"],["UTHR",28.7,"#0a3908"],["PFGC",27.2,"#8ba92b"],["CRS",26.6,"#8daa2b"],["JAZZ",25.0,"#92ac2c"],["STRL",24.7,"#92ac2c"],["RMBS",21.9,"#9fb02f"],["BWXT",21.3,"#9fb02f"],["CW",20.4,"#a2af2f"],["CLH",14.4,"#ada92f"],["ARMK",12.2,"#b1a730"],["FN",8.2,"#bca230"],["RGLD",7.1,"#bf9d2f"],["HL",6.5,"#bf992e"],["DKS",4.6,"#bf8e2a"],["TXRH",1.9,"#c07d24"],["NVT",1.2,"#c07822"],["TTMI",1.2,"#c07822"],["DY",-0.2,"#c06e1f"],["BJ",-1.2,"#be651e"],["USFD",-2.3,"#bc591d"],["MEDP",-2.4,"#bc591d"],["AMKR",-3.3,"#ba521c"],["WCC",-4.9,"#b7431b"],["AEIS",-5.8,"#b63c1a"],["MTZ",-7.5,"#ae3018"],["DAR",-9.7,"#a32615"],["BWA",-10.7,"#9c2113"],["WWD",-11.7,"#961b11"],["EQH",-12.5,"#921810"],["FIVE",-14.5,"#84120d"],["WBS",-15.2,"#80110d"],["LSCC",-15.8,"#7e110d"],["SNX",-17.2,"#760f0c"],["CNH",-17.3,"#760f0c"],["P",-17.8,"#740f0c"],["NTNX",-18.2,"#730e0b"],["MTSI",-19.6,"#6d0d0b"],["EVR",-19.7,"#6b0d0b"],["WSO",-20.3,"#690d0a"],["ITT",-20.6,"#670c0a"],["ROIV",-20.7,"#670c0a"],["PEN",-22.6,"#5d0b09"],["AA",-23.7,"#590a09"],["SGI",-27.0,"#480808"],["XPO",-27.6,"#440707"],["RRX",-29.5,"#3b0607"],["BURL",-30.4,"#390607"],["TOL",-31.0,"#390607"],["NLY",-32.6,"#390607"],["ONTO",-32.7,"#390607"],["PINS",-33.2,"#390607"],["CDE",-33.3,"#390607"],["DT",-36.5,"#390607"],["CHWY",-37.1,"#390607"],["THC",-40.3,"#390607"],["GWRE",-44.9,"#390607"],["KTOS",-46.8,"#390607"],["ILMN",-46.9,"#390607"],["RH",-50.1,"#390607"],["GME",-50.2,"#390607"],["MKSI",-51.4,"#390607"],["ENTG",-52.7,"#390607"],["OKTA",-69.5,"#390607"],["RBLX",-72.4,"#390607"],["TWLO",-81.4,"#390607"],["ROKU",-82.2,"#390607"]],[["STRL",168.1,"#0a3908"],["XPO",163.1,"#0a3908"],["ROKU",125.2,"#0a3908"],["ONTO",124.6,"#0a3908"],["TOL",105.9,"#0a3908"],["KTOS",96.6,"#0a3908"],["CRS",91.7,"#0a3908"],["RMBS",90.5,"#0a3908"],["NTNX",83.1,"#1f6414"],["ENTG",82.7,"#206614"],["GWRE",74.3,"#277116"],["WSO",71.8,"#287216"],["FTI",65.2,"#2e7b18"],["RBLX",60.6,"#337f19"],["EVR",56.8,"#38831a"],["TWLO",55.0,"#3a841a"],["THC",54.9,"#3a841a"],["NVT",53.6,"#3c851b"],["CLH",52.9,"#3e861b"],["PINS",52.6,"#3e861b"],["ATI",52.3,"#3e861b"],["SGI",48.5,"#468b1d"],["FN",48.4,"#468b1d"],["MTSI",47.6,"#478c1d"],["ITT",47.1,"#498d1d"],["PR",44.7,"#51911f"],["MEDP",44.3,"#51911f"],["DT",42.8,"#559420"],["WWD",40.9,"#5a9721"],["ROIV",40.6,"#5a9721"],["WCC",38.9,"#609a22"],["AMKR",38.7,"#609a22"],["TXRH",34.4,"#6fa025"],["USFD",33.5,"#74a126"],["CW",33.4,"#74a126"],["P",33.3,"#74a126"],["OKTA",32.5,"#77a227"],["BWXT",32.1,"#79a327"],["AEIS",27.0,"#8ba92b"],["RRX",23.4,"#97ad2d"],["DY",23.0,"#9aae2e"],["DKS",22.2,"#9caf2e"],["MKSI",21.4,"#9fb02f"],["FIVE",20.5,"#a2af2f"],["PFGC",18.4,"#a5ad2f"],["EQH",16.0,"#aaaa2f"],["SNX",13.6,"#aea82f"],["PEN",13.1,"#afa830"],["NBIX",10.3,"#b4a530"],["RH",9.1,"#b9a330"],["CRBG",8.0,"#bda130"],["RGLD",7.3,"#bf9f30"],["WBS",7.2,"#bf9f30"],["DINO",7.1,"#bf9d2f"],["LSCC",6.3,"#bf992e"],["TTMI",4.8,"#bf902a"],["BWA",1.3,"#c07822"],["BJ",0.8,"#c07621"],["CDE",-3.0,"#bb551d"],["BURL",-4.1,"#b9491c"],["GME",-5.0,"#b7401b"],["ARMK",-5.8,"#b6391a"],["NLY",-8.1,"#ab2d17"],["MTZ",-11.3,"#991e12"],["OVV",-13.4,"#8c130e"],["HL",-13.5,"#8c130e"],["DAR",-20.4,"#690d0a"],["UTHR",-20.9,"#650c0a"],["JAZZ",-22.8,"#5d0b09"],["CNH",-24.2,"#570a09"],["AA",-25.2,"#500908"],["AR",-26.8,"#480808"],["ILMN",-31.1,"#390607"],["CHWY",-36.3,"#390607"]],[["TLN",214.8,"#0a3908"],["CRS",139.7,"#0a3908"],["STRL",91.6,"#0a3908"],["SN",90.3,"#0a3908"],["MTZ",79.8,"#0a3908"],["GME",78.8,"#0a3908"],["CART",76.5,"#0a3908"],["CDE",75.5,"#0a3908"],["P",72.3,"#287216"],["THC",67.0,"#2d7917"],["EVR",62.1,"#317e18"],["UTHR",60.5,"#337f19"],["CW",59.3,"#358019"],["TTMI",56.5,"#38831a"],["DKS",55.7,"#3a841a"],["GWRE",54.6,"#3c851b"],["AR",54.5,"#3c851b"],["DY",51.2,"#40871c"],["XPO",49.7,"#42881c"],["USFD",48.6,"#468b1d"],["TXRH",47.6,"#478c1d"],["BURL",46.6,"#4b8e1e"],["BWXT",45.2,"#4f901f"],["FTI",43.7,"#53931f"],["TWLO",42.5,"#579520"],["CHWY",41.7,"#589621"],["EQH",41.7,"#589621"],["MTSI",39.8,"#5e9922"],["CRBG",38.2,"#639b23"],["RH",35.0,"#6d9f25"],["BJ",34.0,"#72a026"],["ARMK",32.8,"#77a227"],["CLH",31.9,"#79a327"],["KTOS",30.0,"#81a629"],["NTNX",28.3,"#86a72a"],["RBLX",26.6,"#8daa2b"],["TOL",22.5,"#9caf2e"],["PFGC",22.3,"#9caf2e"],["WWD",22.3,"#9caf2e"],["ATI",21.0,"#a0af2f"],["ITT",19.7,"#a3ae2f"],["FN",15.5,"#aaaa2f"],["NVT",15.3,"#acaa2f"],["SGI",11.2,"#b3a630"],["AA",11.1,"#b3a630"],["WSO",10.6,"#b4a530"],["ONTO",9.0,"#b9a330"],["RGLD",9.0,"#b9a330"],["SNX",9.0,"#b9a330"],["WBS",8.8,"#bba230"],["MEDP",8.4,"#bca230"],["AEIS",6.2,"#bf982d"],["PR",5.7,"#bf962c"],["ROIV",5.3,"#bf942c"],["RRX",4.8,"#bf902a"],["WCC",4.1,"#bf8a28"],["NBIX",3.6,"#bf8828"],["HL",2.1,"#c07d24"],["MKSI",1.5,"#c07922"],["JAZZ",0.1,"#c0701f"],["DT",-0.6,"#bf691e"],["ILMN",-1.2,"#be651e"],["NLY",-5.5,"#b73e1b"],["PEN",-5.6,"#b63c1a"],["CNH",-7.0,"#b13319"],["OVV",-7.8,"#ac2e17"],["BWA",-11.3,"#991e12"],["OKTA",-13.0,"#8f160f"],["ENTG",-17.3,"#760f0c"],["LSCC",-17.9,"#740f0c"],["ROKU",-18.9,"#6f0e0b"],["PINS",-21.7,"#630c0a"],["NXT",-22.0,"#610b0a"],["RMBS",-22.5,"#5f0b09"],["AMKR",-22.8,"#5d0b09"],["DAR",-32.4,"#390607"],["DINO",-36.9,"#390607"],["FIVE",-50.8,"#390607"]],[["HL",290.8,"#0a3908"],["CDE",211.7,"#0a3908"],["KTOS",187.8,"#0a3908"],["TTMI",178.8,"#0a3908"],["NXT",138.5,"#0a3908"],["ATI",108.5,"#0a3908"],["FN",107.1,"#0a3908"],["DY",94.1,"#0a3908"],["TLN",86.1,"#1d6113"],["CRS",85.5,"#1d6113"],["ROIV",83.4,"#1f6414"],["STRL",81.8,"#206614"],["WWD",81.7,"#206614"],["AEIS",81.1,"#216814"],["FIVE",79.5,"#226a15"],["RMBS",73.8,"#277116"],["MEDP",69.1,"#2a7617"],["RGLD",68.6,"#2c7817"],["MTZ",59.7,"#358019"],["SGI",57.5,"#38831a"],["THC",57.4,"#38831a"],["CW",55.3,"#3a841a"],["BWXT",55.2,"#3a841a"],["FTI",54.0,"#3c851b"],["AMKR",53.7,"#3c851b"],["MKSI",53.1,"#3e861b"],["NVT",49.6,"#448a1c"],["ROKU",45.9,"#4d8f1e"],["BWA",41.7,"#589621"],["AA",40.7,"#5a9721"],["RBLX",40.0,"#5c9821"],["UTHR",38.1,"#639b23"],["JAZZ",38.0,"#639b23"],["WCC",35.2,"#6d9f25"],["MTSI",31.8,"#79a327"],["TWLO",31.6,"#79a327"],["DINO",31.5,"#7ca428"],["PEN",30.9,"#7ca428"],["LSCC",29.9,"#81a629"],["SNX",28.1,"#86a72a"],["EVR",22.7,"#9aae2e"],["NLY",22.2,"#9caf2e"],["ITT",21.4,"#9fb02f"],["GWRE",19.2,"#a4ad2f"],["SN",14.9,"#acaa2f"],["WBS",14.0,"#aea82f"],["USFD",11.7,"#b2a730"],["OKTA",9.7,"#b7a430"],["P",9.1,"#b9a330"],["CART",8.6,"#bba230"],["TOL",7.4,"#bf9f30"],["DAR",6.9,"#bf9d2f"],["PFGC",6.4,"#bf992e"],["NBIX",3.9,"#bf8a28"],["XPO",3.6,"#bf8828"],["CLH",1.9,"#c07d24"],["BURL",1.3,"#c07922"],["EQH",1.0,"#c07822"],["CRBG",0.8,"#c07621"],["BJ",0.8,"#c07621"],["ARMK",-1.2,"#be651e"],["CHWY",-1.3,"#be651e"],["AR",-1.7,"#bd601e"],["ILMN",-1.8,"#bd5e1d"],["PR",-2.4,"#bc591d"],["OVV",-3.2,"#ba521c"],["ONTO",-5.3,"#b73e1b"],["TXRH",-8.0,"#ac2e17"],["RRX",-9.5,"#a32615"],["PINS",-10.7,"#9c2113"],["DKS",-13.5,"#8c130e"],["ENTG",-15.0,"#82110d"],["NTNX",-15.5,"#7e110d"],["CNH",-18.6,"#710e0b"],["DT",-20.3,"#690d0a"],["WSO",-28.9,"#3d0607"],["GME",-35.9,"#390607"],["RH",-54.5,"#390607"]],[["TTMI",208.7,"#0a3908"],["STRL",191.4,"#0a3908"],["MKSI",157.1,"#0a3908"],["AMKR",132.0,"#0a3908"],["MTSI",129.4,"#0a3908"],["ENTG",116.8,"#0a3908"],["ONTO",116.3,"#0a3908"],["LSCC",108.0,"#0a3908"],["SNX",89.4,"#0a3908"],["CRS",85.7,"#1d6113"],["AEIS",79.0,"#226a15"],["MTZ",77.3,"#246b15"],["SOLS",77.1,"#256d15"],["ATI",76.8,"#256d15"],["NVT",74.8,"#266f15"],["BWA",63.2,"#2f7d18"],["RRX",62.2,"#317e18"],["RMBS",55.3,"#3a841a"],["WCC",49.1,"#448a1c"],["FTI",48.1,"#478c1d"],["XPO",45.7,"#4d8f1e"],["ROIV",45.4,"#4f901f"],["NXT",45.3,"#4f901f"],["DAR",44.7,"#51911f"],["ARMK",44.7,"#51911f"],["RBC",42.5,"#579520"],["WWD",41.8,"#589621"],["CW",39.7,"#5e9922"],["OKTA",39.2,"#5e9922"],["DINO",39.1,"#609a22"],["OVV",35.9,"#6a9e24"],["DY",34.6,"#6fa025"],["JAZZ",33.2,"#74a126"],["PR",33.0,"#74a126"],["TWLO",30.9,"#7ca428"],["FN",29.2,"#83a729"],["ROKU",26.6,"#8daa2b"],["H",23.9,"#95ad2d"],["CLH",23.9,"#97ad2d"],["SN",23.2,"#97ad2d"],["USFD",23.2,"#9aae2e"],["ILMN",22.6,"#9aae2e"],["DKS",22.4,"#9caf2e"],["BWXT",21.3,"#9fb02f"],["WBS",20.6,"#a0af2f"],["BURL",20.6,"#a0af2f"],["WSO",17.9,"#a7ac2f"],["TLN",16.6,"#a9ab2f"],["PFGC",15.8,"#aaaa2f"],["P",15.8,"#aaaa2f"],["CNH",14.3,"#ada92f"],["TOL",14.0,"#aea82f"],["ITT",13.9,"#aea82f"],["NBIX",12.6,"#b1a730"],["EVR",10.6,"#b4a530"],["TXRH",10.5,"#b4a530"],["UTHR",9.9,"#b6a530"],["M",9.5,"#b7a430"],["AA",9.0,"#b9a330"],["GME",7.3,"#bf9f30"],["FIVE",2.7,"#c08326"],["PEN",1.7,"#c07b23"],["ALLY",0.4,"#c07220"],["NLY",-0.2,"#c06e1f"],["CART",-0.4,"#bf6b1f"],["CRBG",-2.2,"#bc5c1d"],["CDE",-3.0,"#bb551d"],["RGLD",-3.7,"#ba4e1c"],["AR",-4.3,"#b8471b"],["EQH",-4.5,"#b8451b"],["DT",-4.7,"#b8451b"],["BJ",-5.4,"#b73e1b"],["NTNX",-9.9,"#a12514"],["THC",-13.0,"#8f160f"],["RH",-16.0,"#7c100c"],["SGI",-16.9,"#780f0c"],["HL",-17.2,"#760f0c"],["MEDP",-19.3,"#6d0d0b"],["PINS",-21.8,"#610b0a"],["CG",-24.2,"#550909"],["KTOS",-31.6,"#390607"],["RBLX",-40.0,"#390607"],["CHWY",-46.0,"#390607"],["GWRE",-46.9,"#390607"]]];
+  const LABELS = ["2022","2023","2024","2025","2026 YTD"];
+  const INDEX_NAME = "S&P MidCap 100";
+  FRAMES.forEach(s => { const im = new Image(); im.src = s; });
+  const img = document.getElementById('treeimg');
+  const btns = Array.from(document.querySelectorAll('.tfbar button.tf'));
+  const layers = Array.from(document.querySelectorAll('.hotlayer'));
+  const playBtn = document.querySelector('.tfbar button.play');
+  const stopBtn = document.querySelector('.tfbar button.stop');
+  const viewBtn = document.querySelector('.tfbar button.view');
+  const stageEl = document.querySelector('.stage');
+  const ranksEl = document.getElementById('ranks');
+  let cur = 0, timer = null, showRanks = false;
+  function renderRanks(i) {
+    const rows = RANKS[i];
+    let h = '<div class="rankhead"><b>' + INDEX_NAME + '</b> &middot; ' + LABELS[i] +
+            ' &middot; ' + rows.length + ' stocks ranked by return</div><div class="rankgrid">';
+    for (let k = 0; k < rows.length; k++) {
+      const r = rows[k], up = r[1] >= 0;
+      h += '<div class="rankrow" style="--c:' + r[2] + '"><span class="rk">' + (k + 1) +
+           '</span><span class="tk">' + r[0] + '</span><span class="rt" style="color:' +
+           (up ? '#7fd6a0' : '#ec8a8a') + '">' + (up ? '+' : '') + r[1].toFixed(1) + '%</span></div>';
+    }
+    ranksEl.innerHTML = h + '</div>';
+  }
+  function setFrame(i) {
+    cur = (i + FRAMES.length) % FRAMES.length;
+    img.src = FRAMES[cur];
+    layers.forEach(l => l.style.display = (+l.dataset.i === cur) ? 'block' : 'none');
+    btns.forEach(b => b.classList.toggle('active', +b.dataset.i === cur));
+    if (showRanks) renderRanks(cur);
+  }
+  function startPlay() {
+    if (timer) return;
+    playBtn.classList.add('on');
+    stopBtn.disabled = false;
+    timer = setInterval(() => setFrame(cur + 1), 1300);
+  }
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    playBtn.classList.remove('on');
+    stopBtn.disabled = true;
+  }
+  function setView() {
+    stageEl.style.display = showRanks ? 'none' : '';
+    ranksEl.style.display = showRanks ? 'block' : 'none';
+    viewBtn.classList.toggle('on', showRanks);
+    viewBtn.innerHTML = showRanks ? '\u{1F333} Tree' : '\u2630 Rankings';
+    if (showRanks) renderRanks(cur);
+  }
+  btns.forEach(b => b.addEventListener('click', () => { stop(); setFrame(+b.dataset.i); }));
+  playBtn.addEventListener('click', startPlay);
+  stopBtn.addEventListener('click', stop);
+  viewBtn.addEventListener('click', () => { showRanks = !showRanks; setView(); });
+</script>
+</body></html>

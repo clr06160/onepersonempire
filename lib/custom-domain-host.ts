@@ -32,6 +32,8 @@ export function getAppHosts() {
     'www.onepersonempire.web.app',
     'onepersonempire.firebaseapp.com',
     'www.onepersonempire.firebaseapp.com',
+    'dreamtreestocks.com',
+    'www.dreamtreestocks.com',
   ];
 
   const baseUrlHost = normalizeHost(
@@ -45,6 +47,11 @@ export function getAppHosts() {
   if (publishHost) defaults.push(publishHost);
 
   return new Set([...defaults, ...configured]);
+}
+
+export function isDreamTreeStocksHost(host: string | null | undefined) {
+  const normalized = normalizeHost(host);
+  return normalized === 'dreamtreestocks.com' || normalized === 'www.dreamtreestocks.com';
 }
 
 export function isAppHost(host: string) {

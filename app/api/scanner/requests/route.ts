@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { requireScannerSession } from '@/lib/scanner-auth';
 import { getAdminFirestore } from '@/lib/firebase-admin';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -79,7 +80,7 @@ export async function GET() {
 
     return NextResponse.json({ user, requests, results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not load scan requests.';
+    const message = toScannerUserMessage(error, 'Could not load scan requests.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
       { status: 201 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not save scan request.';
+    const message = toScannerUserMessage(error, 'Could not save scan request.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
