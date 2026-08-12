@@ -1,0 +1,40 @@
+name: Scanner daily refresh
+
+# Optional backup to Cloud Run Job. Add repo secrets:
+#   FMP_API_KEY
+#   SCANNER_RESULTS_GCS_BUCKET
+#   GCP_SA_KEY  (JSON service account with storage objectAdmin on the bucket)
+#
+# Enable by uncommenting the schedule once secrets are set.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "35 13 * * 1-5"   # 7:35 America/Denver ≈ 13:35 UTC (MST); adjust for MDT
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r jobs/scanner-refresh/requirements.txt
+
+      - name: Auth GCS
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Refresh + upload
+        env:
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          SCANNER_RESULTS_GCS_BUCKET: ${{ secrets.SCANNER_RESULTS_GCS_BUCKET }}
+        run: |
+          chmod +x jobs/scanner-refresh/entrypoint.sh
+          ./jobs/scanner-refresh/entrypoint.sh

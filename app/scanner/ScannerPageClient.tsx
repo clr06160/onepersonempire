@@ -232,6 +232,25 @@ function formatDashboardDate(iso?: string): string {
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : iso;
 }
 
+/** Count Mon–Fri sessions strictly after `asOf` through today (local). */
+function weekdaySessionsBehind(asOf?: string | null): number | null {
+  const day = formatDashboardDate(asOf || undefined);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const start = new Date(`${day}T12:00:00`);
+  const end = new Date();
+  end.setHours(12, 0, 0, 0);
+  if (Number.isNaN(start.getTime()) || start >= end) return 0;
+  let behind = 0;
+  const cursor = new Date(start);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor <= end) {
+    const wd = cursor.getDay();
+    if (wd !== 0 && wd !== 6) behind += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return behind;
+}
+
 type ScannerPageClientProps = {
   googleClientId: string;
   /** Design preview: Dream Tree header + balanced grids only — same data and sections. */
@@ -537,6 +556,15 @@ export default function ScannerPageClient({
     [systems, agentRanks],
   );
   const selectedSystem = systems.find((system) => system.id === selectedSystemId) || systems[0];
+  const scanSessionsBehind = useMemo(() => {
+    const asOfDates = systems
+      .map((system) => formatDashboardDate(system.asOf || system.date))
+      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+    if (!asOfDates.length) return null;
+    const newest = asOfDates.sort().at(-1);
+    return weekdaySessionsBehind(newest);
+  }, [systems]);
+  const scanLooksStale = scanSessionsBehind != null && scanSessionsBehind >= 1;
   const isBearScanner = selectedSystem?.id === 'daily-raw-bear';
   const bearUniverseGroups = selectedSystem?.dailyBearUniverses;
   const ewLabels = (selectedSystem && ewOverlay?.labelsBySystem?.[selectedSystem.id]) || {};
@@ -1102,6 +1130,15 @@ export default function ScannerPageClient({
           <section className="mb-6 rounded-2xl border border-amber-800 bg-amber-950/40 p-4 text-amber-100">
             Saved scan fallback — live refresh did not run. Picks may be stale.
             {data.liveScanError ? <span className="mt-1 block text-sm text-amber-200/90">{data.liveScanError}</span> : null}
+          </section>
+        ) : null}
+
+        {user && scanLooksStale ? (
+          <section className="mb-6 rounded-2xl border border-amber-800 bg-amber-950/40 p-4 text-amber-100">
+            System scanner data looks stale
+            {scanSessionsBehind != null ? ` by ${scanSessionsBehind} trading session${scanSessionsBehind === 1 ? '' : 's'}` : ''}
+            . The site reads GCS uploads — if your PC refresh did not run, deploy the cloud job in{' '}
+            <span className="font-mono text-amber-50">jobs/scanner-refresh</span> so weekdays update without the PC.
           </section>
         ) : null}
 

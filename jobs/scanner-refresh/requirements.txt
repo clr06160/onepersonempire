@@ -1,0 +1,6 @@
+# Cloud Run Job / local runner for Dream Tree system-scanner refresh
+pandas>=2.0
+numpy>=1.26
+requests>=2.31
+python-dotenv>=1.0
+google-cloud-storage>=2.14
