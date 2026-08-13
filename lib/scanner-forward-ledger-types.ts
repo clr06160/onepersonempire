@@ -6,6 +6,7 @@
 export type ForwardLedgerSystemId =
   | 'earnings-calendar'
   | 'shortlist'
+  | 'ebitda-margins'
   | 'catalysts'
   | 'valuations'
   | 'daytrade-soxs'

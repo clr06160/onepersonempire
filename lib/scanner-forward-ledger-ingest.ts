@@ -15,6 +15,7 @@ import { loadFirstPullbackDashboard } from '@/lib/scanner-first-pullback-data';
 import { loadPeGlassDashboard } from '@/lib/scanner-pe-glass-data';
 import { loadRawBearDashboard } from '@/lib/scanner-raw-bear-data';
 import { loadScannerShortlistData } from '@/lib/scanner-shortlist-data';
+import { loadEbitdaMarginData } from '@/lib/ebitda-data';
 import { loadScannerValuationsData } from '@/lib/scanner-valuations-data';
 import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
@@ -96,6 +97,52 @@ async function collectShortlist(): Promise<ForwardLedgerTrade[]> {
         status: 'closed',
       }),
     );
+  }
+  return out;
+}
+
+async function collectEbitdaMargins(): Promise<ForwardLedgerTrade[]> {
+  const data = await loadEbitdaMarginData();
+  const out: ForwardLedgerTrade[] = [];
+  for (const universe of data.forwardTest?.universes || []) {
+    for (const row of universe.recentClosed || []) {
+      pushTrade(
+        out,
+        normalizeLedgerTrade({
+          systemId: 'ebitda-margins',
+          systemLabel: 'EBITDA margin top 10',
+          sleeve: universe.key || universe.label,
+          ticker: String(row.ticker || ''),
+          company: row.company,
+          entryDate: String(row.entryDate || ''),
+          exitDate: String(row.exitDate || row.lastDate || ''),
+          entryPrice: row.entryPrice,
+          exitPrice: row.exitPrice ?? row.lastPrice,
+          returnPct: row.returnPct ?? row.currentReturnPct,
+          status: 'closed',
+          sourceNote: universe.label ? `Universe ${universe.label}` : null,
+        }),
+      );
+    }
+    for (const row of universe.openPositions || []) {
+      pushTrade(
+        out,
+        normalizeLedgerTrade({
+          systemId: 'ebitda-margins',
+          systemLabel: 'EBITDA margin top 10',
+          sleeve: universe.key || universe.label,
+          ticker: String(row.ticker || ''),
+          company: row.company,
+          entryDate: String(row.entryDate || ''),
+          exitDate: null,
+          entryPrice: row.entryPrice,
+          exitPrice: row.lastPrice,
+          returnPct: row.currentReturnPct ?? row.returnPct,
+          status: 'open',
+          sourceNote: universe.label ? `Universe ${universe.label}` : null,
+        }),
+      );
+    }
   }
   return out;
 }
@@ -378,6 +425,7 @@ const COLLECTORS: {
 }[] = [
   { systemId: 'earnings-calendar', run: collectEarningsCalendar },
   { systemId: 'shortlist', run: collectShortlist },
+  { systemId: 'ebitda-margins', run: collectEbitdaMargins },
   { systemId: 'catalysts', run: collectCatalysts },
   { systemId: 'valuations', run: collectValuations },
   { systemId: 'daytrade', run: collectDaytrade },

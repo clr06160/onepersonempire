@@ -2,8 +2,9 @@
 
 import Script from 'next/script';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { EbitdaName, EbitdaPayload } from '@/lib/ebitda-shared';
+import type { EbitdaForwardTest, EbitdaName, EbitdaPayload } from '@/lib/ebitda-shared';
 import { filterEbitdaNames } from '@/lib/ebitda-shared';
+import ScannerExtrasNav from '@/app/scanner/_extras/ScannerExtrasNav';
 
 type ScannerUser = {
   email: string;
@@ -18,17 +19,20 @@ type EbitdaResponse = {
   error?: string;
 };
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
-          renderButton: (element: HTMLElement, options: Record<string, string | number | boolean>) => void;
-        };
-      };
-    };
-  }
+type GoogleAccountsId = {
+  initialize: (config: {
+    client_id: string;
+    callback: (response: { credential: string }) => void;
+    nonce?: string;
+    use_fedcm_for_button?: boolean;
+    auto_select?: boolean;
+  }) => void;
+  renderButton: (element: HTMLElement, options: Record<string, string | number | boolean>) => void;
+};
+
+function getGoogleAccountsId(): GoogleAccountsId | null {
+  const google = (window as Window & { google?: { accounts?: { id?: GoogleAccountsId } } }).google;
+  return google?.accounts?.id || null;
 }
 
 const fetchInit: RequestInit = { cache: 'no-store', credentials: 'include' };
@@ -42,6 +46,113 @@ function formatPct(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) return 'n/a';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)}%`;
+}
+
+function pctClass(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return 'text-zinc-400';
+  if (value > 0) return 'text-emerald-300';
+  if (value < 0) return 'text-red-300';
+  return 'text-zinc-300';
+}
+
+function money(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function ForwardTestPanel({ forwardTest }: { forwardTest?: EbitdaForwardTest | null }) {
+  if (!forwardTest?.universes?.length) return null;
+  const topN = forwardTest.topN || 10;
+
+  return (
+    <section className="rounded-2xl border border-emerald-900/40 bg-zinc-900 p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">Forward test</p>
+      <h2 className="mt-1 text-xl font-semibold text-zinc-100">Top {topN} margin expanders by universe</h2>
+      <p className="mt-2 max-w-4xl text-sm text-zinc-400">
+        {forwardTest.method ||
+          `Equal-weight top ${topN} like the Top Ten tester — one book per universe (NASDAQ-100, S&P 500 / SPY, Russell).`}
+      </p>
+      {forwardTest.note ? <p className="mt-2 text-xs text-zinc-500">{forwardTest.note}</p> : null}
+      <p className="mt-3 text-sm text-zinc-500">
+        As of {forwardTest.asOf || 'n/a'}
+        {forwardTest.updatedAt ? ` · updated ${forwardTest.updatedAt}` : ''}
+      </p>
+
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[920px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-zinc-700 text-left text-zinc-400">
+              <th className="py-2 pr-3">Universe</th>
+              <th className="py-2 pr-3 text-right">Equity</th>
+              <th className="py-2 pr-3 text-right">Total</th>
+              <th className="py-2 pr-3 text-right">Max DD</th>
+              <th className="py-2 pr-3 text-right">Open</th>
+              <th className="py-2 pr-3 text-right">Live avg</th>
+              <th className="py-2 pr-3 text-right">Hit rate</th>
+              <th className="py-2 pr-3">Top {topN} holdings</th>
+            </tr>
+          </thead>
+          <tbody>
+            {forwardTest.universes.map((row) => (
+              <tr key={row.key} className="border-b border-zinc-800/80 align-top">
+                <td className="py-3 pr-3 font-semibold text-zinc-100">{row.label}</td>
+                <td className="py-3 pr-3 text-right font-mono text-zinc-200">{money(row.equity)}</td>
+                <td className={`py-3 pr-3 text-right font-mono ${pctClass(row.totalReturnPct ?? row.summary?.totalReturnPct)}`}>
+                  {formatPct(row.totalReturnPct ?? row.summary?.totalReturnPct)}
+                </td>
+                <td className={`py-3 pr-3 text-right font-mono ${pctClass(row.maxDrawdownPct)}`}>
+                  {formatPct(row.maxDrawdownPct)}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono text-zinc-300">{row.openCount ?? row.currentTickers?.length ?? 0}</td>
+                <td className={`py-3 pr-3 text-right font-mono ${pctClass(row.openAvgReturnPct)}`}>
+                  {formatPct(row.openAvgReturnPct)}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono text-zinc-400">{formatPct(row.summary?.hitRatePct)}</td>
+                <td className="py-3 pr-3 text-xs leading-relaxed text-zinc-400">
+                  {row.currentTickers?.length ? row.currentTickers.join(', ') : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        {forwardTest.universes.map((row) => (
+          <div key={`${row.key}-detail`} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <h3 className="font-semibold text-emerald-200">{row.label} · live book</h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              {row.summary?.closedCount ?? 0} closed · {row.summary?.periodCount ?? 0} periods
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {(row.openPositions || []).slice(0, 5).map((pos) => (
+                <li key={`${row.key}-${pos.ticker}`} className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-zinc-100">{pos.ticker}</span>
+                  <span className={`font-mono ${pctClass(pos.currentReturnPct ?? pos.returnPct)}`}>
+                    {formatPct(pos.currentReturnPct ?? pos.returnPct)}
+                  </span>
+                </li>
+              ))}
+              {!row.openPositions?.length ? <li className="text-zinc-500">No open marks yet — next rebuild starts the book.</li> : null}
+            </ul>
+            {row.recentClosed?.length ? (
+              <div className="mt-4 border-t border-zinc-800 pt-3">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Recent closed</p>
+                <ul className="mt-2 space-y-1 text-xs text-zinc-400">
+                  {row.recentClosed.slice(0, 3).map((pos) => (
+                    <li key={`${row.key}-closed-${pos.ticker}-${pos.exitDate || ''}`} className="flex justify-between gap-2">
+                      <span>{pos.ticker}</span>
+                      <span className={`font-mono ${pctClass(pos.returnPct)}`}>{formatPct(pos.returnPct)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function MarginSparkline({ quarters }: { quarters: EbitdaName['quarters'] }) {
@@ -140,14 +251,15 @@ export default function EbitdaPageClient({ googleClientId: initialGoogleClientId
 
   const renderGoogleButton = useCallback(() => {
     const target = document.getElementById('google-signin-button');
-    if (!target || !window.google || !googleClientId) return false;
+    const googleId = getGoogleAccountsId();
+    if (!target || !googleId || !googleClientId) return false;
 
     target.innerHTML = '';
-    window.google.accounts.id.initialize({
+    googleId.initialize({
       client_id: googleClientId,
       callback: (response) => handleCredential(response.credential),
     });
-    window.google.accounts.id.renderButton(target, {
+    googleId.renderButton(target, {
       theme: 'filled_black',
       size: 'large',
       text: 'continue_with',
@@ -222,21 +334,31 @@ export default function EbitdaPageClient({ googleClientId: initialGoogleClientId
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-10 text-zinc-100">
       <div className="mx-auto max-w-7xl">
+        <ScannerExtrasNav active="/ebitda" />
         <div className="mb-8 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private research</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold tracking-tight">EBITDA Margin Trend</h1>
               <p className="mt-3 max-w-3xl text-zinc-300">
-                Standalone watchlist for rising EBITDA margins — the APP-style tip — without mixing into scanner systems.
+                Rising EBITDA-margin watchlist with a Top Ten-style forward test by universe (NASDAQ-100, S&P 500 / SPY,
+                Russell).
               </p>
             </div>
-            <a
-              href="/scanner"
-              className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500"
-            >
-              Back to scanner
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="/scanner/ledger"
+                className="rounded-full border border-cyan-800 px-4 py-2 text-sm font-semibold text-cyan-200 hover:border-cyan-500"
+              >
+                Forward ledger
+              </a>
+              <a
+                href="/scanner"
+                className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500"
+              >
+                Back to scanner
+              </a>
+            </div>
           </div>
         </div>
 
@@ -265,6 +387,7 @@ export default function EbitdaPageClient({ googleClientId: initialGoogleClientId
             {error && <p className="mt-4 rounded-xl border border-red-800 bg-red-950/60 p-4 text-red-200">{error}</p>}
           </section>
         ) : (
+          <div className="space-y-5">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
             <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -462,6 +585,8 @@ export default function EbitdaPageClient({ googleClientId: initialGoogleClientId
                 </p>
               </div>
             </aside>
+          </div>
+          <ForwardTestPanel forwardTest={data?.forwardTest} />
           </div>
         )}
       </div>

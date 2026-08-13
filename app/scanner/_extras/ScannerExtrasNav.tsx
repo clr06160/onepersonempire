@@ -38,6 +38,7 @@ const links: NavLink[] = [
   { href: '/scanner/gallery', label: 'Price as art', developerOnly: true },
   { href: '/scanner/top100', label: 'Top 100', developerOnly: true },
   { href: '/scanner/top-ten', label: 'Top Ten', developerOnly: true },
+  { href: '/ebitda', label: 'EBITDA margins', developerOnly: true },
   { href: '/scanner/daytrade', label: 'Day trade', developerOnly: true },
   { href: '/scanner/journal', label: 'Trade journal', developerOnly: true },
   { href: '/scanner/valuations', label: 'Valuations', developerOnly: true },

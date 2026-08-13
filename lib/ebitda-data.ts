@@ -2,9 +2,15 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
-import type { EbitdaName, EbitdaPayload, EbitdaQuarter } from '@/lib/ebitda-shared';
+import type {
+  EbitdaForwardTest,
+  EbitdaForwardUniverse,
+  EbitdaName,
+  EbitdaPayload,
+  EbitdaQuarter,
+} from '@/lib/ebitda-shared';
 
-export type { EbitdaName, EbitdaPayload, EbitdaQuarter } from '@/lib/ebitda-shared';
+export type { EbitdaName, EbitdaPayload, EbitdaQuarter, EbitdaForwardTest } from '@/lib/ebitda-shared';
 export { filterEbitdaNames } from '@/lib/ebitda-shared';
 
 function normalizeName(raw: unknown): EbitdaName | null {
@@ -51,10 +57,15 @@ function normalizeName(raw: unknown): EbitdaName | null {
   const above200dma =
     typeof row.above200dma === 'boolean' ? row.above200dma : row.above200dma == null ? null : Boolean(row.above200dma);
 
+  const universes = Array.isArray(row.universes)
+    ? row.universes.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : undefined;
+
   return {
     ticker,
     name: typeof row.name === 'string' ? row.name : ticker,
     sector: typeof row.sector === 'string' ? row.sector : undefined,
+    ...(universes?.length ? { universes } : {}),
     ebitdaMarginLatest,
     ebitdaMarginPrior,
     marginDeltaPp,
@@ -63,6 +74,35 @@ function normalizeName(raw: unknown): EbitdaName | null {
     asOf: typeof row.asOf === 'string' ? row.asOf : undefined,
     why: typeof row.why === 'string' ? row.why : undefined,
     quarters,
+  };
+}
+
+function normalizeForwardUniverse(raw: unknown): EbitdaForwardUniverse | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const key = typeof row.key === 'string' ? row.key : '';
+  const label = typeof row.label === 'string' ? row.label : key;
+  if (!key) return null;
+  return {
+    ...(row as EbitdaForwardUniverse),
+    key,
+    label,
+  };
+}
+
+function normalizeForwardTest(raw: unknown): EbitdaForwardTest | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const universes = Array.isArray(row.universes)
+    ? row.universes.map(normalizeForwardUniverse).filter((item): item is EbitdaForwardUniverse => Boolean(item))
+    : [];
+  return {
+    asOf: typeof row.asOf === 'string' ? row.asOf : undefined,
+    updatedAt: typeof row.updatedAt === 'string' ? row.updatedAt : undefined,
+    method: typeof row.method === 'string' ? row.method : undefined,
+    topN: Number.isFinite(Number(row.topN)) ? Number(row.topN) : 10,
+    note: typeof row.note === 'string' ? row.note : undefined,
+    universes,
   };
 }
 
@@ -86,6 +126,7 @@ function normalizePayload(parsed: unknown, source: string): EbitdaPayload {
     message: typeof raw.message === 'string' ? raw.message : undefined,
     method: Array.isArray(raw.method) ? raw.method.filter((item): item is string => typeof item === 'string') : [],
     names,
+    forwardTest: normalizeForwardTest(raw.forwardTest),
     source,
   };
 }

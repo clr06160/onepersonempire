@@ -1,44 +1,45 @@
 {
   "generatedAt": "2026-08-13T00:00:00Z",
   "universe": "sample-illustrative",
-  "note": "Sample payload so the standalone page works before a PC fundamentals upload job exists. Replace via GCS or EBITDA_MARGINS_JSON_PATH with live expanding-margin names.",
+  "note": "Sample payload so the page works before a PC fundamentals upload job exists. Replace via GCS (scanner/ebitda_margin_trends.json) or EBITDA_MARGINS_JSON_PATH.",
   "method": [
     "Rank by EBITDA margin expansion (latest quarter vs ~4 quarters earlier)",
     "Prefer names where revenue is not collapsing",
     "Optional trend context: above 200-day when provided",
-    "This is a research watchlist, not a scanner system buy list"
+    "Forward test: equal-weight top 10 expanders per universe; replace when a name falls out of that sleeve's top 10"
   ],
   "names": [
     {
-      "ticker": "APP",
-      "name": "AppLovin",
-      "sector": "Ad tech / software",
-      "ebitdaMarginLatest": 41.2,
-      "ebitdaMarginPrior": 27.8,
-      "marginDeltaPp": 13.4,
-      "revenueGrowthYoY": 14.0,
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "sector": "Semiconductors",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 62.1,
+      "ebitdaMarginPrior": 37.4,
+      "marginDeltaPp": 24.7,
+      "revenueGrowthYoY": 126.0,
       "above200dma": true,
-      "asOf": "2023-03-31",
-      "why": "Software mix rising while games pruned — classic margin-expansion tip before Axon 2 growth showed up in sales.",
+      "asOf": "2024-01-28",
+      "why": "Data-center mix lifted sales and margins.",
       "quarters": [
-        { "period": "2022Q2", "ebitdaMargin": 24.1, "revenueM": 671 },
-        { "period": "2022Q3", "ebitdaMargin": 25.6, "revenueM": 713 },
-        { "period": "2022Q4", "ebitdaMargin": 26.9, "revenueM": 703 },
-        { "period": "2023Q1", "ebitdaMargin": 38.3, "revenueM": 715 },
-        { "period": "2023Q2", "ebitdaMargin": 41.2, "revenueM": 734 }
+        { "period": "2023Q1", "ebitdaMargin": 37.4, "revenueM": 7192 },
+        { "period": "2023Q2", "ebitdaMargin": 50.8, "revenueM": 13507 },
+        { "period": "2023Q3", "ebitdaMargin": 58.9, "revenueM": 18120 },
+        { "period": "2023Q4", "ebitdaMargin": 62.1, "revenueM": 22103 }
       ]
     },
     {
       "ticker": "META",
       "name": "Meta Platforms",
       "sector": "Internet",
+      "universes": ["nasdaq100", "sp500"],
       "ebitdaMarginLatest": 48.5,
       "ebitdaMarginPrior": 33.2,
       "marginDeltaPp": 15.3,
       "revenueGrowthYoY": 23.0,
       "above200dma": true,
       "asOf": "2023-12-31",
-      "why": "Efficiency year + ad re-acceleration — margin expansion led the re-rating.",
+      "why": "Efficiency year + ad re-acceleration.",
       "quarters": [
         { "period": "2022Q4", "ebitdaMargin": 33.2, "revenueM": 32165 },
         { "period": "2023Q1", "ebitdaMargin": 39.1, "revenueM": 28645 },
@@ -48,34 +49,56 @@
       ]
     },
     {
-      "ticker": "NVDA",
-      "name": "NVIDIA",
-      "sector": "Semiconductors",
-      "ebitdaMarginLatest": 62.1,
-      "ebitdaMarginPrior": 37.4,
-      "marginDeltaPp": 24.7,
-      "revenueGrowthYoY": 126.0,
+      "ticker": "APP",
+      "name": "AppLovin",
+      "sector": "Ad tech / software",
+      "universes": ["nasdaq100", "russell"],
+      "ebitdaMarginLatest": 41.2,
+      "ebitdaMarginPrior": 27.8,
+      "marginDeltaPp": 13.4,
+      "revenueGrowthYoY": 14.0,
       "above200dma": true,
-      "asOf": "2024-01-28",
-      "why": "Product mix into data-center AI lifted both sales and margins — expansion confirmed the cycle.",
+      "asOf": "2023-03-31",
+      "why": "Software mix rising while games pruned.",
       "quarters": [
-        { "period": "2023Q1", "ebitdaMargin": 37.4, "revenueM": 7192 },
-        { "period": "2023Q2", "ebitdaMargin": 50.8, "revenueM": 13507 },
-        { "period": "2023Q3", "ebitdaMargin": 58.9, "revenueM": 18120 },
-        { "period": "2023Q4", "ebitdaMargin": 62.1, "revenueM": 22103 }
+        { "period": "2022Q2", "ebitdaMargin": 24.1, "revenueM": 671 },
+        { "period": "2022Q3", "ebitdaMargin": 25.6, "revenueM": 713 },
+        { "period": "2022Q4", "ebitdaMargin": 26.9, "revenueM": 703 },
+        { "period": "2023Q1", "ebitdaMargin": 38.3, "revenueM": 715 },
+        { "period": "2023Q2", "ebitdaMargin": 41.2, "revenueM": 734 }
+      ]
+    },
+    {
+      "ticker": "AVGO",
+      "name": "Broadcom",
+      "sector": "Semiconductors",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 58.0,
+      "ebitdaMarginPrior": 49.5,
+      "marginDeltaPp": 8.5,
+      "revenueGrowthYoY": 47.0,
+      "above200dma": true,
+      "asOf": "2024-08-04",
+      "why": "AI networking mix expanded margins with growth.",
+      "quarters": [
+        { "period": "2023Q3", "ebitdaMargin": 49.5, "revenueM": 9300 },
+        { "period": "2023Q4", "ebitdaMargin": 52.1, "revenueM": 11960 },
+        { "period": "2024Q1", "ebitdaMargin": 54.8, "revenueM": 12490 },
+        { "period": "2024Q2", "ebitdaMargin": 58.0, "revenueM": 13070 }
       ]
     },
     {
       "ticker": "CRWD",
       "name": "CrowdStrike",
       "sector": "Cybersecurity",
+      "universes": ["nasdaq100", "russell"],
       "ebitdaMarginLatest": 24.6,
       "ebitdaMarginPrior": 16.8,
       "marginDeltaPp": 7.8,
       "revenueGrowthYoY": 33.0,
       "above200dma": true,
       "asOf": "2024-04-30",
-      "why": "Software operating leverage — margins grind higher while growth stays solid.",
+      "why": "Software operating leverage.",
       "quarters": [
         { "period": "2023Q2", "ebitdaMargin": 16.8, "revenueM": 692 },
         { "period": "2023Q3", "ebitdaMargin": 19.1, "revenueM": 786 },
@@ -88,13 +111,14 @@
       "ticker": "MELI",
       "name": "MercadoLibre",
       "sector": "E-commerce / fintech",
+      "universes": ["nasdaq100", "russell"],
       "ebitdaMarginLatest": 26.4,
       "ebitdaMarginPrior": 18.9,
       "marginDeltaPp": 7.5,
       "revenueGrowthYoY": 37.0,
       "above200dma": true,
       "asOf": "2024-06-30",
-      "why": "Scale + fintech mix improved profitability without needing a pure growth slowdown.",
+      "why": "Scale + fintech mix.",
       "quarters": [
         { "period": "2023Q2", "ebitdaMargin": 18.9, "revenueM": 3401 },
         { "period": "2023Q3", "ebitdaMargin": 20.5, "revenueM": 3776 },
@@ -104,16 +128,116 @@
       ]
     },
     {
+      "ticker": "ANET",
+      "name": "Arista Networks",
+      "sector": "Networking",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 43.2,
+      "ebitdaMarginPrior": 36.1,
+      "marginDeltaPp": 7.1,
+      "revenueGrowthYoY": 20.0,
+      "above200dma": true,
+      "asOf": "2024-06-30",
+      "why": "AI campus/data-center demand with high incremental margins.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 36.1, "revenueM": 1460 },
+        { "period": "2023Q3", "ebitdaMargin": 38.4, "revenueM": 1510 },
+        { "period": "2023Q4", "ebitdaMargin": 40.5, "revenueM": 1540 },
+        { "period": "2024Q1", "ebitdaMargin": 41.8, "revenueM": 1571 },
+        { "period": "2024Q2", "ebitdaMargin": 43.2, "revenueM": 1690 }
+      ]
+    },
+    {
+      "ticker": "KLAC",
+      "name": "KLA",
+      "sector": "Semiconductors",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 42.0,
+      "ebitdaMarginPrior": 35.5,
+      "marginDeltaPp": 6.5,
+      "revenueGrowthYoY": 18.0,
+      "above200dma": true,
+      "asOf": "2024-06-30",
+      "why": "Process control intensity lifted mix.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 35.5, "revenueM": 2350 },
+        { "period": "2023Q3", "ebitdaMargin": 37.2, "revenueM": 2397 },
+        { "period": "2023Q4", "ebitdaMargin": 39.0, "revenueM": 2487 },
+        { "period": "2024Q1", "ebitdaMargin": 40.5, "revenueM": 2360 },
+        { "period": "2024Q2", "ebitdaMargin": 42.0, "revenueM": 2569 }
+      ]
+    },
+    {
+      "ticker": "CDNS",
+      "name": "Cadence",
+      "sector": "Software / EDA",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 38.4,
+      "ebitdaMarginPrior": 32.2,
+      "marginDeltaPp": 6.2,
+      "revenueGrowthYoY": 15.0,
+      "above200dma": true,
+      "asOf": "2024-06-30",
+      "why": "EDA software leverage.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 32.2, "revenueM": 977 },
+        { "period": "2023Q3", "ebitdaMargin": 33.8, "revenueM": 1023 },
+        { "period": "2023Q4", "ebitdaMargin": 35.5, "revenueM": 1069 },
+        { "period": "2024Q1", "ebitdaMargin": 36.9, "revenueM": 1009 },
+        { "period": "2024Q2", "ebitdaMargin": 38.4, "revenueM": 1061 }
+      ]
+    },
+    {
+      "ticker": "SNPS",
+      "name": "Synopsys",
+      "sector": "Software / EDA",
+      "universes": ["nasdaq100", "sp500"],
+      "ebitdaMarginLatest": 34.8,
+      "ebitdaMarginPrior": 28.9,
+      "marginDeltaPp": 5.9,
+      "revenueGrowthYoY": 14.0,
+      "above200dma": true,
+      "asOf": "2024-07-31",
+      "why": "Design software mix and scale.",
+      "quarters": [
+        { "period": "2023Q3", "ebitdaMargin": 28.9, "revenueM": 1486 },
+        { "period": "2023Q4", "ebitdaMargin": 30.5, "revenueM": 1511 },
+        { "period": "2024Q1", "ebitdaMargin": 32.1, "revenueM": 1455 },
+        { "period": "2024Q2", "ebitdaMargin": 34.8, "revenueM": 1455 }
+      ]
+    },
+    {
+      "ticker": "FTNT",
+      "name": "Fortinet",
+      "sector": "Cybersecurity",
+      "universes": ["nasdaq100", "sp500", "russell"],
+      "ebitdaMarginLatest": 30.1,
+      "ebitdaMarginPrior": 24.4,
+      "marginDeltaPp": 5.7,
+      "revenueGrowthYoY": 11.0,
+      "above200dma": true,
+      "asOf": "2024-06-30",
+      "why": "Product mix and opex discipline.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 24.4, "revenueM": 1290 },
+        { "period": "2023Q3", "ebitdaMargin": 26.0, "revenueM": 1335 },
+        { "period": "2023Q4", "ebitdaMargin": 27.8, "revenueM": 1418 },
+        { "period": "2024Q1", "ebitdaMargin": 28.9, "revenueM": 1353 },
+        { "period": "2024Q2", "ebitdaMargin": 30.1, "revenueM": 1434 }
+      ]
+    },
+    {
       "ticker": "EXMP",
       "name": "Example Co (noise)",
       "sector": "Cyclical",
+      "universes": ["russell"],
       "ebitdaMarginLatest": 19.2,
       "ebitdaMarginPrior": 12.0,
       "marginDeltaPp": 7.2,
       "revenueGrowthYoY": -18.0,
       "above200dma": false,
       "asOf": "2024-06-30",
-      "why": "Margin up but sales collapsing and below 200-day — keep as a false-positive example for filters.",
+      "why": "Margin up but sales collapsing — false-positive for filters.",
       "quarters": [
         { "period": "2023Q2", "ebitdaMargin": 12.0, "revenueM": 900 },
         { "period": "2023Q3", "ebitdaMargin": 14.5, "revenueM": 820 },
@@ -122,5 +246,90 @@
         { "period": "2024Q2", "ebitdaMargin": 19.2, "revenueM": 680 }
       ]
     }
-  ]
+  ],
+  "forwardTest": {
+    "asOf": "2026-08-12",
+    "updatedAt": "2026-08-13T00:00:00Z",
+    "topN": 10,
+    "method": "Equal-weight top 10 EBITDA-margin expanders in each universe (non-collapsing revenue). Hold while in that sleeve's top 10; replace on the next rebuild when a name falls out. Same book style as Top Ten / shortlist.",
+    "note": "Sample seed so the UI is visible before the PC/cloud builder writes live forwardTest into scanner/ebitda_margin_trends.json.",
+    "universes": [
+      {
+        "key": "nasdaq100",
+        "label": "NASDAQ-100",
+        "lastAsOf": "2026-08-12",
+        "openCount": 10,
+        "currentTickers": ["NVDA", "META", "APP", "AVGO", "CRWD", "MELI", "ANET", "KLAC", "CDNS", "SNPS"],
+        "equity": 118400,
+        "totalReturnPct": 18.4,
+        "maxDrawdownPct": -9.2,
+        "openAvgReturnPct": 12.1,
+        "summary": {
+          "periodCount": 6,
+          "avgPeriodReturnPct": 2.9,
+          "totalReturnPct": 18.4,
+          "hitRatePct": 66.7,
+          "closedCount": 8
+        },
+        "openPositions": [
+          { "ticker": "NVDA", "company": "NVIDIA", "entryDate": "2026-05-01", "entryRank": 1, "lastRank": 1, "currentReturnPct": 22.4, "status": "open" },
+          { "ticker": "META", "company": "Meta Platforms", "entryDate": "2026-05-01", "entryRank": 2, "lastRank": 2, "currentReturnPct": 14.1, "status": "open" },
+          { "ticker": "APP", "company": "AppLovin", "entryDate": "2026-06-12", "entryRank": 3, "lastRank": 3, "currentReturnPct": 19.8, "status": "open" }
+        ],
+        "recentClosed": [
+          { "ticker": "PANW", "company": "Palo Alto", "entryDate": "2026-03-10", "exitDate": "2026-06-12", "returnPct": 6.2, "status": "closed" }
+        ]
+      },
+      {
+        "key": "sp500",
+        "label": "S&P 500 (SPY)",
+        "lastAsOf": "2026-08-12",
+        "openCount": 10,
+        "currentTickers": ["NVDA", "META", "AVGO", "ANET", "KLAC", "CDNS", "SNPS", "FTNT", "NOW", "ADBE"],
+        "equity": 112900,
+        "totalReturnPct": 12.9,
+        "maxDrawdownPct": -7.4,
+        "openAvgReturnPct": 8.6,
+        "summary": {
+          "periodCount": 6,
+          "avgPeriodReturnPct": 2.1,
+          "totalReturnPct": 12.9,
+          "hitRatePct": 58.3,
+          "closedCount": 11
+        },
+        "openPositions": [
+          { "ticker": "NVDA", "company": "NVIDIA", "entryDate": "2026-05-01", "entryRank": 1, "lastRank": 1, "currentReturnPct": 22.4, "status": "open" },
+          { "ticker": "AVGO", "company": "Broadcom", "entryDate": "2026-05-01", "entryRank": 4, "lastRank": 3, "currentReturnPct": 11.2, "status": "open" }
+        ],
+        "recentClosed": [
+          { "ticker": "INTU", "company": "Intuit", "entryDate": "2026-02-20", "exitDate": "2026-05-15", "returnPct": -3.4, "status": "closed" }
+        ]
+      },
+      {
+        "key": "russell",
+        "label": "Russell / broader",
+        "lastAsOf": "2026-08-12",
+        "openCount": 8,
+        "currentTickers": ["APP", "CRWD", "MELI", "FTNT", "DUOL", "TOST", "PATH", "NET"],
+        "equity": 109500,
+        "totalReturnPct": 9.5,
+        "maxDrawdownPct": -11.0,
+        "openAvgReturnPct": 7.2,
+        "summary": {
+          "periodCount": 6,
+          "avgPeriodReturnPct": 1.6,
+          "totalReturnPct": 9.5,
+          "hitRatePct": 54.0,
+          "closedCount": 14
+        },
+        "openPositions": [
+          { "ticker": "APP", "company": "AppLovin", "entryDate": "2026-06-12", "entryRank": 1, "lastRank": 1, "currentReturnPct": 19.8, "status": "open" },
+          { "ticker": "MELI", "company": "MercadoLibre", "entryDate": "2026-05-01", "entryRank": 3, "lastRank": 2, "currentReturnPct": 9.4, "status": "open" }
+        ],
+        "recentClosed": [
+          { "ticker": "EXMP", "company": "Example Co", "entryDate": "2026-04-01", "exitDate": "2026-05-20", "returnPct": -8.1, "status": "closed" }
+        ]
+      }
+    ]
+  }
 }
