@@ -207,7 +207,8 @@ export default function FunClient() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-400">Look</p>
           <h2 className="mt-2 text-xl font-semibold text-zinc-50">Price as art</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Charts as pictures — atmosphere over spreadsheets.
+            Index fingerprints (Dow, SPY, QQQ, IWM) plus scanner picks as pictures — atmosphere
+            over spreadsheets.
           </p>
         </Link>
         <Link

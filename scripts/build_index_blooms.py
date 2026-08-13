@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build long-history seasonal blooms for Dow / S&P / Nasdaq-100 / Russell 2000.
 
-Writes WebPs into public/gallery/ and prints blurb stats. Requires: pillow, numpy.
-Data: Yahoo Finance chart API (daily closes).
+Writes WebPs + manifest into public/gallery/indexes/ (kept separate from the
+scanner-pick art wall so art_lab publishes do not prune them).
+Requires: pillow, numpy. Data: Yahoo Finance chart API (daily closes).
 """
 
 from __future__ import annotations
@@ -20,8 +21,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "public" / "gallery"
+OUT_DIR = ROOT / "public" / "gallery" / "indexes"
 CACHE_DIR = ROOT / "tmp" / "index-art"
+MANIFEST = OUT_DIR / "manifest.json"
 SIZE = 640
 CX = CY = SIZE // 2
 
@@ -175,12 +177,19 @@ def main() -> None:
         for row in rows:
             peak = max(peak, row["close"])
             drawdown = min(drawdown, row["close"] / peak - 1)
+        short = {"DOW": "DOW", "SPX": "SPY", "NDX": "QQQ", "RUT": "IWM"}[key]
+        title = {"DOW": "Dow Jones", "SPX": "S&P 500", "NDX": "Nasdaq-100", "RUT": "Russell 2000"}[key]
         blurbs[key] = {
             "key": key,
+            "short": short,
+            "title": title,
             "symbol": symbol,
             "label": label,
+            "image": f"/gallery/indexes/{key}_bloom.webp",
             "start": rows[0]["date"].strftime("%Y-%m-%d"),
             "end": rows[-1]["date"].strftime("%Y-%m-%d"),
+            "startYear": rows[0]["date"].year,
+            "endYear": rows[-1]["date"].year,
             "n": len(rows),
             "years": round(years, 1),
             "totalPct": round(total * 100, 1),
@@ -191,6 +200,22 @@ def main() -> None:
         }
         print(blurbs[key])
     (CACHE_DIR / "blurbs.json").write_text(json.dumps(blurbs, indent=2))
+    manifest = {
+        "generatedAt": datetime.now(tz=timezone.utc).strftime("%Y-%m-%d"),
+        "note": (
+            "Long-history seasonal blooms for major indexes. "
+            "Kept under /gallery/indexes so scanner-pick art publishes do not prune them."
+        ),
+        "items": [
+            {k: blurbs[key][k] for k in (
+                "key", "short", "title", "symbol", "image", "start", "end",
+                "startYear", "endYear", "years", "totalPct", "cagrPct", "volPct", "maxDdPct",
+            )}
+            for key, _, _ in SERIES
+        ],
+    }
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+    print("wrote", MANIFEST)
 
 
 if __name__ == "__main__":
