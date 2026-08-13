@@ -106,9 +106,18 @@ export async function POST(req: NextRequest) {
     });
 
     const url = new URL(`/s/${site.slug}`, getPublicOrigin(req));
+    const builderOrigin = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || req.nextUrl.origin;
+    const editUrl = new URL(builderOrigin);
+    editUrl.searchParams.set('edit', site.slug);
+    if (site.editToken) {
+      editUrl.searchParams.set('key', site.editToken);
+    }
+
     return NextResponse.json({
       slug: site.slug,
       url: url.toString(),
+      editUrl: editUrl.toString(),
+      editToken: site.editToken || null,
       updatedAt: site.updatedAt,
       assetCount: site.assetCount || 0,
       chunkCount: site.chunkCount || 0,

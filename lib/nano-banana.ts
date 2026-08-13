@@ -63,3 +63,53 @@ Return only the image.
 
   return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 }
+
+export async function generateDeskMarketImageDataUrl(input: {
+  asOf: string;
+  headline: string;
+  imageBrief: string;
+  tapeMood?: string;
+}) {
+  const ai = getClient();
+  const finalPrompt = `
+You are Nano Banana making a unique daily market-mood image for Dream Tree Stocks.
+
+Date this image represents (prior session / overnight into the morning):
+${input.asOf}
+
+Desk headline:
+${input.headline}
+
+Visual brief (must drive the image):
+${input.imageBrief}
+
+Tape mood hints:
+${input.tapeMood || '(none)'}
+
+Rules:
+- One cinematic still that feels like "what the market felt like yesterday."
+- Metaphorical / atmospheric: weather, light, terrain, motion, pressure — NOT charts, candlesticks, tickers, logos, UI, newspapers, or readable text.
+- Distinct for this date and mood — not a generic finance stock photo.
+- No people faces, no brand marks, no watermarks, no captions.
+- Wide 16:9 composition, rich color, gallery-quality still.
+
+Return only the image.
+`.trim();
+
+  const result = await ai.models.generateContent({
+    model: IMAGE_MODEL,
+    contents: finalPrompt,
+    config: { responseModalities: ['IMAGE'] },
+  });
+  const part = result.candidates?.[0]?.content?.parts?.find((candidatePart) => candidatePart.inlineData);
+
+  if (!part?.inlineData) {
+    throw new Error('Nano Banana returned no desk market image');
+  }
+
+  return {
+    dataUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+    mimeType: part.inlineData.mimeType || 'image/png',
+    model: IMAGE_MODEL,
+  };
+}

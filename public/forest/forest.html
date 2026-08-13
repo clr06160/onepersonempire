@@ -1,0 +1,279 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>The Forest — scanner universe</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; color:#e7efe6;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:
+      radial-gradient(1100px 720px at 18% -8%, #15321f 0%, rgba(21,50,31,0) 60%),
+      radial-gradient(900px 680px at 88% 8%, #0e2a3a 0%, rgba(14,42,58,0) 55%),
+      radial-gradient(1200px 900px at 50% 120%, #102014 0%, rgba(16,32,20,0) 60%),
+      #05080a;
+  }
+  .stars { position:fixed; inset:0; pointer-events:none; opacity:.5;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 30%, rgba(180,230,200,.5), transparent),
+      radial-gradient(1.5px 1.5px at 70% 60%, rgba(160,210,255,.4), transparent),
+      radial-gradient(2px 2px at 40% 80%, rgba(210,240,200,.35), transparent),
+      radial-gradient(1.5px 1.5px at 85% 25%, rgba(200,255,220,.4), transparent);
+    background-size: 600px 600px, 700px 700px, 500px 500px, 650px 650px; }
+  .wrap { position:relative; max-width:1380px; margin:0 auto; padding:46px 34px 70px; }
+  header { text-align:center; margin-bottom:8px; }
+  h1 { font-family:Georgia,'Times New Roman',serif; font-weight:600; font-size:46px;
+        letter-spacing:1.5px; margin:0;
+        background:linear-gradient(180deg,#eafff0,#9fd8b0); -webkit-background-clip:text;
+        background-clip:text; color:transparent; text-shadow:0 2px 30px rgba(110,200,140,.18); }
+  .sub { color:#9fb6a6; max-width:680px; margin:12px auto 0; line-height:1.6; font-size:14px; }
+  .tabs { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:22px auto 8px; }
+  .tabs button { background:rgba(20,36,27,.8); color:#cfe6d4; border:1px solid #2c4636;
+    padding:8px 18px; border-radius:999px; font-size:13.5px; font-weight:600; letter-spacing:.5px;
+    cursor:pointer; transition:all .15s ease; }
+  .tabs button:hover { border-color:#5aa86e; color:#eafff0; }
+  .tabs button.active { background:linear-gradient(180deg,#2f7d36,#1b5524); border-color:#7fd6a0; color:#fff; }
+  .legend { display:flex; align-items:center; gap:12px; justify-content:center;
+             margin:10px auto 30px; color:#9fb6a6; font-size:12px; letter-spacing:.5px; }
+  .legend .bar { width:240px; height:9px; border-radius:6px;
+                  background:linear-gradient(90deg, #4a0d12 0%, #9d2120 17%, #d75725 33%, #e8a024 50%, #c9cf3d 67%, #66ae42 83%, #2c8f63 100%); box-shadow:0 0 18px rgba(120,200,150,.25); }
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:30px 24px; }
+  .leaf { margin:0; text-align:center; }
+  .frame { position:relative; padding:6px; transition:transform .35s ease; }
+  .frame::after { content:""; position:absolute; left:50%; bottom:6%; width:55%; height:14px;
+    transform:translateX(-50%); background:radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%);
+    filter:blur(3px); z-index:0; }
+  .leaf img { width:100%; display:block; position:relative; z-index:1;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)) drop-shadow(0 0 16px color-mix(in srgb, var(--glow) 45%, transparent));
+    transition:transform .35s ease; }
+  .leaf:hover .frame { transform:translateY(-6px) scale(1.04); }
+  .leaf:hover img { transform:rotate(0deg) !important; }
+  figcaption { margin-top:4px; display:flex; align-items:baseline; justify-content:center; gap:10px; }
+  .tk { font-weight:600; letter-spacing:1px; font-size:15px; color:#eaf3ea; }
+  .ret { font-variant-numeric:tabular-nums; font-size:13px; font-weight:600; }
+  @media (max-width:1100px) { .grid { grid-template-columns:repeat(3,1fr); } h1 { font-size:38px; } }
+  @media (max-width:680px) { .grid { grid-template-columns:repeat(2,1fr); } }
+</style></head>
+<body>
+  <div class="stars"></div>
+  <div class="wrap">
+    <header>
+      <h1>The Forest</h1>
+      <div class="sub">Each scanner universe over YTD, one leaf per name. Color is health, shape is its growth character, and the notches are the dips it took along the way. Healthiest leaves first.</div>
+      <div class="tabs">
+      <button class="tab active" data-i="0">IWM</button>
+      <button class="tab" data-i="1">QQQ</button>
+      <button class="tab" data-i="2">MidCap</button>
+      </div>
+      <div class="legend"><span>dying</span><span class="bar"></span><span>thriving</span></div>
+    </header>
+    <div class="grid" data-i="0" style="display:grid">
+    <figure class="leaf" style="--glow:#379656">
+      <div class="frame"><img style="transform:rotate(-4.1deg)" src="APGE_leaf_clean.webp" alt="APGE" loading="lazy" /></div>
+      <figcaption><span class="tk">APGE</span><span class="ret" style="color:#379656">+76%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#6cb240">
+      <div class="frame"><img style="transform:rotate(0.8deg)" src="HIMS_leaf_clean.webp" alt="HIMS" loading="lazy" /></div>
+      <figcaption><span class="tk">HIMS</span><span class="ret" style="color:#6cb240">+13%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#87bc3f">
+      <div class="frame"><img style="transform:rotate(-3.3deg)" src="TECH_leaf_clean.webp" alt="TECH" loading="lazy" /></div>
+      <figcaption><span class="tk">TECH</span><span class="ret" style="color:#87bc3f">+19%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#94c03f">
+      <div class="frame"><img style="transform:rotate(-3.3deg)" src="CRL_leaf_clean.webp" alt="CRL" loading="lazy" /></div>
+      <figcaption><span class="tk">CRL</span><span class="ret" style="color:#94c03f">+13%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#aec93f">
+      <div class="frame"><img style="transform:rotate(0.1deg)" src="NUVL_leaf_clean.webp" alt="NUVL" loading="lazy" /></div>
+      <figcaption><span class="tk">NUVL</span><span class="ret" style="color:#aec93f">+23%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#b6cb3e">
+      <div class="frame"><img style="transform:rotate(4.1deg)" src="ABVX_leaf_clean.webp" alt="ABVX" loading="lazy" /></div>
+      <figcaption><span class="tk">ABVX</span><span class="ret" style="color:#b6cb3e">+7%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#cfd03d">
+      <div class="frame"><img style="transform:rotate(3.2deg)" src="TEM_leaf_clean.webp" alt="TEM" loading="lazy" /></div>
+      <figcaption><span class="tk">TEM</span><span class="ret" style="color:#cfd03d">-2%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e0c232">
+      <div class="frame"><img style="transform:rotate(-0.5deg)" src="ELF_leaf_clean.webp" alt="ELF" loading="lazy" /></div>
+      <figcaption><span class="tk">ELF</span><span class="ret" style="color:#e0c232">-5%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e7811f">
+      <div class="frame"><img style="transform:rotate(-1.7deg)" src="CELC_leaf_clean.webp" alt="CELC" loading="lazy" /></div>
+      <figcaption><span class="tk">CELC</span><span class="ret" style="color:#e7811f">+11%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#d35127">
+      <div class="frame"><img style="transform:rotate(1.4deg)" src="CELH_leaf_clean.webp" alt="CELH" loading="lazy" /></div>
+      <figcaption><span class="tk">CELH</span><span class="ret" style="color:#d35127">-30%</span></figcaption>
+    </figure>
+    </div>
+    <div class="grid" data-i="1" style="display:none">
+    <figure class="leaf" style="--glow:#66ae42">
+      <div class="frame"><img style="transform:rotate(-2.4deg)" src="AXON_leaf_clean.webp" alt="AXON" loading="lazy" /></div>
+      <figcaption><span class="tk">AXON</span><span class="ret" style="color:#66ae42">+15%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#b4ca3e">
+      <div class="frame"><img style="transform:rotate(3.7deg)" src="TTWO_leaf_clean.webp" alt="TTWO" loading="lazy" /></div>
+      <figcaption><span class="tk">TTWO</span><span class="ret" style="color:#b4ca3e">+4%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#dec736">
+      <div class="frame"><img style="transform:rotate(-3.2deg)" src="KHC_leaf_clean.webp" alt="KHC" loading="lazy" /></div>
+      <figcaption><span class="tk">KHC</span><span class="ret" style="color:#dec736">+5%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#dfc635">
+      <div class="frame"><img style="transform:rotate(-3.2deg)" src="DASH_leaf_clean.webp" alt="DASH" loading="lazy" /></div>
+      <figcaption><span class="tk">DASH</span><span class="ret" style="color:#dfc635">-11%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#ea9020">
+      <div class="frame"><img style="transform:rotate(-4.0deg)" src="ROP_leaf_clean.webp" alt="ROP" loading="lazy" /></div>
+      <figcaption><span class="tk">ROP</span><span class="ret" style="color:#ea9020">-15%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#ea8f1f">
+      <div class="frame"><img style="transform:rotate(1.7deg)" src="MELI_leaf_clean.webp" alt="MELI" loading="lazy" /></div>
+      <figcaption><span class="tk">MELI</span><span class="ret" style="color:#ea8f1f">-8%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e16921">
+      <div class="frame"><img style="transform:rotate(4.1deg)" src="ZS_leaf_clean.webp" alt="ZS" loading="lazy" /></div>
+      <figcaption><span class="tk">ZS</span><span class="ret" style="color:#e16921">-31%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e06722">
+      <div class="frame"><img style="transform:rotate(-3.4deg)" src="PYPL_leaf_clean.webp" alt="PYPL" loading="lazy" /></div>
+      <figcaption><span class="tk">PYPL</span><span class="ret" style="color:#e06722">-21%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#9a201f">
+      <div class="frame"><img style="transform:rotate(-4.3deg)" src="INSM_leaf_clean.webp" alt="INSM" loading="lazy" /></div>
+      <figcaption><span class="tk">INSM</span><span class="ret" style="color:#9a201f">-36%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#741417">
+      <div class="frame"><img style="transform:rotate(-2.2deg)" src="CHTR_leaf_clean.webp" alt="CHTR" loading="lazy" /></div>
+      <figcaption><span class="tk">CHTR</span><span class="ret" style="color:#741417">-34%</span></figcaption>
+    </figure>
+    </div>
+    <div class="grid" data-i="2" style="display:none">
+    <figure class="leaf" style="--glow:#a8c83f">
+      <div class="frame"><img style="transform:rotate(-3.0deg)" src="WTS_leaf_clean.webp" alt="WTS" loading="lazy" /></div>
+      <figcaption><span class="tk">WTS</span><span class="ret" style="color:#a8c83f">+30%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#d9d23c">
+      <div class="frame"><img style="transform:rotate(2.7deg)" src="RBA_leaf_clean.webp" alt="RBA" loading="lazy" /></div>
+      <figcaption><span class="tk">RBA</span><span class="ret" style="color:#d9d23c">+11%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#dad03b">
+      <div class="frame"><img style="transform:rotate(-2.5deg)" src="CCK_leaf_clean.webp" alt="CCK" loading="lazy" /></div>
+      <figcaption><span class="tk">CCK</span><span class="ret" style="color:#dad03b">+9%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e0c333">
+      <div class="frame"><img style="transform:rotate(-4.1deg)" src="ELAN_leaf_clean.webp" alt="ELAN" loading="lazy" /></div>
+      <figcaption><span class="tk">ELAN</span><span class="ret" style="color:#e0c333">+11%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e0c333">
+      <div class="frame"><img style="transform:rotate(-3.0deg)" src="TRU_leaf_clean.webp" alt="TRU" loading="lazy" /></div>
+      <figcaption><span class="tk">TRU</span><span class="ret" style="color:#e0c333">-4%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e5b72c">
+      <div class="frame"><img style="transform:rotate(3.9deg)" src="FLR_leaf_clean.webp" alt="FLR" loading="lazy" /></div>
+      <figcaption><span class="tk">FLR</span><span class="ret" style="color:#e5b72c">+19%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e7af29">
+      <div class="frame"><img style="transform:rotate(2.6deg)" src="CSL_leaf_clean.webp" alt="CSL" loading="lazy" /></div>
+      <figcaption><span class="tk">CSL</span><span class="ret" style="color:#e7af29">+10%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e8a024">
+      <div class="frame"><img style="transform:rotate(2.1deg)" src="WMS_leaf_clean.webp" alt="WMS" loading="lazy" /></div>
+      <figcaption><span class="tk">WMS</span><span class="ret" style="color:#e8a024">-0%</span></figcaption>
+    </figure>
+    <figure class="leaf" style="--glow:#e06722">
+      <div class="frame"><img style="transform:rotate(2.6deg)" src="GMED_leaf_clean.webp" alt="GMED" loading="lazy" /></div>
+      <figcaption><span class="tk">GMED</span><span class="ret" style="color:#e06722">-7%</span></figcaption>
+    </figure>
+    </div>
+  </div>
+<script>
+  const COUNTS = [10, 10, 9];
+  const tabs = Array.from(document.querySelectorAll('.tabs button'));
+  const grids = Array.from(document.querySelectorAll('.grid'));
+  tabs.forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.i;
+    tabs.forEach(t => t.classList.toggle('active', +t.dataset.i === i));
+    grids.forEach(g => g.style.display = (+g.dataset.i === i) ? 'grid' : 'none');
+  }));
+
+  function healthFromGlow(hex) {
+    const h = String(hex || '').replace('#', '');
+    if (h.length !== 6) return { label: 'Mixed', blurb: 'Still on the board — take a closer look if you want.' };
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    // Greens = healthy; yellows = stretched/cooling; oranges/reds = stressed.
+    if (g > r + 20 && g > b + 20) {
+      return { label: 'Healthy growth', blurb: 'Looking strong vs the pack — a name you can simply watch grow.' };
+    }
+    if (r > 180 && g > 140 && b < 80) {
+      return { label: 'Getting tired', blurb: 'Still interesting, but the leaf is yellowing — don’t force it.' };
+    }
+    if (r > g + 10) {
+      return { label: 'Stressed / withering', blurb: 'This one has taken damage. Fine to skip; nothing to prove.' };
+    }
+    return { label: 'Mixed', blurb: 'Neither screaming buy nor disaster — curiosity only.' };
+  }
+
+  function returnPlain(retText) {
+    const n = parseFloat(String(retText || '').replace('%', ''));
+    if (!Number.isFinite(n)) return 'Path so far is unclear.';
+    if (n >= 20) return 'Has already run a lot this year.';
+    if (n >= 5) return 'Modest climb this year.';
+    if (n > -5) return 'Roughly flat on the year.';
+    if (n > -20) return 'Down from earlier highs — recovering or resting.';
+    return 'Had a rough stretch — bruised leaf.';
+  }
+
+  const card = document.createElement('aside');
+  card.id = 'leaf-card';
+  card.setAttribute('hidden', '');
+  card.innerHTML = '<button type="button" class="close" aria-label="Close">×</button><p class="eyebrow">Leaf card</p><h2 class="tk"></h2><p class="health"></p><p class="path"></p><p class="blurb"></p><a class="chart" href="#">Look closer (chart)</a>';
+  document.body.appendChild(card);
+  const style = document.createElement('style');
+  style.textContent = `
+    #leaf-card { position:fixed; right:18px; bottom:18px; z-index:40; width:min(340px,calc(100vw - 24px));
+      padding:18px 18px 16px; border-radius:18px; border:1px solid rgba(52,211,153,.35);
+      background:linear-gradient(160deg,rgba(9,20,15,.96),rgba(24,24,27,.96)); color:#f4f4f5;
+      box-shadow:0 18px 50px rgba(0,0,0,.45); font-family:ui-sans-serif,system-ui,sans-serif; }
+    #leaf-card[hidden] { display:none; }
+    #leaf-card .eyebrow { margin:0; font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:#34d399; font-weight:700; }
+    #leaf-card .tk { margin:8px 0 4px; font-size:28px; font-family:ui-monospace,monospace; }
+    #leaf-card .health { margin:0; font-size:14px; font-weight:600; color:#a7f3d0; }
+    #leaf-card .path { margin:8px 0 0; font-size:13px; color:#d4d4d8; }
+    #leaf-card .blurb { margin:8px 0 14px; font-size:13px; line-height:1.45; color:#a1a1aa; }
+    #leaf-card .chart { display:inline-flex; font-size:13px; font-weight:600; color:#6ee7b7; text-decoration:none; }
+    #leaf-card .chart:hover { color:#a7f3d0; }
+    #leaf-card .close { position:absolute; top:8px; right:10px; border:0; background:transparent; color:#a1a1aa; font-size:22px; cursor:pointer; }
+    .leaf { cursor:pointer; }
+    .leaf.is-selected .frame { outline:2px solid rgba(52,211,153,.7); outline-offset:4px; }
+  `;
+  document.head.appendChild(style);
+
+  card.querySelector('.close').addEventListener('click', () => {
+    card.setAttribute('hidden', '');
+    document.querySelectorAll('.leaf.is-selected').forEach(el => el.classList.remove('is-selected'));
+  });
+
+  document.querySelectorAll('.leaf').forEach(leaf => {
+    leaf.addEventListener('click', () => {
+      const tk = leaf.querySelector('.tk')?.textContent?.trim() || '';
+      const ret = leaf.querySelector('.ret')?.textContent?.trim() || '';
+      const glow = getComputedStyle(leaf).getPropertyValue('--glow').trim() || leaf.style.getPropertyValue('--glow');
+      const health = healthFromGlow(glow);
+      document.querySelectorAll('.leaf.is-selected').forEach(el => el.classList.remove('is-selected'));
+      leaf.classList.add('is-selected');
+      card.querySelector('.tk').textContent = tk;
+      card.querySelector('.health').textContent = health.label;
+      card.querySelector('.path').textContent = returnPlain(ret) + (ret ? ` (${ret} YTD)` : '');
+      card.querySelector('.blurb').textContent = health.blurb;
+      const link = card.querySelector('.chart');
+      link.href = '/scanner/charts?ticker=' + encodeURIComponent(tk);
+      card.removeAttribute('hidden');
+    });
+  });
+</script>
+</body></html>

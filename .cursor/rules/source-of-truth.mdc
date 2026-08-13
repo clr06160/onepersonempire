@@ -1,0 +1,56 @@
+---
+description: Live repo only — ignore archived duplicates and stale git snapshots
+alwaysApply: true
+---
+
+# OnePerson Empire — source of truth
+
+## This repo is the only live website
+
+| Path | Role |
+|------|------|
+| `C:\Users\CoryRoberts\onepersonempire` | **LIVE** — deploy from here |
+| `C:\Users\CoryRoberts\Projects\stocks` | Scanner Python/data only — not the Next.js app |
+
+## Never use these for website edits
+
+- `C:\Users\CoryRoberts\ARCHIVED\onepersonempire-request-board-deploy`
+- `C:\Users\CoryRoberts\onepersonempire-scanner-deploy` (stale deploy copy)
+- Any path under `ARCHIVED/` or named `*-deploy` unless the user explicitly opens that folder as the workspace root
+
+If search finds the same filename in an archived copy, **ignore it** and use this repo.
+
+## Builder entry points (current architecture)
+
+| Area | Path |
+|------|------|
+| Route | `app/page.tsx` — thin wrapper only |
+| Builder UI + logic | `components/builder/BuilderHome.tsx` |
+| Modals | `components/builder/BuilderModals.tsx`, `components/builder/modals/` |
+| Hooks | `lib/builder/hooks/` |
+| Shared lib | `lib/builder/`, `lib/cms-html.ts` |
+
+Do **not** rebuild the giant monolith inside `app/page.tsx`. Do **not** copy old `app/page.tsx` from git history as the working version.
+
+## Git safety (critical)
+
+- **Working tree wins** over last commit for in-progress refactors (hooks, Phase B/C).
+- **Never** run `git checkout`, `git restore`, or `git reset` on builder files unless the user explicitly asks to discard changes.
+- Before any git operation that touches `app/page.tsx`, `components/builder/`, or `lib/builder/`, run `git status` and warn if it would destroy uncommitted work.
+- Do not assume `git show HEAD:…` is current — check the file on disk first.
+
+## Deploy
+
+```powershell
+cd C:\Users\CoryRoberts\onepersonempire
+gcloud run deploy onepersonempire --source . --region us-central1 --allow-unauthenticated
+```
+
+Live URL: `https://onepersonempire.web.app` (no custom `.com` until DNS is owned).
+
+## Products on same deploy
+
+- `/` — builder (`components/builder/`, `lib/builder/`)
+- `/scanner` — scanner tools (`app/scanner/`, `app/api/scanner/`)
+
+Do not mix builder and scanner edits unless the user asks.

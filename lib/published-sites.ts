@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { getAdminFirestore, getAdminStorageBucket } from '@/lib/firebase-admin';
 
@@ -7,6 +7,7 @@ export type PublishedSite = {
   slug: string;
   html: string;
   idea?: string;
+  editToken?: string;
   safetyReview?: {
     status: 'approved' | 'blocked' | 'needs_review';
     reason: string;
@@ -17,6 +18,10 @@ export type PublishedSite = {
   assetCount?: number;
   chunkCount?: number;
 };
+
+export function createEditToken() {
+  return randomBytes(18).toString('base64url');
+}
 
 const PUBLISHED_DIR = path.join(process.cwd(), 'data', 'published-sites');
 const PUBLISHED_COLLECTION = 'publishedSites';
@@ -116,15 +121,19 @@ export async function publishSite(input: {
 
   const now = new Date().toISOString();
   const { html: publishHtml, assetCount } = await replaceDataUrlImages(slug, input.html);
+  let existingEditToken: string | undefined;
 
   if (isFirestorePublishingEnabled()) {
     const db = getAdminFirestore();
     const ref = db.collection(PUBLISHED_COLLECTION).doc(slug);
     const existing = await ref.get();
+    existingEditToken = typeof existing.data()?.editToken === 'string' ? existing.data()?.editToken : undefined;
+    const editToken = existingEditToken || createEditToken();
     const chunks = splitHtml(publishHtml);
     const site: PublishedSite = {
       slug,
       idea: input.idea,
+      editToken,
       safetyReview: input.safetyReview,
       createdAt: existing.exists ? existing.data()?.createdAt || now : now,
       updatedAt: now,
@@ -143,6 +152,7 @@ export async function publishSite(input: {
     await ref.set({
       slug,
       idea: input.idea || null,
+      editToken,
       safetyReview: input.safetyReview || null,
       createdAt: site.createdAt,
       updatedAt: now,
@@ -159,14 +169,17 @@ export async function publishSite(input: {
   try {
     const existing = JSON.parse(await readFile(sitePath(slug), 'utf8')) as PublishedSite;
     createdAt = existing.createdAt || now;
+    existingEditToken = existing.editToken;
   } catch {
     // New site.
   }
 
+  const editToken = existingEditToken || createEditToken();
   const site: PublishedSite = {
     slug,
     html: publishHtml,
     idea: input.idea,
+    editToken,
     safetyReview: input.safetyReview,
     createdAt,
     updatedAt: now,
@@ -205,6 +218,7 @@ export async function getPublishedSite(slug: string) {
       slug: normalized,
       html,
       idea: typeof data?.idea === 'string' ? data.idea : undefined,
+      editToken: typeof data?.editToken === 'string' ? data.editToken : undefined,
       createdAt: typeof data?.createdAt === 'string' ? data.createdAt : '',
       updatedAt: typeof data?.updatedAt === 'string' ? data.updatedAt : '',
     };
@@ -215,6 +229,25 @@ export async function getPublishedSite(slug: string) {
   } catch {
     return null;
   }
+}
+
+export async function verifyPublishedSiteEditAccess(slug: string, editToken: string) {
+  const normalized = normalizeSlug(slug);
+  const token = editToken.trim();
+  if (!normalized || !token) return null;
+
+  const site = await getPublishedSite(normalized);
+  if (!site?.editToken || site.editToken !== token) return null;
+
+  return {
+    slug: site.slug,
+    html: site.html,
+    idea: site.idea,
+    createdAt: site.createdAt,
+    updatedAt: site.updatedAt,
+    assetCount: site.assetCount,
+    chunkCount: site.chunkCount,
+  };
 }
 
 export async function updatePublishedSiteHtml(input: {

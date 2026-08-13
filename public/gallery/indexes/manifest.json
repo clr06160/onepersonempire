@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-08-13",
+  "note": "Long-history seasonal blooms for major indexes. Kept under /gallery/indexes so scanner-pick art publishes do not prune them.",
+  "items": [
+    {
+      "key": "DOW",
+      "short": "DOW",
+      "title": "Dow Jones",
+      "symbol": "^DJI",
+      "image": "/gallery/indexes/DOW_bloom.webp",
+      "start": "1992-01-02",
+      "end": "2026-08-13",
+      "startYear": 1992,
+      "endYear": 2026,
+      "years": 34.6,
+      "totalPct": 1597.1,
+      "cagrPct": 8.5,
+      "volPct": 17,
+      "maxDdPct": -53.8
+    },
+    {
+      "key": "SPX",
+      "short": "SPY",
+      "title": "S&P 500",
+      "symbol": "^GSPC",
+      "image": "/gallery/indexes/SPX_bloom.webp",
+      "start": "1927-12-30",
+      "end": "2026-08-13",
+      "startYear": 1927,
+      "endYear": 2026,
+      "years": 98.6,
+      "totalPct": 44061.9,
+      "cagrPct": 6.4,
+      "volPct": 19,
+      "maxDdPct": -86.2
+    },
+    {
+      "key": "NDX",
+      "short": "QQQ",
+      "title": "Nasdaq-100",
+      "symbol": "^NDX",
+      "image": "/gallery/indexes/NDX_bloom.webp",
+      "start": "1985-10-01",
+      "end": "2026-08-13",
+      "startYear": 1985,
+      "endYear": 2026,
+      "years": 40.9,
+      "totalPct": 26727.6,
+      "cagrPct": 14.7,
+      "volPct": 26,
+      "maxDdPct": -82.9
+    },
+    {
+      "key": "RUT",
+      "short": "IWM",
+      "title": "Russell 2000",
+      "symbol": "^RUT",
+      "image": "/gallery/indexes/RUT_bloom.webp",
+      "start": "1987-09-10",
+      "end": "2026-08-13",
+      "startYear": 1987,
+      "endYear": 2026,
+      "years": 38.9,
+      "totalPct": 1706.7,
+      "cagrPct": 7.7,
+      "volPct": 22,
+      "maxDdPct": -59.9
+    }
+  ]
+}
