@@ -16,9 +16,14 @@ export default function ScannerRequestsPage() {
                 A simple place for approved users to suggest scanner and backtest ideas before any manual review or local run.
               </p>
             </div>
-            <Link href="/scanner" className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500">
-              Open scanner
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/ebitda" className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500">
+                EBITDA margins
+              </Link>
+              <Link href="/scanner" className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500">
+                Open scanner
+              </Link>
+            </div>
           </div>
         </div>
 
