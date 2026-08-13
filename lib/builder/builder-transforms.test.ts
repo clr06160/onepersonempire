@@ -6,6 +6,8 @@ import { addCouponToHtml } from './coupon-transforms.ts';
 import { findImageTagByIndex, replaceImageSrcByIndex } from './image-transforms.ts';
 import { addPageLikeSectionToHtml, removeAddedPageFromHtml } from './page-templates.ts';
 import { buildVenmoPayment, updateStripeButtonHtml } from './payment-transforms.ts';
+import { buildEditLinkBackupMessage, parseEditLinkCredentials } from './home-publish-utils.ts';
+import { stripMarkdownHtmlFences } from './site-html-utils.ts';
 
 const baseHtml = '<html><body><nav><a href="#top">Home</a></nav><main><section id="top">Home</section></main></body></html>';
 
@@ -59,6 +61,18 @@ describe('builder HTML transforms', () => {
     assert.match(updated, /data-venmo-phone="801-555-1212"/);
     assert.match(updated, /data-product-name="Starter kit"/);
     assert.match(updated, /data-product-price="\$49"/);
+  });
+
+  it('strips markdown html fences and builds edit-link backup text', () => {
+    assert.equal(stripMarkdownHtmlFences('```html\n<body>Hi</body>\n```'), '<body>Hi</body>');
+    assert.match(
+      buildEditLinkBackupMessage({ slug: 'dog-walking', publishedUrl: '', siteEditUrl: 'https://example.com/?edit=dog-walking&key=abc' }),
+      /dog-walking/,
+    );
+    assert.deepEqual(
+      parseEditLinkCredentials('https://example.com/?edit=dog-walking&key=abc', ''),
+      { slug: 'dog-walking', key: 'abc' },
+    );
   });
 
   it('adds an avatar section with a nav link and editable image metadata', () => {

@@ -1,0 +1,266 @@
+{
+  "ticker": "NVDA",
+  "window": "2022-10-01 to 2024-06-30",
+  "events": [
+    {
+      "reportDate": "2022-11-16",
+      "priorCloseDate": "2022-11-16",
+      "day0Date": "2022-11-17",
+      "day3Date": "2022-11-22",
+      "day0Pct": -1.45,
+      "day3Pct": 0.82
+    },
+    {
+      "reportDate": "2023-02-22",
+      "priorCloseDate": "2023-02-22",
+      "day0Date": "2023-02-23",
+      "day3Date": "2023-02-28",
+      "day0Pct": 14.0,
+      "day3Pct": 11.88
+    },
+    {
+      "reportDate": "2023-05-24",
+      "priorCloseDate": "2023-05-24",
+      "day0Date": "2023-05-25",
+      "day3Date": "2023-05-31",
+      "day0Pct": 24.34,
+      "day3Pct": 23.85
+    },
+    {
+      "reportDate": "2023-08-23",
+      "priorCloseDate": "2023-08-23",
+      "day0Date": "2023-08-24",
+      "day3Date": "2023-08-29",
+      "day0Pct": 0.09,
+      "day3Pct": 3.53
+    },
+    {
+      "reportDate": "2023-11-21",
+      "priorCloseDate": "2023-11-21",
+      "day0Date": "2023-11-22",
+      "day3Date": "2023-11-28",
+      "day0Pct": -2.45,
+      "day3Pct": -4.23
+    },
+    {
+      "reportDate": "2024-02-21",
+      "priorCloseDate": "2024-02-21",
+      "day0Date": "2024-02-22",
+      "day3Date": "2024-02-27",
+      "day0Pct": 16.41,
+      "day3Pct": 16.64
+    },
+    {
+      "reportDate": "2024-05-22",
+      "priorCloseDate": "2024-05-22",
+      "day0Date": "2024-05-23",
+      "day3Date": "2024-05-29",
+      "day0Pct": 9.32,
+      "day3Pct": 20.93
+    }
+  ],
+  "stats": {
+    "day0": {
+      "n": 7,
+      "mean": 8.61,
+      "median": 9.32,
+      "min": -2.45,
+      "max": 24.34,
+      "pctPositive": 71.4
+    },
+    "day3": {
+      "n": 7,
+      "mean": 10.49,
+      "median": 11.88,
+      "min": -4.23,
+      "max": 23.85,
+      "pctPositive": 85.7
+    }
+  },
+  "histograms": {
+    "day0": [
+      {
+        "from": -4.0,
+        "to": -2.0,
+        "label": "-4 to -2",
+        "count": 1
+      },
+      {
+        "from": -2.0,
+        "to": 0.0,
+        "label": "-2 to 0",
+        "count": 1
+      },
+      {
+        "from": 0.0,
+        "to": 2.0,
+        "label": "0 to 2",
+        "count": 1
+      },
+      {
+        "from": 2.0,
+        "to": 4.0,
+        "label": "2 to 4",
+        "count": 0
+      },
+      {
+        "from": 4.0,
+        "to": 6.0,
+        "label": "4 to 6",
+        "count": 0
+      },
+      {
+        "from": 6.0,
+        "to": 8.0,
+        "label": "6 to 8",
+        "count": 0
+      },
+      {
+        "from": 8.0,
+        "to": 10.0,
+        "label": "8 to 10",
+        "count": 1
+      },
+      {
+        "from": 10.0,
+        "to": 12.0,
+        "label": "10 to 12",
+        "count": 0
+      },
+      {
+        "from": 12.0,
+        "to": 14.0,
+        "label": "12 to 14",
+        "count": 0
+      },
+      {
+        "from": 14.0,
+        "to": 16.0,
+        "label": "14 to 16",
+        "count": 1
+      },
+      {
+        "from": 16.0,
+        "to": 18.0,
+        "label": "16 to 18",
+        "count": 1
+      },
+      {
+        "from": 18.0,
+        "to": 20.0,
+        "label": "18 to 20",
+        "count": 0
+      },
+      {
+        "from": 20.0,
+        "to": 22.0,
+        "label": "20 to 22",
+        "count": 0
+      },
+      {
+        "from": 22.0,
+        "to": 24.0,
+        "label": "22 to 24",
+        "count": 0
+      },
+      {
+        "from": 24.0,
+        "to": 26.0,
+        "label": "24 to 26",
+        "count": 1
+      }
+    ],
+    "day3": [
+      {
+        "from": -6.0,
+        "to": -4.0,
+        "label": "-6 to -4",
+        "count": 1
+      },
+      {
+        "from": -4.0,
+        "to": -2.0,
+        "label": "-4 to -2",
+        "count": 0
+      },
+      {
+        "from": -2.0,
+        "to": 0.0,
+        "label": "-2 to 0",
+        "count": 0
+      },
+      {
+        "from": 0.0,
+        "to": 2.0,
+        "label": "0 to 2",
+        "count": 1
+      },
+      {
+        "from": 2.0,
+        "to": 4.0,
+        "label": "2 to 4",
+        "count": 1
+      },
+      {
+        "from": 4.0,
+        "to": 6.0,
+        "label": "4 to 6",
+        "count": 0
+      },
+      {
+        "from": 6.0,
+        "to": 8.0,
+        "label": "6 to 8",
+        "count": 0
+      },
+      {
+        "from": 8.0,
+        "to": 10.0,
+        "label": "8 to 10",
+        "count": 0
+      },
+      {
+        "from": 10.0,
+        "to": 12.0,
+        "label": "10 to 12",
+        "count": 1
+      },
+      {
+        "from": 12.0,
+        "to": 14.0,
+        "label": "12 to 14",
+        "count": 0
+      },
+      {
+        "from": 14.0,
+        "to": 16.0,
+        "label": "14 to 16",
+        "count": 0
+      },
+      {
+        "from": 16.0,
+        "to": 18.0,
+        "label": "16 to 18",
+        "count": 1
+      },
+      {
+        "from": 18.0,
+        "to": 20.0,
+        "label": "18 to 20",
+        "count": 0
+      },
+      {
+        "from": 20.0,
+        "to": 22.0,
+        "label": "20 to 22",
+        "count": 1
+      },
+      {
+        "from": 22.0,
+        "to": 24.0,
+        "label": "22 to 24",
+        "count": 1
+      }
+    ]
+  }
+}

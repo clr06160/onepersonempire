@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 import { requireScannerSession } from '@/lib/scanner-auth';
 import { getAdminFirestore } from '@/lib/firebase-admin';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
       { status: 201 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not save test result.';
+    const message = toScannerUserMessage(error, 'Could not save test result.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

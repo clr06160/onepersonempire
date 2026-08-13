@@ -1,13 +1,16 @@
-import { isAppHost, normalizeHost } from '@/lib/custom-domain-host';
+import { isAppHost, isDreamTreeStocksHost, normalizeHost } from '@/lib/custom-domain-host';
 import { NextRequest, NextResponse } from 'next/server';
 
-const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success'];
+const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success', '/privacy', '/terms', '/ebitda'];
 
 function shouldServePublishedSite(pathname: string) {
   if (pathname.startsWith('/api/')) return false;
   if (pathname.startsWith('/_next/')) return false;
   if (pathname.startsWith('/published-assets/')) return false;
   if (pathname.startsWith('/i/')) return false;
+  if (pathname.startsWith('/pitch-deck')) return false;
+  if (pathname.startsWith('/privacy')) return false;
+  if (pathname.startsWith('/terms')) return false;
   if (APP_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
   return true;
 }
@@ -16,6 +19,18 @@ export async function proxy(request: NextRequest) {
   const host = normalizeHost(
     request.headers.get('x-forwarded-host') || request.headers.get('host'),
   );
+
+  // dreamtreestocks.com product host: serve the scanner brochure at `/`
+  // (rewrite keeps the home URL for link previews — do not 302 away).
+  if (isDreamTreeStocksHost(host)) {
+    const pathname = request.nextUrl.pathname;
+    if (pathname === '/' || pathname === '') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/scanner';
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next();
+  }
 
   if (isAppHost(host)) {
     return NextResponse.next();

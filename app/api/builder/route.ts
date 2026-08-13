@@ -63,7 +63,7 @@ function normalizeStringArray(value: unknown) {
 function fallbackCleanBrief(rawNotes: string): CleanBusinessBrief {
   return {
     summary: rawNotes,
-    businessType: 'Local business',
+    businessType: rawNotes,
     location: 'Local area',
     primaryOffer: rawNotes,
     targetCustomer: 'Local customers',
@@ -72,6 +72,35 @@ function fallbackCleanBrief(rawNotes: string): CleanBusinessBrief {
     mustInclude: [],
     ignoreForFirstVersion: [],
   };
+}
+
+function shouldUseAiCleanBrief(rawNotes: string) {
+  const trimmed = rawNotes.trim();
+  const lineCount = trimmed.split(/\n/).map((line) => line.trim()).filter(Boolean).length;
+  return trimmed.length > 220 || lineCount > 2;
+}
+
+function reconcileBriefWithRawNotes(rawNotes: string, brief: CleanBusinessBrief): CleanBusinessBrief {
+  const briefText = `${brief.summary} ${brief.businessType} ${brief.primaryOffer}`.toLowerCase();
+  const isPetCare = /\b(dog walk(?:ing|er)?|pet sit(?:ting|ter)?|pet care|puppy walk(?:ing|er)?|cat sit(?:ting|ter)?)\b/i.test(rawNotes);
+  const looksLikeTourism = /\b(walking tour|sightseeing|city tour|guided tour|tour guide|tourist)\b/i.test(briefText);
+
+  if (isPetCare && looksLikeTourism) {
+    const locationMatch = rawNotes.match(/\b(?:in|near|around)\s+([A-Za-z][A-Za-z\s,.-]{1,40})/i);
+    const location = locationMatch?.[1]?.trim() || brief.location;
+    return {
+      ...brief,
+      summary: `Dog walking and pet care service${location && location !== 'Local area' ? ` in ${location}` : ''}.`,
+      businessType: 'Dog walking / pet care',
+      location,
+      primaryOffer: 'Dog walking and pet care for local pet owners',
+      targetCustomer: 'Pet owners who need reliable dog walking or pet care',
+      mustInclude: [...new Set([...brief.mustInclude, 'dogs', 'pet care', 'dog walking'])],
+      ignoreForFirstVersion: [...new Set([...brief.ignoreForFirstVersion, 'walking tours', 'sightseeing', 'city tours', 'tourism'])],
+    };
+  }
+
+  return brief;
 }
 
 function formatCleanBrief(brief: CleanBusinessBrief) {
@@ -89,6 +118,10 @@ function formatCleanBrief(brief: CleanBusinessBrief) {
 }
 
 async function cleanBusinessBrief(rawNotes: string): Promise<CleanBusinessBrief> {
+  if (!shouldUseAiCleanBrief(rawNotes)) {
+    return fallbackCleanBrief(rawNotes);
+  }
+
   const prompt = `You clean messy user notes into a simple local-business website brief.
 
 Goal:
@@ -96,6 +129,9 @@ Goal:
 - Ignore rambling, future maybe ideas, conflicting extras, social/networking/game ideas, blogs, marketplaces, memberships, and unrelated product ideas unless they are clearly the main business.
 - Preserve simple direct instructions: colors, background, tone, language, location, payment/contact method, one-page/full-site, gallery/reviews/menu/services.
 - Make the first version a normal, credible local-business site.
+- Keep the exact business category from the user. Do not swap it for a related industry.
+- Examples: "dog walking in Barcelona" = dog walking / pet care in Barcelona, NOT walking tours, sightseeing, tourism, or city tours. "house cleaning" is not a hotel. "mobile detailing" is not a car dealership.
+- A city or tourist destination in the notes is just the service area unless the user clearly sells tours, tickets, or sightseeing.
 
 Return ONLY compact JSON with this exact shape:
 {
@@ -117,7 +153,7 @@ ${rawNotes}`;
     const result = await generateTextWithFallback(prompt, { maxOutputTokens: 1000 });
     const parsed = parseJsonObject(result.text);
     const fallback = fallbackCleanBrief(rawNotes);
-    return {
+    const brief = {
       summary: String(parsed.summary || fallback.summary).slice(0, 500),
       businessType: String(parsed.businessType || fallback.businessType).slice(0, 160),
       location: String(parsed.location || fallback.location).slice(0, 160),
@@ -128,6 +164,7 @@ ${rawNotes}`;
       mustInclude: normalizeStringArray(parsed.mustInclude),
       ignoreForFirstVersion: normalizeStringArray(parsed.ignoreForFirstVersion),
     };
+    return reconcileBriefWithRawNotes(rawNotes, brief);
   } catch (error) {
     console.error('[builder:clean-brief]', error);
     return fallbackCleanBrief(rawNotes);
@@ -254,6 +291,7 @@ Hard rules:
 - Professional layout: max-w-7xl mx-auto px-6 lg:px-8, no giant icons, no emojis larger than text-xl.
 - Make it credible for a real local business owner to send today: clear service area, practical contact/payment CTA, concrete services/products, and one trust-building proof section.
 - Avoid overpromising. Use plain language, specific details, and believable claims instead of hype.
+- Keep the exact business category from the idea. "Dog walking" means pet care for dogs, NOT city walking tours or tourism.
 ${mode === 'onepage' ? '- One-page version: no menu, no anchor-link nav, no fake extra page links, one core offer, compact proof, payment CTA.' : ''}
 
 Make the copy specific to the business idea.`;
@@ -327,11 +365,16 @@ export async function POST(req: NextRequest) {
       ? buildRewritePrompt(trimmed, existingHtml, rewriteFeedback)
       : `You are Agent 3 — elite conversion-focused web designer for OnePerson Empire.
 
-Build from this cleaned business brief, not from the raw notes. If the raw notes had rambling, future ideas, or conflicting extras, ignore them unless they appear in this clean brief:
+Build from this cleaned business brief:
 ${builderIdea}
 
-Original raw notes for context only:
+Original raw notes — these define the actual business category. If the cleaned brief conflicts with the raw notes on business type, follow the raw notes:
 "${trimmed}"
+
+Business type rule (critical):
+- Never swap the user's business for a related but different industry.
+- "Dog walking" / "dog walker" = pet care for dogs, NOT walking tours, sightseeing, tourism, or city tours.
+- A city name is only the service area unless the user clearly sells tours or tickets.
 
 Location/language:
 Use the language, country, city, currency, and local payment/contact clues mentioned in the business idea. If the user mentions WhatsApp, make WhatsApp the primary contact/payment instruction. If the user mentions Venmo, make Venmo the primary payment instruction. If no location or payment method is mentioned, default to US English and simple payment info.

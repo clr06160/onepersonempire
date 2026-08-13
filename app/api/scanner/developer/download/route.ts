@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireScannerSession } from '@/lib/scanner-auth';
 import { buildScannerDownloadZip } from '@/lib/scanner-download';
+import { toScannerUserMessage } from '@/lib/scanner-user-error';
 
 export const runtime = 'nodejs';
 
@@ -20,7 +21,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not build scanner download.';
+    const message = toScannerUserMessage(error, 'Could not build scanner download.');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

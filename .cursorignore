@@ -1,0 +1,13 @@
+﻿# Stale / duplicate website repos — never index or search these for live work
+../onepersonempire-scanner-deploy/
+../ARCHIVED/
+../onepersonempire-request-board-deploy-ARCHIVED.txt
+
+# Build artifacts
+.next/
+node_modules/
+
+# Secrets
+.env
+.env.local
+**/.env*
