@@ -21,8 +21,8 @@ export default function GalleryClient() {
         />
       </div>
       <p className="mt-4 text-center text-sm text-zinc-400">
-        Every name currently live in the scanners, rendered as price-as-art. Click any tile to open
-        its full gallery. Open directly to share:{' '}
+        Index fingerprints at the top, then every name currently live in the scanners. Click any pick
+        tile for its full gallery. Open directly to share:{' '}
         <a className="text-emerald-400 hover:underline" href="/gallery/index.html" target="_blank" rel="noreferrer">
           /gallery/index.html
         </a>

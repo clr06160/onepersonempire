@@ -10,9 +10,9 @@ export default function GalleryPage() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner · extras</p>
           <h1 className="text-4xl font-bold tracking-tight">Price as Art</h1>
           <p className="mt-3 max-w-3xl text-zinc-300">
-            The scanner&apos;s current picks, each turned into a set of evocative shapes — its bloom,
-            heartbeat, growth rings, dusk mountains, constellation, record-of-time spiral and leaf.
-            Click any name to open its full gallery.
+            Index fingerprints first (Dow, SPY, QQQ, IWM — full history), then the scanner&apos;s
+            current picks as blooms, heartbeats, rings, mountains, constellations, spirals, and leaves.
+            Click any pick to open its full gallery.
           </p>
         </div>
         <GalleryClient />
