@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         source: '/scanner',
         headers: [{ key: 'Cache-Control', value: 'private, no-store, max-age=0' }],
       },
+      {
+        source: '/api/ebitda',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store, max-age=0' }],
+      },
+      {
+        source: '/ebitda',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store, max-age=0' }],
+      },
     ];
   },
 };

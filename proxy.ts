@@ -1,7 +1,7 @@
 import { isAppHost, normalizeHost } from '@/lib/custom-domain-host';
 import { NextRequest, NextResponse } from 'next/server';
 
-const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success'];
+const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success', '/ebitda'];
 
 function shouldServePublishedSite(pathname: string) {
   if (pathname.startsWith('/api/')) return false;
