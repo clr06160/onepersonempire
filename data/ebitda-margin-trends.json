@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-08-13T00:00:00Z",
+  "universe": "sample-illustrative",
+  "note": "Sample payload so the standalone page works before a PC fundamentals upload job exists. Replace via GCS or EBITDA_MARGINS_JSON_PATH with live expanding-margin names.",
+  "method": [
+    "Rank by EBITDA margin expansion (latest quarter vs ~4 quarters earlier)",
+    "Prefer names where revenue is not collapsing",
+    "Optional trend context: above 200-day when provided",
+    "This is a research watchlist, not a scanner system buy list"
+  ],
+  "names": [
+    {
+      "ticker": "APP",
+      "name": "AppLovin",
+      "sector": "Ad tech / software",
+      "ebitdaMarginLatest": 41.2,
+      "ebitdaMarginPrior": 27.8,
+      "marginDeltaPp": 13.4,
+      "revenueGrowthYoY": 14.0,
+      "above200dma": true,
+      "asOf": "2023-03-31",
+      "why": "Software mix rising while games pruned — classic margin-expansion tip before Axon 2 growth showed up in sales.",
+      "quarters": [
+        { "period": "2022Q2", "ebitdaMargin": 24.1, "revenueM": 671 },
+        { "period": "2022Q3", "ebitdaMargin": 25.6, "revenueM": 713 },
+        { "period": "2022Q4", "ebitdaMargin": 26.9, "revenueM": 703 },
+        { "period": "2023Q1", "ebitdaMargin": 38.3, "revenueM": 715 },
+        { "period": "2023Q2", "ebitdaMargin": 41.2, "revenueM": 734 }
+      ]
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms",
+      "sector": "Internet",
+      "ebitdaMarginLatest": 48.5,
+      "ebitdaMarginPrior": 33.2,
+      "marginDeltaPp": 15.3,
+      "revenueGrowthYoY": 23.0,
+      "above200dma": true,
+      "asOf": "2023-12-31",
+      "why": "Efficiency year + ad re-acceleration — margin expansion led the re-rating.",
+      "quarters": [
+        { "period": "2022Q4", "ebitdaMargin": 33.2, "revenueM": 32165 },
+        { "period": "2023Q1", "ebitdaMargin": 39.1, "revenueM": 28645 },
+        { "period": "2023Q2", "ebitdaMargin": 42.8, "revenueM": 31999 },
+        { "period": "2023Q3", "ebitdaMargin": 46.0, "revenueM": 34146 },
+        { "period": "2023Q4", "ebitdaMargin": 48.5, "revenueM": 40111 }
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "sector": "Semiconductors",
+      "ebitdaMarginLatest": 62.1,
+      "ebitdaMarginPrior": 37.4,
+      "marginDeltaPp": 24.7,
+      "revenueGrowthYoY": 126.0,
+      "above200dma": true,
+      "asOf": "2024-01-28",
+      "why": "Product mix into data-center AI lifted both sales and margins — expansion confirmed the cycle.",
+      "quarters": [
+        { "period": "2023Q1", "ebitdaMargin": 37.4, "revenueM": 7192 },
+        { "period": "2023Q2", "ebitdaMargin": 50.8, "revenueM": 13507 },
+        { "period": "2023Q3", "ebitdaMargin": 58.9, "revenueM": 18120 },
+        { "period": "2023Q4", "ebitdaMargin": 62.1, "revenueM": 22103 }
+      ]
+    },
+    {
+      "ticker": "CRWD",
+      "name": "CrowdStrike",
+      "sector": "Cybersecurity",
+      "ebitdaMarginLatest": 24.6,
+      "ebitdaMarginPrior": 16.8,
+      "marginDeltaPp": 7.8,
+      "revenueGrowthYoY": 33.0,
+      "above200dma": true,
+      "asOf": "2024-04-30",
+      "why": "Software operating leverage — margins grind higher while growth stays solid.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 16.8, "revenueM": 692 },
+        { "period": "2023Q3", "ebitdaMargin": 19.1, "revenueM": 786 },
+        { "period": "2023Q4", "ebitdaMargin": 21.4, "revenueM": 845 },
+        { "period": "2024Q1", "ebitdaMargin": 23.0, "revenueM": 921 },
+        { "period": "2024Q2", "ebitdaMargin": 24.6, "revenueM": 1010 }
+      ]
+    },
+    {
+      "ticker": "MELI",
+      "name": "MercadoLibre",
+      "sector": "E-commerce / fintech",
+      "ebitdaMarginLatest": 26.4,
+      "ebitdaMarginPrior": 18.9,
+      "marginDeltaPp": 7.5,
+      "revenueGrowthYoY": 37.0,
+      "above200dma": true,
+      "asOf": "2024-06-30",
+      "why": "Scale + fintech mix improved profitability without needing a pure growth slowdown.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 18.9, "revenueM": 3401 },
+        { "period": "2023Q3", "ebitdaMargin": 20.5, "revenueM": 3776 },
+        { "period": "2023Q4", "ebitdaMargin": 22.1, "revenueM": 4190 },
+        { "period": "2024Q1", "ebitdaMargin": 24.0, "revenueM": 4373 },
+        { "period": "2024Q2", "ebitdaMargin": 26.4, "revenueM": 5073 }
+      ]
+    },
+    {
+      "ticker": "EXMP",
+      "name": "Example Co (noise)",
+      "sector": "Cyclical",
+      "ebitdaMarginLatest": 19.2,
+      "ebitdaMarginPrior": 12.0,
+      "marginDeltaPp": 7.2,
+      "revenueGrowthYoY": -18.0,
+      "above200dma": false,
+      "asOf": "2024-06-30",
+      "why": "Margin up but sales collapsing and below 200-day — keep as a false-positive example for filters.",
+      "quarters": [
+        { "period": "2023Q2", "ebitdaMargin": 12.0, "revenueM": 900 },
+        { "period": "2023Q3", "ebitdaMargin": 14.5, "revenueM": 820 },
+        { "period": "2023Q4", "ebitdaMargin": 16.0, "revenueM": 760 },
+        { "period": "2024Q1", "ebitdaMargin": 17.8, "revenueM": 710 },
+        { "period": "2024Q2", "ebitdaMargin": 19.2, "revenueM": 680 }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,11 @@
 import { isAppHost, isDreamTreeStocksHost, normalizeHost } from '@/lib/custom-domain-host';
 import { NextRequest, NextResponse } from 'next/server';
 
+<<<<<<< HEAD
 const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success', '/privacy', '/terms'];
+=======
+const APP_ONLY_PREFIXES = ['/builder', '/scanner', '/success', '/ebitda'];
+>>>>>>> 3903701 (Add standalone EBITDA margin trend research page)
 
 function shouldServePublishedSite(pathname: string) {
   if (pathname.startsWith('/api/')) return false;
