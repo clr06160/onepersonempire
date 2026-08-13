@@ -239,12 +239,20 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">Private scanner</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <h1 className="text-4xl font-bold tracking-tight">OnePersonEmpire Stock Scanner</h1>
-            <a
-              href="/scanner/requests"
-              className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
-            >
-              Request a scan
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="/ebitda"
+                className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 hover:border-zinc-500"
+              >
+                EBITDA margins
+              </a>
+              <a
+                href="/scanner/requests"
+                className="rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+              >
+                Request a scan
+              </a>
+            </div>
           </div>
         </div>
 
@@ -388,12 +396,20 @@ export default function ScannerPageClient({ googleClientId: initialGoogleClientI
               <p className="mt-2 text-sm text-zinc-400">
                 This page is tied to the signed-in Google account, not a shared password.
               </p>
-              <a
-                href="/scanner/requests"
-                className="mt-5 inline-flex rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
-              >
-                Request a scan
-              </a>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <a
+                  href="/ebitda"
+                  className="inline-flex rounded-full border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-200 hover:border-zinc-500"
+                >
+                  EBITDA margins
+                </a>
+                <a
+                  href="/scanner/requests"
+                  className="inline-flex rounded-full border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-300 hover:border-emerald-500 hover:text-emerald-200"
+                >
+                  Request a scan
+                </a>
+              </div>
               {user.role === 'developer' ? (
                 <div className="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4">
                   <h3 className="font-semibold text-emerald-200">Developer tools</h3>
