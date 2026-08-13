@@ -18,14 +18,69 @@
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
   .name { text-align:center; margin-top:10px; font-weight:700; letter-spacing:1.5px; color:#e8e8f0; }
 
+
+  .indexes { margin: 0 0 42px; padding: 22px 18px 8px; border: 1px solid #2a2440;
+    border-radius: 18px; background: linear-gradient(180deg, rgba(40,28,70,.35), rgba(14,14,26,.6)); }
+  .idx-head { text-align: center; margin-bottom: 18px; }
+  .idx-kicker { margin: 0; font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: #c4a8ff; font-weight: 700; }
+  .indexes h2 { margin: 8px 0 0; font-size: 26px; letter-spacing: .3px; color: #f2eefe; }
+  .idx-sub { margin: 10px auto 0; max-width: 720px; color: #aab; font-size: 13px; line-height: 1.55; }
+  .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 18px; }
+  .idx-tile { margin: 0; background: #0a0a14; border: 1px solid #2a2450; border-radius: 14px; padding: 10px; }
+  .idx-tile .meta { text-align: center; margin-top: 4px; font-size: 11px; color: #8b86a8; letter-spacing: .4px; }
+  .idx-tile .stats { text-align: center; margin-top: 6px; font-size: 11px; color: #c9b8ff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  @media (max-width:1000px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width:620px) { .idx-grid { grid-template-columns: 1fr; } }
   @media (max-width:1000px) { .grid { grid-template-columns:repeat(3,1fr); } }
   @media (max-width:620px) { .grid { grid-template-columns:repeat(2,1fr); } h1 { font-size:32px; } }
 </style></head>
 <body><div class="wrap">
   <header>
     <h1>Price as Art</h1>
-    <div class="sub">64 names currently live in the scanners, each rendered as a set of evocative shapes. Click any tile to open its gallery.</div>
+    <div class="sub">Index fingerprints up top (full history). Below: names currently live in the scanners — click any tile for its gallery.</div>
   </header>
+
+  <section class="indexes">
+    <div class="idx-head">
+      <p class="idx-kicker">Indexes · full history</p>
+      <h2>Market fingerprints</h2>
+      <p class="idx-sub">Same seasonal-bloom idea as the picks wall — but for the big indexes, as far back as the data goes. Each one is a unique visual fingerprint of that market’s life (a QR code that decided to look cool).</p>
+    </div>
+    <div class="idx-grid">
+      <figure class="idx-tile">
+        <div class="thumb"><img src="indexes/DOW_bloom.webp" alt="DOW bloom" /></div>
+        <figcaption>
+          <div class="name">DOW</div>
+          <div class="meta">Dow Jones · 1992–2026</div>
+          <div class="stats">34.6y · +1,597% · +8.5%/yr · 17% vol</div>
+        </figcaption>
+      </figure>
+      <figure class="idx-tile">
+        <div class="thumb"><img src="indexes/SPX_bloom.webp" alt="SPY bloom" /></div>
+        <figcaption>
+          <div class="name">SPY</div>
+          <div class="meta">S&P 500 · 1927–2026</div>
+          <div class="stats">98.6y · +44,062% · +6.4%/yr · 19% vol</div>
+        </figcaption>
+      </figure>
+      <figure class="idx-tile">
+        <div class="thumb"><img src="indexes/NDX_bloom.webp" alt="QQQ bloom" /></div>
+        <figcaption>
+          <div class="name">QQQ</div>
+          <div class="meta">Nasdaq-100 · 1985–2026</div>
+          <div class="stats">40.9y · +26,728% · +14.7%/yr · 26% vol</div>
+        </figcaption>
+      </figure>
+      <figure class="idx-tile">
+        <div class="thumb"><img src="indexes/RUT_bloom.webp" alt="IWM bloom" /></div>
+        <figcaption>
+          <div class="name">IWM</div>
+          <div class="meta">Russell 2000 · 1987–2026</div>
+          <div class="stats">38.9y · +1,707% · +7.7%/yr · 22% vol</div>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
 
   <div class="grid">
     <a class="tile" href="AAL_gallery.html">
